@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Nexus AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filters {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            background: var(--primary-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .users-table {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--primary-bg);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.admin {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+
+
+        .badge.usuario {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+
+        .badge.analista_qa {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .badge.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-hover);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Volver al inicio
+        </a>
+
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> Panel de Administración</h1>
+            <p>Gestión de usuarios y configuración del sistema</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <!-- Debug Info (solo visible en desarrollo) -->
+        <div id="debug-info" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-muted); display: none;">
+            <strong>Debug Info:</strong>
+            <div id="debug-content">Cargando...</div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">-</div>
+                <div class="stat-label">Total Usuarios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-active">-</div>
+                <div class="stat-label">Usuarios Activos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-inactive">-</div>
+                <div class="stat-label">Usuarios Inactivos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-admins">-</div>
+                <div class="stat-label">Administradores</div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="search-input"><i class="fas fa-search"></i> Buscar por email</label>
+                    <input type="text" id="search-input" placeholder="email@ejemplo.com">
+                </div>
+                <div class="filter-group">
+                    <label for="role-filter"><i class="fas fa-user-tag"></i> Filtrar por rol</label>
+                    <select id="role-filter">
+                        <option value="">Todos los roles</option>
+                        <option value="admin">Administrador</option>
+                        <option value="analista_qa">Analista QA</option>
+                        <option value="usuario">Usuario</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="status-filter"><i class="fas fa-toggle-on"></i> Estado</label>
+                    <select id="status-filter">
+                        <option value="">Todos</option>
+                        <option value="active">Activos</option>
+                        <option value="inactive">Inactivos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="users-table">
+            <div class="table-header">
+                <h2><i class="fas fa-users"></i> Usuarios</h2>
+                <button class="btn btn-primary" onclick="loadUsers()">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+            <div class="table-container">
+                <div id="loading" class="loading" style="display: block;">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+                </div>
+                <table id="users-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Creado</th>
+                            <th>Último Login</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                    </tbody>
+                </table>
+                <div id="empty-state" class="empty-state" style="display: none;">
+                    <i class="fas fa-users-slash"></i>
+                    <p>No se encontraron usuarios</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        const roleLabels = {
+            admin: 'Administrador',
+            analista_qa: 'Analista QA',
+            usuario: 'Usuario'
+        };
+
+        // Obtener información del usuario actual
+        async function getCurrentUser() {
+            console.log('[DEBUG] getCurrentUser() - Obteniendo usuario actual');
+            try {
+                const response = await fetch('/auth/session');
+                console.log('[DEBUG] getCurrentUser() - Response status:', response.status);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[DEBUG] getCurrentUser() - Usuario actual:', data);
+                    currentUser = data;
+                } else {
+                    console.error('[DEBUG] getCurrentUser() - Response no OK:', response.status);
+                }
+            } catch (e) {
+                console.error('[DEBUG] getCurrentUser() - Error:', e);
+            }
+        }
+
+        // Cargar usuarios
+        async function loadUsers() {
+            console.log('[DEBUG] loadUsers() - Iniciando carga de usuarios');
+            showDebugInfo('Iniciando carga de usuarios...');
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('users-table');
+            const tbody = document.getElementById('users-tbody');
+            const emptyState = document.getElementById('empty-state');
+
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const search = document.getElementById('search-input').value;
+                const role = document.getElementById('role-filter').value;
+                const status = document.getElementById('status-filter').value;
+
+                let url = '/admin/users?';
+                if (search) url += `search=${encodeURIComponent(search)}&`;
+                if (role) url += `role=${encodeURIComponent(role)}&`;
+                if (status === 'active') url += 'active_only=true&';
+                if (status === 'inactive') url += 'active_only=false&';
+
+                console.log('[DEBUG] loadUsers() - URL:', url);
+                showDebugInfo(`Haciendo petición a: ${url}`);
+
+                const response = await fetch(url);
+                console.log('[DEBUG] loadUsers() - Response status:', response.status);
+                showDebugInfo(`Respuesta recibida: HTTP ${response.status}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[DEBUG] loadUsers() - Error response:', errorText);
+                    showDebugInfo(`ERROR HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                    showAlert(`Error HTTP ${response.status}: ${errorText.substring(0, 100)}`, 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('[DEBUG] loadUsers() - Data recibida:', data);
+                showDebugInfo(`Datos recibidos: success=${data.success}, usuarios=${data.users?.length || 0}`);
+
+                if (data.success) {
+                    displayUsers(data.users);
+                    updateStats(data.statistics);
+                    console.log('[DEBUG] loadUsers() - Usuarios mostrados exitosamente');
+                    showDebugInfo(`✅ Usuarios cargados exitosamente: ${data.users.length} usuarios`);
+                } else {
+                    const errorMsg = data.error || 'Error desconocido al cargar usuarios';
+                    console.error('[DEBUG] loadUsers() - Error en respuesta:', errorMsg);
+                    showDebugInfo(`ERROR: ${errorMsg}`);
+                    showAlert(`Error: ${errorMsg}`, 'error');
+                }
+            } catch (e) {
+                console.error('[DEBUG] loadUsers() - Excepción capturada:', e);
+                console.error('[DEBUG] loadUsers() - Stack:', e.stack);
+                showDebugInfo(`EXCEPCIÓN: ${e.message}`);
+                showAlert(`Error al cargar usuarios: ${e.message}`, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Mostrar usuarios en la tabla
+        function displayUsers(users) {
+            console.log('[DEBUG] displayUsers() - Iniciando, usuarios recibidos:', users);
+            showDebugInfo(`displayUsers() llamado con ${users?.length || 0} usuarios`);
+            
+            const tbody = document.getElementById('users-tbody');
+            const table = document.getElementById('users-table');
+            const emptyState = document.getElementById('empty-state');
+            const loading = document.getElementById('loading');
+
+            if (!tbody || !table || !emptyState) {
+                console.error('[DEBUG] displayUsers() - Elementos DOM no encontrados');
+                showDebugInfo('ERROR: Elementos DOM no encontrados');
+                return;
+            }
+
+            // Asegurar que el loading esté oculto
+            if (loading) {
+                loading.style.display = 'none';
+            }
+
+            tbody.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                console.log('[DEBUG] displayUsers() - No hay usuarios, mostrando empty state');
+                showDebugInfo('No hay usuarios para mostrar');
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            console.log('[DEBUG] displayUsers() - Mostrando tabla con usuarios');
+            table.style.display = 'table';
+            emptyState.style.display = 'none';
+
+            users.forEach((user, index) => {
+                try {
+                    const row = document.createElement('tr');
+                    
+                    const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString('es-ES') : 'N/A';
+                    const lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString('es-ES') : 'Nunca';
+                    const role = (user.role || 'usuario').toLowerCase();
+                    const roleLabel = roleLabels[role] || role;
+
+                    row.innerHTML = `
+                        <td>${user.email || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${role}">${roleLabel}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${user.active ? 'active' : 'inactive'}">
+                                ${user.active ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </td>
+                        <td>${createdDate}</td>
+                        <td>${lastLogin}</td>
+                        <td>
+                            <div class="actions">
+                                <select class="btn btn-sm btn-secondary" onchange="changeRole('${user.id}', this.value)" ${user.id === currentUser?.user_id ? 'disabled' : ''}>
+                                    <option value="admin" ${role === 'admin' ? 'selected' : ''}>Administrador</option>
+                                    <option value="analista_qa" ${role === 'analista_qa' ? 'selected' : ''}>Analista QA</option>
+                                    <option value="usuario" ${role === 'usuario' ? 'selected' : ''}>Usuario</option>
+                                </select>
+                                <button class="btn btn-sm ${user.active ? 'btn-danger' : 'btn-primary'}" 
+                                        onclick="toggleStatus('${user.id}', ${!user.active})"
+                                        ${user.id === currentUser?.user_id ? 'disabled' : ''}>
+                                    <i class="fas fa-${user.active ? 'ban' : 'check'}"></i>
+                                    ${user.active ? 'Desactivar' : 'Activar'}
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    console.log(`[DEBUG] displayUsers() - Usuario ${index + 1} agregado: ${user.email}`);
+                } catch (e) {
+                    console.error(`[DEBUG] displayUsers() - Error al agregar usuario ${index}:`, e);
+                    showDebugInfo(`ERROR al agregar usuario ${index}: ${e.message}`);
+                }
+            });
+            
+            console.log('[DEBUG] displayUsers() - Completado, usuarios mostrados:', users.length);
+            showDebugInfo(`✅ ${users.length} usuarios mostrados en la tabla`);
+        }
+
+        // Actualizar estadísticas
+        function updateStats(stats) {
+            console.log('[DEBUG] updateStats() - Estadísticas recibidas:', stats);
+            showDebugInfo(`Actualizando estadísticas: total=${stats?.total || 0}`);
+            
+            try {
+                const statTotal = document.getElementById('stat-total');
+                const statActive = document.getElementById('stat-active');
+                const statInactive = document.getElementById('stat-inactive');
+                const statAdmins = document.getElementById('stat-admins');
+
+                if (statTotal) statTotal.textContent = stats?.total || 0;
+                if (statActive) statActive.textContent = stats?.active || 0;
+                if (statInactive) statInactive.textContent = stats?.inactive || 0;
+                if (statAdmins) statAdmins.textContent = stats?.by_role?.admin || 0;
+                
+                console.log('[DEBUG] updateStats() - Estadísticas actualizadas');
+                showDebugInfo('✅ Estadísticas actualizadas');
+            } catch (e) {
+                console.error('[DEBUG] updateStats() - Error:', e);
+                showDebugInfo(`ERROR al actualizar estadísticas: ${e.message}`);
+            }
+        }
+
+        // Cambiar rol
+        async function changeRole(userId, newRole) {
+            if (!confirm(`¿Cambiar rol a ${newRole}?`)) {
+                loadUsers(); // Recargar para revertir el select
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(`Rol actualizado a ${newRole}`, 'success');
+                    loadUsers();
+                } else {
+                    showAlert(data.error || 'Error al actualizar rol', 'error');
+                    loadUsers(); // Recargar para revertir
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                showAlert('Error al actualizar rol', 'error');
+                loadUsers();
+            }
+        }
+
+        // Cambiar estado (activar/desactivar)
+        async function toggleStatus(userId, newStatus) {
+            const action = newStatus ? 'activar' : 'desactivar';
+            if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} este usuario?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/users/${userId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ active: newStatus })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert(`Usuario ${action}do exitosamente`, 'success');
+                    loadUsers();
+                } else {
+                    showAlert(data.error || 'Error al actualizar estado', 'error');
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                showAlert('Error al actualizar estado', 'error');
+            }
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            container.innerHTML = '';
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            }, 3000);
+        }
+
+        // Event listeners para filtros
+        document.getElementById('search-input').addEventListener('input', debounce(loadUsers, 500));
+        document.getElementById('role-filter').addEventListener('change', loadUsers);
+        document.getElementById('status-filter').addEventListener('change', loadUsers);
+
+        // Debounce helper
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Mostrar información de debug
+        function showDebugInfo(message) {
+            const debugInfo = document.getElementById('debug-info');
+            const debugContent = document.getElementById('debug-content');
+            if (debugInfo && debugContent) {
+                debugInfo.style.display = 'block';
+                const timestamp = new Date().toLocaleTimeString();
+                debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        function initAdminPanel() {
+            console.log('[DEBUG] initAdminPanel() - Inicializando panel de administración');
+            showDebugInfo('Inicializando panel de administración...');
+            try {
+                getCurrentUser().then(() => {
+                    console.log('[DEBUG] initAdminPanel() - Usuario actual obtenido, cargando usuarios...');
+                    showDebugInfo('Usuario actual obtenido, cargando usuarios...');
+                    loadUsers();
+                }).catch(error => {
+                    console.error('[DEBUG] initAdminPanel() - Error al obtener usuario actual:', error);
+                    showDebugInfo(`ERROR: ${error.message}`);
+                    showAlert('Error al obtener información del usuario actual', 'error');
+                });
+            } catch (e) {
+                console.error('[DEBUG] initAdminPanel() - Excepción en initAdminPanel:', e);
+                showDebugInfo(`EXCEPCIÓN: ${e.message}`);
+                showAlert(`Error al inicializar panel: ${e.message}`, 'error');
+            }
+        }
+
+        // Ejecutar cuando el DOM esté listo
+        console.log('[DEBUG] Script cargado, readyState:', document.readyState);
+        if (document.readyState === 'loading') {
+            console.log('[DEBUG] Esperando DOMContentLoaded...');
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('[DEBUG] DOMContentLoaded - Ejecutando initAdminPanel');
+                initAdminPanel();
+            });
+        } else {
+            // DOM ya está listo, ejecutar inmediatamente
+            console.log('[DEBUG] DOM ya listo - Ejecutando initAdminPanel inmediatamente');
+            initAdminPanel();
+        }
+    </script>
+</body>
+</html>
+

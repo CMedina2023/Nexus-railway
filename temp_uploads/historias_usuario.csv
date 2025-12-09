@@ -1,0 +1,154 @@
+Summary,Description,Issuetype,Priority
+Visualizar Inventario Consolidado en Tiempo Real,"* COMO: Usuario
+* QUIERO: Ver el inventario total disponible de un producto consolidado en tiempo real, abarcando todas las ubicaciones (almacenes, tiendas, centros de distribución)
+* PARA: Tomar decisiones rápidas sobre la disponibilidad de productos para clientes y optimizar la gestión general del stock, mejorando la satisfacción del cliente al proporcionar información precisa.
+* Criterios de Aceptación:
+  • Escenario Principal: existen múltiples unidades de un producto """"Smartphone X"""" distribuidas en """"Almacén Principal"""", """"Tienda Centro"""" y """"CD Norte"""" CUANDO accedo a la vista de inventario del """"Smartphone X"""" ENTONCES el sistema muestra la cantidad total consolidada (ej. 500 unidades) y la desagregación por cada ubicación con sus cantidades actuales.
+  • Escenario Alternativo: un producto """"Auriculares Y"""" solo está disponible en una única ubicación """"Tienda Sur"""" CUANDO accedo a la vista de inventario del """"Auriculares Y"""" ENTONCES el sistema muestra la cantidad total disponible (ej. 30 unidades) y la única ubicación donde se encuentra.
+  • Validaciones: no tengo permisos para ver el inventario de una ubicación específica CUANDO intento acceder a la desagregación de inventario para esa ubicación ENTONCES el sistema me notifica que no tengo los permisos necesarios o simplemente no muestra esa ubicación.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • La actualización del inventario debe reflejarse en tiempo real ante cualquier movimiento (venta, recepción, transferencia).
+  • Las cantidades de inventario deben ser consistentes entre la vista consolidada y la suma de las vistas por ubicación.",Story,High
+Consultar Inventario Específico por Ubicación,"* COMO: Usuario
+* QUIERO: Consultar el inventario disponible de un producto en una ubicación específica (almacén, tienda, CD) en tiempo real
+* PARA: Confirmar la disponibilidad de stock para pedidos locales, organizar recogidas en tienda o gestionar el reabastecimiento interno de manera eficiente, optimizando la operación diaria y minimizando errores.
+* Criterios de Aceptación:
+  • Escenario Principal: necesito verificar el stock del """"Tablet Z"""" en """"Tienda Centro"""" CUANDO busco """"Tablet Z"""" y filtro por ubicación """"Tienda Centro"""" ENTONCES el sistema muestra la cantidad exacta de """"Tablet Z"""" disponible en """"Tienda Centro"""" (ej. 15 unidades).
+  • Escenario Alternativo: necesito verificar el stock de """"Laptop A"""" en """"CD Norte"""", pero no hay existencias CUANDO busco """"Laptop A"""" y filtro por ubicación """"CD Norte"""" ENTONCES el sistema muestra """"0 unidades"""" para """"Laptop A"""" en """"CD Norte"""".
+  • Validaciones: busco una ubicación que no existe o está mal escrita CUANDO intento filtrar por esa ubicación ENTONCES el sistema muestra un mensaje de error """"Ubicación no encontrada"""" o una lista de sugerencias de ubicaciones válidas.
+* Prioridad: Alta
+* Complejidad: Simple
+* Reglas de Negocio Clave:
+  • La búsqueda por ubicación debe ser precisa y mostrar solo el inventario de la ubicación seleccionada.
+  • Se debe garantizar la coherencia de datos con el inventario total consolidado.",Story,High
+Registrar Entrada de Stock con Lote y Vencimiento,"* COMO: Usuario
+* QUIERO: Registrar la entrada de nuevos productos al inventario, incluyendo el número de lote y su fecha de vencimiento
+* PARA: Mantener un control detallado del inventario, cumplir con regulaciones específicas de productos (ej. alimentos, farmacéuticos) y asegurar la frescura del producto para el cliente final, reduciendo pérdidas por caducidad.
+* Criterios de Aceptación:
+  • Escenario Principal: he recibido un envío de 100 unidades de """"Snack Saludable"""" con Lote #SNK202305 y Fecha de Vencimiento 31/12/2024 CUANDO registro la recepción de este producto en """"Almacén Principal"""", especificando la cantidad, lote y fecha de vencimiento ENTONCES el inventario de """"Snack Saludable"""" en """"Almacén Principal"""" se incrementa en 100 unidades, y esta información de lote/vencimiento queda asociada a esas unidades.
+  • Escenario Alternativo: recibo un producto """"Libro X"""" que no requiere control por lote ni fecha de vencimiento CUANDO registro la entrada de este producto ENTONCES el sistema permite omitir los campos de lote y fecha de vencimiento sin generar errores.
+  • Validaciones: intento registrar una fecha de vencimiento pasada CUANDO introduzco """"01/01/2023"""" para un registro actual en 2024 ENTONCES el sistema me alerta sobre la fecha inválida y me impide guardar hasta que se corrija, o me pregunta si deseo continuar con un producto ya vencido.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • Los productos perecederos deben obligatoriamente registrar lote y fecha de vencimiento.
+  • La fecha de vencimiento debe ser posterior a la fecha actual de registro.
+  • Cada lote debe ser único para un producto en una ubicación dada, o el sistema debe permitir múltiples lotes del mismo producto.",Story,High
+Generar Alertas por Fechas de Vencimiento Próximas,"* COMO: Usuario
+* QUIERO: Recibir alertas automáticas sobre productos próximos a su fecha de vencimiento
+* PARA: Poder tomar acciones preventivas como promociones, transferencias o disposición antes de que el producto expire, minimizando las pérdidas económicas y el desperdicio.
+* Criterios de Aceptación:
+  • Escenario Principal: tengo """"Yogurt Orgánico"""" con fecha de vencimiento en 30 días en """"Tienda Centro"""" CUANDO el sistema ejecuta su proceso de monitoreo de inventario ENTONCES recibo una notificación (ej. email, alerta en panel de control) que me informa sobre el """"Yogurt Orgánico"""" en """"Tienda Centro"""" y su fecha de vencimiento próxima.
+  • Escenario Alternativo: no hay productos con fechas de vencimiento próximas según el umbral configurado CUANDO el sistema ejecuta su proceso de monitoreo ENTONCES no recibo ninguna alerta, indicando que el inventario está en buen estado respecto a la caducidad.
+  • Validaciones: un producto ya ha caducado CUANDO el sistema detecta este producto ENTONCES la alerta debe indicar claramente que el producto ya está vencido y sugerir acciones de retiro o descarte.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • El umbral para las alertas de vencimiento próximo es configurable (ej. 30, 60, 90 días).
+  • Las alertas deben ser categorizadas por urgencia (ej. """"Vencimiento crítico"""" vs. """"Vencimiento próximo"""").
+  • Las alertas deben ser visibles en un panel de control y/o enviadas por un canal de comunicación configurado.",Story,High
+Consultar Inventario por Lote,"* COMO: Usuario
+* QUIERO: Buscar y consultar el inventario por número de lote específico
+* PARA: Realizar retiradas de productos (recalls) de manera efectiva, verificar la trazabilidad de un producto o auditar el inventario, garantizando la seguridad del consumidor y la integridad de la cadena de suministro.
+* Criterios de Aceptación:
+  • Escenario Principal: necesito localizar todas las unidades del """"Lote #PRD202301"""" del """"Producto X"""" CUANDO utilizo la función de búsqueda por lote e introduzco """"PRD202301"""" ENTONCES el sistema me muestra todas las ubicaciones donde se encuentra este lote, las cantidades en cada una y su fecha de vencimiento asociada.
+  • Escenario Alternativo: busco un número de lote que no existe o que ya ha sido completamente vendido/retirado CUANDO introduzco un lote inexistente ENTONCES el sistema informa que """"No se encontraron resultados para el lote especificado"""".
+  • Validaciones: un lote específico está asociado a múltiples productos debido a un error de registro (no debería ocurrir en un sistema ideal) CUANDO busco por ese lote ENTONCES el sistema muestra todos los productos asociados con ese lote, permitiendo al usuario identificar la inconsistencia.
+* Prioridad: Media
+* Complejidad: Simple
+* Reglas de Negocio Clave:
+  • La búsqueda por lote debe ser exacta.
+  • La información mostrada debe incluir producto, ubicación, cantidad, y fecha de vencimiento.",Story,Medium
+Realizar una Reserva de Inventario para un Cliente,"* COMO: Usuario
+* QUIERO: Realizar una reserva de inventario para un cliente, especificando el producto y la cantidad
+* PARA: Asegurar la disponibilidad del producto para un cliente específico, gestionar pedidos pendientes y evitar ventas dobles, mejorando la experiencia del cliente y la eficiencia del proceso de venta.
+* Criterios de Aceptación:
+  • Escenario Principal: un cliente quiere reservar 2 unidades del """"Drone Pro X"""" CUANDO accedo a la función de reserva, selecciono el """"Drone Pro X"""", ingreso 2 unidades y asocio al cliente """"Juan Pérez"""" ENTONCES el sistema deduce 2 unidades del stock disponible del """"Drone Pro X"""" (marcando como reservado) y genera un número de reserva, notificando la confirmación.
+  • Escenario Alternativo: el """"Drone Pro X"""" solo tiene 1 unidad disponible y el cliente quiere reservar 2 CUANDO intento reservar 2 unidades ENTONCES el sistema me informa que solo hay 1 unidad disponible para reserva y me pregunta si deseo continuar con la cantidad máxima o esperar reabastecimiento.
+  • Validaciones: intento reservar un producto que no existe en el catálogo CUANDO busco el producto """"Drone Phantom Z"""" inexistente ENTONCES el sistema muestra """"Producto no encontrado"""" y no permite continuar con la reserva.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • Una reserva debe asociarse a un cliente o a un identificador de pedido.
+  • El inventario reservado no debe estar disponible para otras ventas hasta que la reserva sea liberada o completada.
+  • Debe establecerse un plazo de caducidad para las reservas (ej. 24-48 horas) antes de que se libere automáticamente el stock si no se concreta la compra.",Story,High
+Obtener Sugerencias de Ubicación Inteligentes para Reservas,"* COMO: Usuario
+* QUIERO: Que el sistema sugiera la ubicación óptima para surtir una reserva o un pedido, considerando la ubicación del cliente, costos de envío y disponibilidad de stock
+* PARA: Minimizar los costos de logística y tiempos de entrega, lo que a su vez mejora la satisfacción del cliente y la rentabilidad del negocio.
+* Criterios de Aceptación:
+  • Escenario Principal: un cliente en """"Ciudad A"""" pide """"Producto Y"""" y está disponible en """"Almacén Principal"""" (Ciudad A) y """"Tienda Centro"""" (Ciudad B, más lejana) CUANDO creo la reserva/pedido para """"Producto Y"""" con la dirección del cliente ENTONCES el sistema sugiere """"Almacén Principal"""" como la ubicación de origen óptima debido a la proximidad y menor costo de envío.
+  • Escenario Alternativo: el """"Producto Y"""" está agotado en """"Almacén Principal"""" (Ciudad A) pero disponible en """"Tienda Centro"""" (Ciudad B) CUANDO creo la reserva/pedido para """"Producto Y"""" con la dirección del cliente en """"Ciudad A"""" ENTONCES el sistema sugiere """"Tienda Centro"""" como la única opción disponible, mostrando el costo de envío potencial y el tiempo de entrega estimado.
+  • Validaciones: el sistema no puede encontrar ninguna ubicación con stock disponible para el producto solicitado CUANDO intento generar la sugerencia ENTONCES el sistema me informa que """"No hay stock disponible en ninguna ubicación para este producto"""" y no ofrece sugerencias.
+* Prioridad: Alta
+* Complejidad: Compleja
+* Reglas de Negocio Clave:
+  • Las sugerencias deben priorizar la ubicación más cercana al cliente con stock disponible.
+  • En caso de igual distancia, se debe priorizar la ubicación con menor costo de envío o mayor capacidad de procesamiento.
+  • La disponibilidad debe ser en tiempo real para evitar sugerencias erróneas.",Story,High
+Modificar o Anular una Reserva de Inventario,"* COMO: Usuario
+* QUIERO: Modificar la cantidad o anular una reserva de inventario existente
+* PARA: Adaptarme a los cambios en los pedidos de los clientes, corregir errores o liberar stock que ya no será requerido, manteniendo la flexibilidad y precisión en la gestión de inventario.
+* Criterios de Aceptación:
+  • Escenario Principal: existe una reserva de 5 unidades del """"Producto C"""" para el """"Cliente P"""" CUANDO accedo a la reserva y la modifico a 3 unidades ENTONCES el sistema libera las 2 unidades excedentes al stock disponible y actualiza la reserva a 3 unidades para el """"Cliente P"""".
+  • Escenario Alternativo: un cliente cancela completamente su pedido y la reserva asociada CUANDO accedo a la reserva y la anulo ENTONCES el sistema libera todas las unidades reservadas al stock disponible y marca la reserva como """"Anulada"""".
+  • Validaciones: intento modificar una reserva que ya ha sido completada o caducada CUANDO intento editarla ENTONCES el sistema me notifica que """"La reserva no puede ser modificada en su estado actual"""" y me impide realizar cambios.
+* Prioridad: Media
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • La modificación o anulación de una reserva debe actualizar el stock disponible en tiempo real.
+  • Solo las reservas en estado """"Pendiente"""" o """"Activa"""" pueden ser modificadas o anuladas.
+  • Se debe mantener un historial de modificaciones y anulaciones para cada reserva.",Story,Medium
+Visualizar Transferencias Automáticas Sugeridas por IA,"* COMO: Usuario
+* QUIERO: Ver las transferencias de inventario entre ubicaciones que el sistema sugiere automáticamente basándose en la predicción de demanda
+* PARA: Entender las recomendaciones del sistema, planificar los movimientos de stock y optimizar la distribución de productos proactivamente, reduciendo el riesgo de desabastecimiento o exceso de stock en ubicaciones clave.
+* Criterios de Aceptación:
+  • Escenario Principal: la IA ha predicho un aumento de demanda para """"Zapatillas Deportivas"""" en """"Tienda Norte"""" y exceso en """"Almacén Central"""" CUANDO accedo al panel de transferencias sugeridas ENTONCES veo una sugerencia de transferencia de X unidades de """"Zapatillas Deportivas"""" desde """"Almacén Central"""" a """"Tienda Norte"""", junto con la razón (demanda predictiva) y la fecha recomendada.
+  • Escenario Alternativo: el sistema no ha identificado ninguna necesidad de transferencia automática por demanda predictiva CUANDO accedo al panel de transferencias sugeridas ENTONCES el sistema muestra """"No hay transferencias automáticas sugeridas en este momento"""".
+  • Validaciones: intento ver las sugerencias de transferencia sin los permisos adecuados CUANDO accedo a la sección correspondiente ENTONCES el sistema me deniega el acceso con un mensaje apropiado.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • Las sugerencias deben incluir producto, cantidad, origen, destino, y la justificación (ej. """"demanda predictiva"""").
+  • Las sugerencias deben ser actualizadas periódicamente según los últimos cálculos de la IA.
+  • Los usuarios con permisos pueden ver el detalle de la predicción que originó la sugerencia.",Story,High
+Iniciar una Transferencia Manual de Inventario,"* COMO: Usuario
+* QUIERO: Iniciar una transferencia manual de inventario entre dos ubicaciones (origen y destino)
+* PARA: Responder a necesidades imprevistas, equilibrar el stock manualmente o realizar movimientos por razones operativas no cubiertas por las transferencias automáticas, manteniendo la flexibilidad en la gestión del inventario.
+* Criterios de Aceptación:
+  • Escenario Principal: necesito mover 50 unidades de """"Camiseta Básica"""" de """"Almacén Principal"""" a """"Tienda Centro"""" CUANDO selecciono el producto, la cantidad, la ubicación de origen y la de destino en la interfaz de transferencia manual ENTONCES el sistema registra la transferencia, decrementa el stock en el origen y lo incrementa en el destino, mostrando un estado """"En tránsito"""" mientras dura el movimiento.
+  • Escenario Alternativo: intento transferir 10 unidades de """"Producto X"""" de """"Almacén A"""" a """"Almacén B"""", pero """"Almacén A"""" solo tiene 5 unidades disponibles CUANDO intento confirmar la transferencia de 10 unidades ENTONCES el sistema me alerta que la cantidad a transferir excede el stock disponible en el origen y me impide continuar hasta corregir la cantidad.
+  • Validaciones: selecciono la misma ubicación como origen y destino para una transferencia CUANDO intento confirmar la transferencia ENTONCES el sistema me informa que """"Origen y destino no pueden ser la misma ubicación"""" y me pide corregirlo.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • La cantidad a transferir no puede exceder el stock disponible en la ubicación de origen.
+  • Se debe especificar una razón para la transferencia manual.
+  • El inventario en tránsito debe ser distinguible del inventario disponible para venta o reserva.",Story,High
+Consultar el Estado y Detalle de Transferencias,"* COMO: Usuario
+* QUIERO: Consultar el estado y todos los detalles de las transferencias de inventario, tanto manuales como automáticas
+* PARA: Hacer seguimiento de los movimientos de stock, garantizar que los productos lleguen a su destino y resolver posibles incidencias, manteniendo la visibilidad y el control sobre la logística interna.
+* Criterios de Aceptación:
+  • Escenario Principal: quiero saber el progreso de una transferencia de """"Almacén A"""" a """"Tienda B"""" con ID #TRF123 CUANDO busco la transferencia #TRF123 ENTONCES el sistema me muestra el estado actual (ej. """"En tránsito"""", """"Completada"""", """"Cancelada""""), la fecha de inicio, la fecha estimada de llegada, los productos incluidos y las cantidades.
+  • Escenario Alternativo: busco transferencias """"En tránsito"""" para identificar posibles retrasos CUANDO filtro las transferencias por estado """"En tránsito"""" ENTONCES el sistema muestra una lista de todas las transferencias activas que aún no han llegado a su destino.
+  • Validaciones: busco una transferencia con un ID que no existe CUANDO introduzco un ID inválido ENTONCES el sistema me notifica que """"No se encontraron transferencias con el ID especificado"""".
+* Prioridad: Media
+* Complejidad: Simple
+* Reglas de Negocio Clave:
+  • Cada transferencia debe tener un identificador único.
+  • Los estados de la transferencia (ej. Creada, En tránsito, Recibida Parcial, Recibida Completa, Cancelada) deben ser claros y reflejar el progreso real.
+  • Se debe registrar la fecha y hora de cada cambio de estado de la transferencia.",Story,Medium
+Aprobar la Recepción de una Transferencia de Inventario,"* COMO: Usuario
+* QUIERO: Aprobar y registrar la recepción de los productos de una transferencia en la ubicación de destino
+* PARA: Confirmar la llegada física del inventario, actualizar con precisión el stock disponible en la ubicación de destino y cerrar el ciclo de la transferencia, asegurando la integridad de los datos de inventario.
+* Criterios de Aceptación:
+  • Escenario Principal: ha llegado un envío de transferencia #TRF456 con 50 unidades de """"Teclado Mecánico"""" a """"Tienda Principal"""" CUANDO accedo a la transferencia #TRF456 y confirmo la recepción de 50 unidades ENTONCES el sistema incrementa el stock disponible de """"Teclado Mecánico"""" en """"Tienda Principal"""" en 50 unidades y marca la transferencia #TRF456 como """"Completada"""".
+  • Escenario Alternativo: ha llegado un envío de transferencia #TRF789 con 20 unidades de """"Ratón Inalámbrico"""", pero solo se recibieron 18 unidades (dos faltantes) CUANDO accedo a la transferencia #TRF789 y registro la recepción de 18 unidades ENTONCES el sistema incrementa el stock de """"Ratón Inalámbrico"""" en 18 unidades, marca la transferencia como """"Recibida Parcial"""" y me permite registrar las discrepancias para su investigación.
+  • Validaciones: intento confirmar una recepción de una transferencia que no ha sido marcada como """"En Tránsito"""" CUANDO intento aprobar la recepción ENTONCES el sistema me informa que """"La transferencia no está en un estado elegible para recepción"""" y me impide continuar.
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • Se debe permitir la recepción parcial, registrando las cantidades recibidas y las discrepancias.
+  • Al confirmar la recepción, el inventario de destino debe actualizarse automáticamente.
+  • La persona que aprueba la recepción debe tener los permisos adecuados y su acción debe ser registrada.",Story,High

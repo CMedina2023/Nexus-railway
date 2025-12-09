@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Métricas - Nexus AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.3;
+            padding: 0.5rem;
+            page-break-inside: avoid;
+        }
+
+        .report-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .report-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .metrics-section {
+            margin-bottom: 1rem;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .project-metrics {
+            margin-top: 0.75rem;
+        }
+
+        .project-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .project-stat {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .project-stat-label {
+            color: var(--text-muted);
+        }
+
+        .project-stat-value {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .history-list {
+            list-style: none;
+            font-size: 0.7rem;
+        }
+
+        .history-item {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-container {
+            text-align: center;
+            margin: 0.75rem 0;
+        }
+
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <div class="report-header">
+            <div class="report-title">Reporte de Métricas - Nexus AI</div>
+            <div class="report-date">Generado el {{ date }}</div>
+        </div>
+
+        {% if 'generator' in selected_types %}
+        <div class="metrics-section">
+            <div class="section-title">Métricas del Generador H/CP</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Historias de Usuario</div>
+                    <div class="metric-value">{{ generator_metrics.stories or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Casos de Prueba</div>
+                    <div class="metric-value">{{ generator_metrics.testCases or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Generado</div>
+                    <div class="metric-value">{{ (generator_metrics.stories or 0) + (generator_metrics.testCases or 0) }}</div>
+                </div>
+            </div>
+            {% if chart_images.generator_area %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.generator_area }}" alt="Distribución por Área">
+            </div>
+            {% endif %}
+            {% if generator_metrics.history and generator_metrics.history|length > 0 %}
+            <div style="margin-top: 0.75rem;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem;">Historial de Generaciones</div>
+                <ul class="history-list">
+                    {% for item in generator_metrics.history[:20] %}
+                    <li class="history-item">
+                        {{ 'Historia' if item.type == 'stories' else 'Caso de Prueba' }} - 
+                        {{ item.count }} - 
+                        {{ item.area }} - 
+                        {{ item.date[:10] }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if 'jira-reports' in selected_types %}
+        <div class="metrics-section">
+            <div class="section-title">Métricas de Reportes Jira</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total de Reportes</div>
+                    <div class="metric-value">{{ jira_metrics.reports.count or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Proyectos Reportados</div>
+                    <div class="metric-value">{{ (jira_metrics.reports.byProject|length) or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Último Reporte</div>
+                    <div class="metric-value" style="font-size: 0.9rem;">{{ jira_metrics.reports.lastDate or 'N/A' }}</div>
+                </div>
+            </div>
+            {% if jira_metrics.reports.byProject %}
+            <div class="project-metrics">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem;">Por Proyecto</div>
+                {% for key, project in jira_metrics.reports.byProject.items() %}
+                <div class="project-item">
+                    <div class="project-name">{{ project.name or key }}</div>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <span class="project-stat-label">Reportes:</span>
+                            <span class="project-stat-value">{{ project.count }}</span>
+                        </div>
+                        <div class="project-stat">
+                            <span class="project-stat-label">Último:</span>
+                            <span class="project-stat-value">{{ project.lastDate or 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if chart_images.reports_by_project %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.reports_by_project }}" alt="Distribución por Proyecto">
+            </div>
+            {% endif %}
+            {% if chart_images.reports_trend %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.reports_trend }}" alt="Tendencia de Reportes">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if 'jira-uploads' in selected_types %}
+        <div class="metrics-section">
+            <div class="section-title">Métricas de Carga Masiva</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total de Cargas</div>
+                    <div class="metric-value">{{ jira_metrics.uploads.count or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Items Cargados</div>
+                    <div class="metric-value">{{ jira_metrics.uploads.itemsCount or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Proyectos con Carga</div>
+                    <div class="metric-value">{{ (jira_metrics.uploads.byProject|length) or 0 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Promedio por Carga</div>
+                    <div class="metric-value">
+                        {% if jira_metrics.uploads.count and jira_metrics.uploads.count > 0 %}
+                            {{ ((jira_metrics.uploads.itemsCount or 0) / jira_metrics.uploads.count)|round }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            {% if jira_metrics.uploads.issueTypesDistribution %}
+            <div class="project-metrics" style="margin-top: 1rem;">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem;">Distribución por Tipo de Issue</div>
+                {% for issue_type, count in jira_metrics.uploads.issueTypesDistribution.items() %}
+                <div class="project-item">
+                    <div class="project-name">{{ issue_type }}</div>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <span class="project-stat-label">Items Cargados:</span>
+                            <span class="project-stat-value">{{ count }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if jira_metrics.uploads.byProject %}
+            <div class="project-metrics">
+                <div style="font-weight: 600; margin-bottom: 0.5rem; font-size: 0.85rem;">Por Proyecto</div>
+                {% for key, project in jira_metrics.uploads.byProject.items() %}
+                <div class="project-item">
+                    <div class="project-name">{{ project.name or key }}</div>
+                    <div class="project-stats">
+                        <div class="project-stat">
+                            <span class="project-stat-label">Cargas:</span>
+                            <span class="project-stat-value">{{ project.count }}</span>
+                        </div>
+                        <div class="project-stat">
+                            <span class="project-stat-label">Items:</span>
+                            <span class="project-stat-value">{{ project.itemsCount or 0 }}</span>
+                        </div>
+                        <div class="project-stat">
+                            <span class="project-stat-label">Promedio:</span>
+                            <span class="project-stat-value">
+                                {% if project.count and project.count > 0 %}
+                                    {{ ((project.itemsCount or 0) / project.count)|round }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="project-stat">
+                            <span class="project-stat-label">Última:</span>
+                            <span class="project-stat-value">{{ project.lastDate or 'N/A' }}</span>
+                        </div>
+                        {% if project.issueTypesDistribution %}
+                        <div class="project-stat" style="grid-column: 1 / -1; margin-top: 0.25rem; padding-top: 0.25rem; border-top: 1px solid var(--border);">
+                            <span class="project-stat-label">Tipos:</span>
+                            <span class="project-stat-value" style="font-size: 0.75rem;">
+                                {% for issue_type, count in project.issueTypesDistribution.items() %}
+                                    {{ issue_type }}({{ count }}){% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if chart_images.uploads_by_type %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.uploads_by_type }}" alt="Distribución por Tipo de Issue">
+            </div>
+            {% endif %}
+            {% if chart_images.uploads_by_project %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.uploads_by_project }}" alt="Items por Proyecto">
+            </div>
+            {% endif %}
+            {% if chart_images.uploads_trend %}
+            <div class="chart-container">
+                <img src="data:image/png;base64,{{ chart_images.uploads_trend }}" alt="Tendencia de Cargas">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

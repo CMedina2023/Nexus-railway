@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup - Modal de Edición</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-container {
+            background: #1a1a1a;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a1a;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #ffffff;
+            font-size: 0.95rem;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #2d2d2d;
+            border: 1px solid #3d3d3d;
+            border-radius: 8px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-help {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #2d2d2d;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: #1a1a1a;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #3d3d3d;
+            color: #ffffff;
+        }
+
+        .btn-secondary:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .badge-info {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .badge-purple {
+            background: rgba(168, 85, 247, 0.2);
+            color: #a855f7;
+        }
+
+        /* Scrollbar personalizado */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #3d3d3d;
+            border-radius: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #4d4d4d;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: #93c5fd;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal de Edición para Historias -->
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title">
+                <span>✏️</span>
+                <span>Editar Historia de Usuario</span>
+            </div>
+            <button class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-box">
+                💡 Puedes editar todos los campos de la historia. Los cambios se guardarán cuando presiones "Guardar Cambios".
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Resumen (Summary) *</label>
+                <input type="text" class="form-input" value="Como usuario, quiero poder iniciar sesión en el sistema" placeholder="Ingresa el resumen de la historia">
+                <div class="form-help">Este será el título de la historia en Jira</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descripción *</label>
+                <textarea class="form-textarea" placeholder="Describe la historia en detalle...">Como usuario del sistema, necesito poder iniciar sesión utilizando mis credenciales (usuario y contraseña) para acceder a las funcionalidades disponibles según mi rol y permisos asignados.
+
+Criterios de aceptación:
+- El usuario debe poder ingresar su nombre de usuario y contraseña
+- El sistema debe validar las credenciales antes de permitir el acceso
+- Debe mostrarse un mensaje de error si las credenciales son incorrectas
+- Después de un login exitoso, el usuario debe ser redirigido al dashboard principal</textarea>
+                <div class="form-help">Incluye la descripción completa, criterios de aceptación y cualquier detalle relevante</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tipo de Issue</label>
+                    <select class="form-select">
+                        <option value="Story" selected>Story</option>
+                        <option value="Task">Task</option>
+                        <option value="Bug">Bug</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Prioridad *</label>
+                    <select class="form-select">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary">
+                <span>Cancelar</span>
+            </button>
+            <button class="btn btn-primary">
+                <span>✅</span>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+    </div>
+
+    <br><br><br>
+
+    <!-- Modal de Edición para Casos de Prueba -->
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title">
+                <span>✏️</span>
+                <span>Editar Caso de Prueba</span>
+            </div>
+            <button class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-box">
+                💡 Puedes editar todos los campos del caso de prueba. Los cambios se guardarán cuando presiones "Guardar Cambios".
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Resumen (Summary) *</label>
+                <input type="text" class="form-input" value="Verificar inicio de sesión con credenciales válidas" placeholder="Ingresa el resumen del caso de prueba">
+                <div class="form-help">Este será el título del caso de prueba en Jira</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descripción *</label>
+                <textarea class="form-textarea" placeholder="Describe el caso de prueba en detalle...">Verificar que el sistema permite el inicio de sesión cuando se ingresan credenciales válidas.
+
+Pasos:
+1. Abrir la aplicación
+2. Ingresar usuario válido
+3. Ingresar contraseña válida
+4. Hacer clic en "Iniciar Sesión"
+
+Resultado esperado:
+- El sistema debe validar las credenciales
+- El usuario debe ser redirigido al dashboard principal
+- Debe mostrarse un mensaje de bienvenida</textarea>
+                <div class="form-help">Incluye los pasos a seguir y el resultado esperado</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tipo de Prueba</label>
+                    <select class="form-select">
+                        <option value="Funcional" selected>Funcional</option>
+                        <option value="No Funcional">No Funcional</option>
+                        <option value="Regresión">Regresión</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nivel de Prueba</label>
+                    <select class="form-select">
+                        <option value="UAT" selected>UAT</option>
+                        <option value="QA">QA</option>
+                        <option value="Producción">Producción</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tipo de Ejecución</label>
+                    <select class="form-select">
+                        <option value="Manual" selected>Manual</option>
+                        <option value="Automática">Automática</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Prioridad *</label>
+                    <select class="form-select">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Categoría</label>
+                <input type="text" class="form-input" value="Autenticación" placeholder="Ingresa la categoría">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary">
+                <span>Cancelar</span>
+            </button>
+            <button class="btn btn-primary">
+                <span>✅</span>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+    </div>
+</body>
+</html>
+
+
+

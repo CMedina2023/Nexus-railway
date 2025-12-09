@@ -1,0 +1,636 @@
+---
+alwaysApply: true
+---
+# 📐 GUÍAS DE ARQUITECTURA Y OPTIMIZACIÓN - NEXUS AI
+
+> **Propósito**: Este documento define las directrices de arquitectura, diseño y optimización que deben seguirse en el proyecto para mantener alta calidad, mantenibilidad y escalabilidad.
+
+**Última actualización**: 2025-11-21  
+**Versión**: 1.0
+
+---
+
+## 📋 TABLA DE CONTENIDOS
+
+1. [Principios Fundamentales](#principios-fundamentales)
+2. [Estructura del Proyecto](#estructura-del-proyecto)
+3. [Patrones de Diseño](#patrones-de-diseño)
+4. [Convenciones de Código](#convenciones-de-código)
+5. [Mejores Prácticas](#mejores-prácticas)
+6. [Checklist de Desarrollo](#checklist-de-desarrollo)
+7. [Anti-Patrones a Evitar](#anti-patrones-a-evitir)
+
+---
+
+## 🎯 PRINCIPIOS FUNDAMENTALES
+
+### 1. SOLID Principles
+
+**SIEMPRE aplicar los principios SOLID en todo el código:**
+
+#### ✅ Single Responsibility Principle (SRP)
+- **Una clase/servicio = Una responsabilidad única**
+- Si una clase tiene más de una razón para cambiar, dividirla
+- **Ejemplo**: `FileManager` solo maneja archivos, `DocumentAnalyzer` solo analiza documentos
+
+```python
+# ✅ CORRECTO
+class FileManager:
+    """Solo maneja archivos"""
+    def save_file(self): ...
+    def delete_file(self): ...
+
+# ❌ INCORRECTO
+class FileManager:
+    """Maneja archivos Y análisis Y validación"""
+    def save_file(self): ...
+    def analyze_content(self): ...  # ❌ Responsabilidad extra
+    def validate_data(self): ...    # ❌ Responsabilidad extra
+```
+
+#### ✅ Open/Closed Principle (OCP)
+- **Extensible sin modificar código existente**
+- Usar interfaces y abstracciones
+- **Ejemplo**: `Generator` interface permite agregar nuevos generadores sin cambiar código existente
+
+```python
+# ✅ CORRECTO - Usar interfaces
+class Generator(ABC):
+    @abstractmethod
+    def generate(self, text, params): ...
+
+class StoryGenerator(Generator): ...
+class MatrixGenerator(Generator): ...
+# Puedes agregar CustomGenerator sin modificar código existente
+
+# ❌ INCORRECTO - Lógica hardcodeada
+def generate_content(type):
+    if type == 'story':
+        # lógica...
+    elif type == 'matrix':
+        # lógica...
+    # ❌ Necesitas modificar esta función para agregar nuevos tipos
+```
+
+#### ✅ Liskov Substitution Principle (LSP)
+- **Las clases derivadas deben ser sustituibles por sus clases base**
+- Mantener contratos de interfaces
+- **Ejemplo**: Cualquier `Generator` puede usarse donde se espera `Generator`
+
+#### ✅ Interface Segregation Principle (ISP)
+- **Interfaces pequeñas y específicas, no monolíticas**
+- Los clientes no deben depender de métodos que no usan
+- **Ejemplo**: Servicios Jira separados (`ProjectService`, `IssueService`) en lugar de un `JiraClient` gigante
+
+#### ✅ Dependency Inversion Principle (DIP)
+- **Depender de abstracciones, no de implementaciones concretas**
+- Inyectar dependencias en lugar de crear instancias directamente
+- **Ejemplo**: Servicios reciben `JiraConnection` en lugar de crear su propia conexión
+
+```python
+# ✅ CORRECTO - Inyección de dependencias
+class ProjectService:
+    def __init__(self, connection: JiraConnection):
+        self._connection = connection
+
+# ❌ INCORRECTO - Dependencia directa
+class ProjectService:
+    def __init__(self):
+        self._connection = JiraConnection()  # ❌ Acoplamiento fuerte
+```
+
+---
+
+### 2. DRY (Don't Repeat Yourself)
+
+**NUNCA duplicar código:**
+- ✅ Extraer funciones comunes a servicios/utilidades
+- ✅ Usar decoradores para lógica repetida
+- ✅ Crear clases base para funcionalidad compartida
+- ✅ Usar constantes en lugar de valores mágicos
+
+**Ejemplo**: `DocumentChunker` unificado en lugar de `split_document_into_chunks()` duplicado en múltiples archivos.
+
+---
+
+### 3. YAGNI (You Aren't Gonna Need It)
+
+**No sobre-ingeniar:**
+- Implementar solo lo necesario para el requerimiento actual
+- Evitar funcionalidad "por si acaso"
+- Refactorizar cuando sea realmente necesario
+
+---
+
+### 4. KISS (Keep It Simple, Stupid)
+
+**Simplicidad sobre complejidad:**
+- Soluciones simples y claras
+- Código que se auto-explica
+- Evitar optimizaciones prematuras
+
+---
+
+## 📁 ESTRUCTURA DEL PROYECTO
+
+### Estructura Actual (MANTENER):
+
+```
+app/
+├── backend/              # Lógica de negocio y backend
+│   ├── generators/       # Generadores con OCP
+│   ├── jira/            # Servicios Jira especializados
+│   └── ...
+├── core/                # Configuración y app principal
+│   ├── app.py           # Endpoints Flask (DELGADOS)
+│   ├── config.py        # Configuración centralizada
+│   └── service_factory.py
+├── services/            # Servicios de negocio (SRP)
+│   ├── file_manager.py
+│   ├── document_analyzer.py
+│   ├── data_transformer.py
+│   ├── validator.py
+│   └── ...
+└── utils/               # Utilidades y helpers
+    ├── decorators.py    # Decoradores reutilizables
+    ├── document_chunker.py
+    ├── exceptions.py
+    └── ...
+```
+
+### Reglas de Estructura:
+
+1. **`app/core/app.py`**: 
+   - Solo endpoints Flask (DELGADOS)
+   - Delega lógica a servicios
+   - Máximo 20 líneas por endpoint
+
+2. **`app/services/`**: 
+   - Servicios de negocio con SRP
+   - Un servicio = Una responsabilidad
+   - Sin dependencias de Flask directamente
+
+3. **`app/backend/`**: 
+   - Integraciones externas (Jira, AI, etc.)
+   - Generadores y procesadores específicos
+
+4. **`app/utils/`**: 
+   - Utilidades reutilizables
+   - Decoradores comunes
+   - Helpers genéricos
+
+---
+
+## 🎨 PATRONES DE DISEÑO
+
+### 1. Factory Pattern
+
+**Usar para creación de objetos complejos:**
+
+```python
+# ✅ CORRECTO
+class GeneratorFactory:
+    def get_generator(self, task_type: str) -> Generator:
+        # Lógica de creación
+
+# Uso
+factory = GeneratorFactory()
+generator = factory.get_generator('story')
+```
+
+### 2. Dependency Injection
+
+**Inyectar dependencias en constructores:**
+
+```python
+# ✅ CORRECTO
+class ProjectService:
+    def __init__(self, connection: JiraConnection, metrics_calculator: MetricsCalculator):
+        self._connection = connection
+        self._metrics_calculator = metrics_calculator
+```
+
+### 3. Strategy Pattern
+
+**Para algoritmos intercambiables:**
+
+```python
+# ✅ CORRECTO
+class DocumentChunker:
+    def __init__(self, strategy: ChunkingStrategy):
+        self.strategy = strategy
+    
+    def split(self, text):
+        if self.strategy == ChunkingStrategy.SMART:
+            return self._split_smart(text)
+        # ...
+```
+
+### 4. Decorator Pattern
+
+**Para funcionalidad cross-cutting:**
+
+```python
+# ✅ CORRECTO
+@validate_file_upload
+@handle_errors("Error procesando archivo")
+def process_file():
+    # Lógica
+```
+
+---
+
+## 📝 CONVENCIONES DE CÓDIGO
+
+### Nomenclatura
+
+1. **Clases**: PascalCase
+   ```python
+   class FileManager: ...
+   class DocumentAnalyzer: ...
+   ```
+
+2. **Funciones/Métodos**: snake_case
+   ```python
+   def save_uploaded_file(): ...
+   def calculate_metrics(): ...
+   ```
+
+3. **Constantes**: UPPER_SNAKE_CASE
+   ```python
+   FINAL_STATUSES = {...}
+   MAX_CHUNK_SIZE = 3000
+   ```
+
+4. **Privados**: Prefijo `_`
+   ```python
+   def _internal_method(self): ...  # Privado
+   def public_method(self): ...     # Público
+   ```
+
+5. **Módulos**: snake_case
+   ```python
+   file_manager.py
+   document_analyzer.py
+   ```
+
+### Documentación
+
+**SIEMPRE documentar:**
+- Docstrings en todas las clases y funciones públicas
+- Type hints en funciones
+- Comentarios para lógica compleja
+
+```python
+def process_document(document_text: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Procesa un documento y genera contenido.
+    
+    Args:
+        document_text: Texto del documento a procesar
+        parameters: Parámetros de generación
+        
+    Returns:
+        Dict con el resultado del procesamiento
+        
+    Raises:
+        ValidationError: Si el documento no es válido
+    """
+    # Implementación
+```
+
+### Imports
+
+**Orden de imports:**
+1. Standard library
+2. Third-party packages
+3. Local application imports
+
+```python
+# Standard library
+import os
+import logging
+from typing import Dict, List
+
+# Third-party
+from flask import Flask, request
+import requests
+
+# Local
+from app.services.file_manager import FileManager
+from app.core.config import Config
+```
+
+---
+
+## ✅ MEJORES PRÁCTICAS
+
+### 1. Configuración Centralizada
+
+**SIEMPRE usar `Config` para valores configurables:**
+
+```python
+# ✅ CORRECTO
+from app.core.config import Config
+timeout = Config.JIRA_TIMEOUT_SHORT
+
+# ❌ INCORRECTO
+timeout = 10  # ❌ Valor hardcodeado
+```
+
+### 2. Manejo de Errores
+
+**Usar decoradores para manejo consistente:**
+
+```python
+# ✅ CORRECTO
+@handle_errors("Error procesando solicitud", status_code=500)
+def process_request():
+    # Lógica
+```
+
+**Lanzar excepciones personalizadas:**
+
+```python
+from app.utils.exceptions import ValidationError
+
+if not valid:
+    raise ValidationError("Datos inválidos")
+```
+
+### 3. Logging
+
+**SIEMPRE usar logging en lugar de print:**
+
+```python
+# ✅ CORRECTO
+logger.info("Procesando documento")
+logger.error(f"Error: {e}", exc_info=True)
+logger.debug(f"Debug info: {data}")
+
+# ❌ INCORRECTO
+print("Procesando documento")  # ❌ No usar print
+```
+
+**Niveles de logging:**
+- `logger.debug()`: Información detallada de debugging
+- `logger.info()`: Eventos informativos normales
+- `logger.warning()`: Advertencias que no impiden funcionamiento
+- `logger.error()`: Errores que impiden alguna funcionalidad
+- `logger.critical()`: Errores críticos que pueden detener la aplicación
+
+### 4. Validación
+
+**Validar siempre en la entrada:**
+- Validar archivos subidos con `@validate_file_upload`
+- Validar parámetros requeridos con `@validate_required_params`
+- Validar datos con servicios `Validator`
+
+### 5. Reintentos
+
+**Usar decorador de reintentos para operaciones externas:**
+
+```python
+# ✅ CORRECTO
+@retry_on_failure(max_retries=3, delay=2.0)
+def call_external_api():
+    # Lógica con posible fallo de red
+```
+
+### 6. Limpieza de Recursos
+
+**SIEMPRE limpiar recursos temporales:**
+
+```python
+# ✅ CORRECTO
+try:
+    filepath = save_file(file)
+    # Procesar
+finally:
+    file_manager.clean_temp_file(filepath)
+```
+
+---
+
+## 📋 CHECKLIST DE DESARROLLO
+
+### Antes de Escribir Código:
+
+- [ ] ¿Estoy siguiendo SRP? (Una clase = Una responsabilidad)
+- [ ] ¿Puedo usar un servicio existente en lugar de crear nuevo código?
+- [ ] ¿El código es extensible sin modificar existente? (OCP)
+- [ ] ¿Estoy inyectando dependencias en lugar de crear instancias directamente?
+- [ ] ¿Estoy usando `Config` para valores configurables?
+
+### Durante el Desarrollo:
+
+- [ ] ¿Estoy documentando con docstrings?
+- [ ] ¿Estoy usando type hints?
+- [ ] ¿Estoy usando logging en lugar de print?
+- [ ] ¿Estoy manejando errores apropiadamente?
+- [ ] ¿Estoy validando entradas?
+
+### Antes de Hacer Commit:
+
+- [ ] ¿El código sigue las convenciones de nomenclatura?
+- [ ] ¿No hay código duplicado? (DRY)
+- [ ] ¿Hay tests para la funcionalidad?
+- [ ] ¿El código pasa el linter sin errores?
+- [ ] ¿Las importaciones están ordenadas correctamente?
+- [ ] ¿Los recursos temporales se están limpiando?
+
+### Revisión de Código:
+
+- [ ] ¿El código es legible y auto-explicativo?
+- [ ] ¿Las funciones son cortas (< 50 líneas preferiblemente)?
+- [ ] ¿Las clases tienen responsabilidades claras?
+- [ ] ¿El acoplamiento entre módulos es bajo?
+- [ ] ¿La cohesión dentro de módulos es alta?
+
+---
+
+## 🚫 ANTI-PATRONES A EVITAR
+
+### 1. God Class / God Object
+
+**❌ NUNCA:**
+```python
+class Everything:
+    def handle_files(self): ...
+    def analyze_documents(self): ...
+    def process_data(self): ...
+    def generate_reports(self): ...
+    def manage_database(self): ...
+    # ❌ Demasiadas responsabilidades
+```
+
+**✅ SIEMPRE:**
+```python
+class FileManager: ...
+class DocumentAnalyzer: ...
+class DataTransformer: ...
+class ReportGenerator: ...
+# ✅ Una responsabilidad por clase
+```
+
+### 2. Magic Numbers
+
+**❌ NUNCA:**
+```python
+if len(text) > 3000:  # ❌ ¿Por qué 3000?
+    # ...
+time.sleep(2)  # ❌ ¿Por qué 2 segundos?
+```
+
+**✅ SIEMPRE:**
+```python
+if len(text) > Config.STORY_MAX_CHUNK_SIZE:
+    # ...
+time.sleep(Config.RETRY_DELAY)
+```
+
+### 3. Code Duplication
+
+**❌ NUNCA:**
+```python
+# Función duplicada en múltiples archivos
+def split_text(text):
+    # Lógica duplicada
+```
+
+**✅ SIEMPRE:**
+```python
+# Servicio unificado
+from app.utils.document_chunker import split_document_into_chunks
+```
+
+### 4. Hardcoded Credentials
+
+**❌ NUNCA:**
+```python
+api_key = "sk-1234567890abcdef"  # ❌ NUNCA hardcodear credenciales
+```
+
+**✅ SIEMPRE:**
+```python
+api_key = Config.GOOGLE_API_KEY  # ✅ De variables de entorno
+```
+
+### 5. Deep Nesting
+
+**❌ NUNCA:**
+```python
+if condition1:
+    if condition2:
+        if condition3:
+            if condition4:
+                # ❌ Demasiado anidado
+```
+
+**✅ SIEMPRE:**
+```python
+if not condition1:
+    return
+
+if not condition2:
+    return
+
+# ✅ Early returns, guard clauses
+```
+
+### 6. Large Functions
+
+**❌ NUNCA:**
+```python
+def process_everything():
+    # 200+ líneas de código  # ❌ Función gigante
+    # ...
+```
+
+**✅ SIEMPRE:**
+```python
+def process_everything():
+    # Función orquestadora delgada
+    data = extract_data()
+    validated = validate_data(data)
+    return transform_data(validated)
+```
+
+### 7. Tight Coupling
+
+**❌ NUNCA:**
+```python
+class ServiceA:
+    def __init__(self):
+        self.service_b = ServiceB()  # ❌ Dependencia directa
+```
+
+**✅ SIEMPRE:**
+```python
+class ServiceA:
+    def __init__(self, service_b: ServiceB):  # ✅ Inyección
+        self.service_b = service_b
+```
+
+---
+
+## 🔍 REVISIÓN DE CÓDIGO - PUNTOS CLAVE
+
+### Cuando Revisar Código Propio o de Otros:
+
+1. **¿Sigue SRP?** - ¿La clase hace solo una cosa?
+2. **¿Hay duplicación?** - ¿Se puede extraer a un servicio común?
+3. **¿Está bien acoplado?** - ¿Las dependencias están inyectadas?
+4. **¿Es testeable?** - ¿Se puede testear fácilmente?
+5. **¿Es extensible?** - ¿Se puede extender sin modificar?
+6. **¿Está documentado?** - ¿Hay docstrings y comentarios claros?
+7. **¿Maneja errores?** - ¿Hay manejo apropiado de excepciones?
+
+---
+
+## 📚 REFERENCIAS Y RECURSOS
+
+### Documentación del Proyecto:
+
+- `RESUMEN_FINAL_REFACTORIZACION.md` - Cambios implementados
+- `docs/README.md` - Documentación técnica
+- `tests/README.md` - Guía de testing
+
+### Principios y Patrones:
+
+- **SOLID Principles**: https://en.wikipedia.org/wiki/SOLID
+- **Design Patterns**: https://refactoring.guru/design-patterns
+- **Clean Code**: Robert C. Martin
+- **Refactoring**: Martin Fowler
+
+---
+
+## 📞 CONTACTO Y SOPORTE
+
+Si tienes dudas sobre cómo aplicar estas guías o necesitas aclarar algún punto, consulta:
+
+1. Este documento primero
+2. El código existente como referencia
+3. Los servicios creados como ejemplos
+
+---
+
+## ✅ COMPROMISO
+
+**Al trabajar en este proyecto, me comprometo a:**
+
+- ✅ Seguir estas guías en todo el código nuevo
+- ✅ Refactorizar código existente cuando sea necesario
+- ✅ Revisar código propio antes de hacer commit
+- ✅ Aplicar principios SOLID consistentemente
+- ✅ Mantener alta calidad y mantenibilidad
+
+---
+
+**Recordatorio**: Estas guías no son opcionales, son **ESTÁNDARES** del proyecto. Todo el código debe seguir estos principios para mantener la calidad y escalabilidad del sistema.
+
+---
+
+*Última actualización: 2025-11-21*  
+*Versión: 1.0*
+
