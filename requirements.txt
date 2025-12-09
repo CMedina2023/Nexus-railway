@@ -1,0 +1,37 @@
+# Flask Framework y utilidades
+Flask>=3.0.0
+Werkzeug>=3.0.0
+
+# Google Generative AI (Gemini)
+google-generativeai>=0.3.0
+
+# Procesamiento de documentos
+python-docx>=1.1.0
+pypdf>=3.17.0
+
+# Variables de entorno
+python-dotenv>=1.0.0
+
+# Autenticación y Seguridad
+Flask-Login>=0.6.3
+Flask-Session>=0.5.0
+bcrypt>=4.0.1
+Flask-WTF>=1.2.0
+WTForms>=3.1.0
+Flask-Limiter>=3.5.0
+
+# Base de datos
+SQLAlchemy>=2.0.0
+Flask-SQLAlchemy>=3.1.0
+alembic>=1.13.0
+
+# Encriptación
+cryptography>=41.0.0
+
+# Validación
+email-validator>=2.1.0
+
+# Playwright para generación de PDFs
+playwright>=1.40.0
+
+
