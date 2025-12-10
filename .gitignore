@@ -72,3 +72,10 @@ htmlcov/
 *.csv
 !docs/Template.docx
 
+# Playwright
+playwright-report/
+test-results/
+
+# Docker
+.dockerignore
+

@@ -2,20 +2,21 @@
 # exit on error
 set -o errexit
 
-# Instalar dependencias de Python
+echo "==> Instalando dependencias de Python..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Instalar Playwright y sus dependencias
-playwright install chromium
-playwright install-deps chromium
+echo "==> Instalando Playwright (solo navegador)..."
+# Instalar solo el navegador sin dependencias del sistema
+# Esto evita el error de permisos en Render
+PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium --no-shell
 
-# Crear directorios necesarios
+echo "==> Creando directorios necesarios..."
 mkdir -p temp_uploads
 mkdir -p sessions
 mkdir -p backups
 
-# Inicializar la base de datos
+echo "==> Inicializando base de datos..."
 python -c "
 from app.database import init_db
 from app.core.config import Config
@@ -33,5 +34,5 @@ except Exception as e:
     raise
 "
 
-echo "Build completado exitosamente"
+echo "==> Build completado exitosamente"
 
