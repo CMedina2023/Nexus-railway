@@ -7273,19 +7273,56 @@
                     const reportsHistory = await getReportsHistory();
                     const uploadsHistory = await getUploadsHistory();
                     
+                    // Construir byProject para reportes desde el historial
+                    const reportsByProject = {};
+                    reportsHistory.forEach(report => {
+                        const projectKey = report.projectKey || 'Unknown';
+                        if (!reportsByProject[projectKey]) {
+                            reportsByProject[projectKey] = {
+                                name: report.projectName || projectKey,
+                                count: 0
+                            };
+                        }
+                        reportsByProject[projectKey].count++;
+                    });
+                    
+                    // Construir byProject para cargas masivas desde el historial
+                    const uploadsByProject = {};
+                    uploadsHistory.forEach(upload => {
+                        const projectKey = upload.projectKey || 'Unknown';
+                        if (!uploadsByProject[projectKey]) {
+                            uploadsByProject[projectKey] = {
+                                name: upload.projectName || projectKey,
+                                count: 0,
+                                itemsCount: 0
+                            };
+                        }
+                        uploadsByProject[projectKey].count++;
+                        uploadsByProject[projectKey].itemsCount += upload.itemsCount || 0;
+                    });
+                    
+                    // Construir issueTypesDistribution desde el historial de cargas
+                    const issueTypesDistribution = {};
+                    uploadsHistory.forEach(upload => {
+                        const types = upload.issueTypesDistribution || {};
+                        Object.keys(types).forEach(type => {
+                            issueTypesDistribution[type] = (issueTypesDistribution[type] || 0) + types[type];
+                        });
+                    });
+                    
                     return {
                         reports: {
                             count: data.metrics.reports_created || 0,
                             lastDate: reportsHistory.length > 0 ? new Date(reportsHistory[0].date).toLocaleDateString('es-ES') : null,
-                            byProject: {},
+                            byProject: reportsByProject,
                             history: reportsHistory
                         },
                         uploads: {
                             count: data.metrics.bulk_uploads_performed || 0,
                             itemsCount: uploadsHistory.reduce((sum, upload) => sum + (upload.itemsCount || 0), 0),
                             lastDate: uploadsHistory.length > 0 ? new Date(uploadsHistory[0].date).toLocaleDateString('es-ES') : null,
-                            byProject: {},
-                            issueTypesDistribution: {},
+                            byProject: uploadsByProject,
+                            issueTypesDistribution: issueTypesDistribution,
                             history: uploadsHistory
                         }
                     };
@@ -7341,14 +7378,27 @@
                 
                 const data = await response.json();
                 if (data.success && data.bulk_uploads) {
-                    return data.bulk_uploads.map(upload => ({
-                        projectKey: upload.project_key || 'Unknown',
-                        projectName: upload.project_key || 'Unknown',
-                        itemsCount: upload.items_count || 0,
-                        issueTypesDistribution: upload.issue_types_distribution || {},
-                        date: upload.created_at,
-                        timestamp: new Date(upload.created_at).getTime()
-                    }));
+                    return data.bulk_uploads.map(upload => {
+                        // Parsear upload_details para obtener issue_types_distribution
+                        let issueTypesDistribution = {};
+                        try {
+                            if (upload.upload_details) {
+                                const details = JSON.parse(upload.upload_details);
+                                issueTypesDistribution = details.issue_types_distribution || {};
+                            }
+                        } catch (e) {
+                            console.warn('Error al parsear upload_details:', e);
+                        }
+                        
+                        return {
+                            projectKey: upload.project_key || 'Unknown',
+                            projectName: upload.project_key || 'Unknown',
+                            itemsCount: upload.total_items || 0,
+                            issueTypesDistribution: issueTypesDistribution,
+                            date: upload.created_at,
+                            timestamp: new Date(upload.created_at).getTime()
+                        };
+                    });
                 }
                 
                 return [];
@@ -8156,8 +8206,8 @@
         }
 
         // Load Jira Metrics
-        function loadJiraMetrics() {
-            const jiraMetrics = getJiraMetrics();
+        async function loadJiraMetrics() {
+            const jiraMetrics = await getJiraMetrics();
             
             // ========== MÉTRICAS DE REPORTES ==========
             const reportsTotalEl = document.getElementById('jira-reports-total');
@@ -8468,7 +8518,9 @@
                 
             } catch (error) {
                 console.error('Error al descargar métricas:', error);
-                showDownloadNotification('Error al generar el reporte PDF', 'error');
+                // Mostrar el mensaje de error específico del servidor
+                const errorMessage = error.message || 'Error al generar el reporte PDF';
+                showDownloadNotification(errorMessage, 'error');
             } finally {
                 modal.remove();
             }
@@ -10967,7 +11019,8 @@
                     }
                 }
                 
-                // Obtener los filtros activos
+                // Obtener los filtros activos (vacío por ahora, ya que los datos vienen filtrados del backend)
+                const filters = {};
                 
                 // Obtener datos completos de las tablas desde el reporte general
                 const generalReportSection = document.getElementById('general-report-section');
@@ -11058,7 +11111,8 @@
                 showDownloadNotification('Reporte PDF descargado exitosamente', 'success');
             } catch (error) {
                 console.error('Error al descargar PDF:', error);
-                showDownloadNotification('Error al generar el reporte PDF', 'error');
+                const errorMessage = error.message || 'Error al generar el reporte PDF';
+                showDownloadNotification(errorMessage, 'error');
             }
         }
 

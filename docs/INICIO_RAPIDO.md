@@ -199,7 +199,6 @@ Verificación:
 
 ---
 
-**¡Éxito con tu despliegue!** 🚀
 
 *Tiempo total estimado: 15 minutos*
 

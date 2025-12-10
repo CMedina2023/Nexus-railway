@@ -525,3 +525,4 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 *Última actualización: Diciembre 2025*  
 *Versión: 1.0.0*
 
+
