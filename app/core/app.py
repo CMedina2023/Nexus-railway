@@ -3322,6 +3322,173 @@ def jira_download_template():
 
 
 # ============================================================================
+# FEEDBACK - Endpoints para gestionar feedback de usuarios
+# ============================================================================
+
+
+
+@app.route('/api/feedback/validate-project', methods=['POST'])
+@login_required
+@handle_errors("Error al validar proyecto", status_code=500)
+def feedback_validate_project():
+    """
+    Valida que el proyecto seleccionado sea válido para feedback
+    """
+    try:
+        from app.services.feedback_service import FeedbackService
+        from app.utils.exceptions import ValidationError
+        from app.auth.user_service import UserService
+        
+        data = request.get_json()
+        project_key = data.get('project_key', '').strip()
+        
+        if not project_key:
+            return jsonify({
+                "success": False,
+                "error": "Debe proporcionar una clave de proyecto"
+            }), 400
+        
+        # Obtener usuario actual
+        user_id = get_current_user_id()
+        user_service = UserService()
+        user = user_service.get_user_by_id(user_id)
+        
+        if not user:
+            return jsonify({
+                "success": False,
+                "error": "Usuario no encontrado"
+            }), 400
+        
+        # Obtener configuración de Jira del usuario
+        token_manager = JiraTokenManager()
+        
+        try:
+            jira_config = token_manager.get_token_for_user(user, project_key)
+        except Exception as e:
+            logger.warning(f"No se pudo obtener configuración de Jira: {e}")
+            return jsonify({
+                "success": False,
+                "error": "No se encontró configuración de Jira para este proyecto"
+            }), 400
+        
+        # Crear conexión
+        connection = JiraConnection(
+            base_url=jira_config.base_url,
+            email=jira_config.email,
+            api_token=jira_config.token
+        )
+        
+        # Validar proyecto
+        feedback_service = FeedbackService(connection)
+        is_valid = feedback_service.validate_project(project_key)
+        
+        return jsonify({
+            "success": True,
+            "valid": is_valid,
+            "message": f"Proyecto '{project_key}' validado correctamente"
+        })
+        
+    except ValidationError as e:
+        return jsonify({
+            "success": False,
+            "valid": False,
+            "error": str(e)
+        }), 400
+    except Exception as e:
+        logger.error(f"Error al validar proyecto: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route('/api/feedback/submit', methods=['POST'])
+@login_required
+@handle_errors("Error al enviar feedback", status_code=500)
+def feedback_submit():
+    """
+    Envía feedback creando un issue (Bug o Task) en Jira
+    """
+    try:
+        from app.services.feedback_service import FeedbackService
+        from app.utils.exceptions import ValidationError
+        from app.auth.user_service import UserService
+        
+        data = request.get_json()
+        
+        # Extraer datos
+        project_key = data.get('project_key', '').strip()
+        issue_type = data.get('issue_type', '').strip()
+        summary = data.get('summary', '').strip()
+        description = data.get('description', '').strip()
+        
+        # Validar datos requeridos
+        if not all([project_key, issue_type, summary, description]):
+            return jsonify({
+                "success": False,
+                "error": "Todos los campos son obligatorios"
+            }), 400
+        
+        # Obtener usuario actual
+        user_service = UserService()
+        user_id = get_current_user_id()
+        user = user_service.get_user_by_id(user_id)
+        
+        if not user:
+            return jsonify({
+                "success": False,
+                "error": "Usuario no encontrado"
+            }), 400
+        
+        user_email = user.email
+        
+        # Obtener configuración de Jira del usuario
+        token_manager = JiraTokenManager()
+        
+        try:
+            jira_config = token_manager.get_token_for_user(user, project_key)
+        except Exception as e:
+            logger.warning(f"No se pudo obtener configuración de Jira: {e}")
+            return jsonify({
+                "success": False,
+                "error": "No se encontró configuración de Jira para este proyecto"
+            }), 400
+        
+        # Crear conexión
+        connection = JiraConnection(
+            base_url=jira_config.base_url,
+            email=jira_config.email,
+            api_token=jira_config.token
+        )
+        
+        # Crear feedback
+        feedback_service = FeedbackService(connection)
+        result = feedback_service.create_feedback_issue(
+            project_key=project_key,
+            issue_type=issue_type,
+            summary=summary,
+            description=description,
+            user_email=user_email
+        )
+        
+        logger.info(f"Feedback enviado por usuario {user_email}: {result.get('issue_key')}")
+        
+        return jsonify(result)
+        
+    except ValidationError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 400
+    except Exception as e:
+        logger.error(f"Error al enviar feedback: {e}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": f"Error al enviar feedback: {str(e)}"
+        }), 500
+
+
+# ============================================================================
 # CONFIGURACIÓN PARA PRODUCCIÓN
 # ============================================================================
 
