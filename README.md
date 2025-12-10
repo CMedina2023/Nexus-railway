@@ -526,3 +526,4 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 *Versión: 1.0.0*
 
 
+
