@@ -6,13 +6,169 @@ import logging
 import json
 import unicodedata
 import re
-from typing import Dict, List, Optional
+import time
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
 
 from app.backend.jira.connection import JiraConnection
 from app.backend.jira.project_service import ProjectService
 from app.core.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Cache con TTL para metadata de campos
+# ============================================================================
+class FieldMetadataCache:
+    """
+    Cache con TTL (Time-To-Live) para metadata de campos de Jira
+    Permite invalidación manual en caso de errores
+    """
+    
+    def __init__(self, ttl_seconds: int = None):
+        """
+        Inicializa el cache con TTL
+        
+        Args:
+            ttl_seconds: Tiempo de vida del cache en segundos (default: Config.JIRA_FIELD_METADATA_CACHE_TTL_SECONDS)
+        """
+        self._cache = {}  # {cache_key: {'data': ..., 'timestamp': ...}}
+        self._ttl_seconds = ttl_seconds or Config.JIRA_FIELD_METADATA_CACHE_TTL_SECONDS
+        logger.info(f"FieldMetadataCache inicializado con TTL de {self._ttl_seconds} segundos")
+    
+    def get(self, cache_key: str) -> Optional[Dict]:
+        """
+        Obtiene datos del cache si existen y no han expirado
+        
+        Args:
+            cache_key: Clave del cache (ej: "RB:Test Case")
+            
+        Returns:
+            Dict con metadata si existe y es válido, None si no existe o expiró
+        """
+        if cache_key not in self._cache:
+            return None
+        
+        cached_item = self._cache[cache_key]
+        timestamp = cached_item.get('timestamp')
+        data = cached_item.get('data')
+        
+        # Verificar si el cache ha expirado
+        if timestamp and datetime.now() - timestamp > timedelta(seconds=self._ttl_seconds):
+            logger.debug(f"Cache expirado para '{cache_key}', eliminando...")
+            del self._cache[cache_key]
+            return None
+        
+        logger.debug(f"Cache hit para '{cache_key}'")
+        return data
+    
+    def set(self, cache_key: str, data: Dict) -> None:
+        """
+        Guarda datos en el cache con timestamp actual
+        
+        Args:
+            cache_key: Clave del cache
+            data: Datos a guardar
+        """
+        self._cache[cache_key] = {
+            'data': data,
+            'timestamp': datetime.now()
+        }
+        logger.debug(f"Cache actualizado para '{cache_key}'")
+    
+    def invalidate(self, cache_key: str) -> None:
+        """
+        Invalida (elimina) una entrada del cache
+        
+        Args:
+            cache_key: Clave del cache a invalidar
+        """
+        if cache_key in self._cache:
+            del self._cache[cache_key]
+            logger.info(f"Cache invalidado para '{cache_key}'")
+    
+    def clear(self) -> None:
+        """Limpia todo el cache"""
+        self._cache.clear()
+        logger.info("Cache completamente limpiado")
+
+
+# ============================================================================
+# Rate Limiter para creación de issues
+# ============================================================================
+class IssueCreationRateLimiter:
+    """
+    Rate limiter con backoff exponencial para creación de issues
+    Previene throttling de Jira API
+    """
+    
+    def __init__(self, base_delay: float = None, backoff_multiplier: float = None, max_delay: float = None):
+        """
+        Inicializa el rate limiter
+        
+        Args:
+            base_delay: Delay base entre requests en segundos
+            backoff_multiplier: Multiplicador para backoff exponencial
+            max_delay: Delay máximo en segundos
+        """
+        self._base_delay = base_delay or Config.JIRA_CREATE_ISSUE_DELAY_SECONDS
+        self._backoff_multiplier = backoff_multiplier or Config.JIRA_CREATE_ISSUE_BACKOFF_MULTIPLIER
+        self._max_delay = max_delay or Config.JIRA_CREATE_ISSUE_MAX_DELAY_SECONDS
+        self._current_delay = self._base_delay
+        self._consecutive_errors = 0
+        self._last_request_time = None
+        logger.info(f"RateLimiter inicializado: base_delay={self._base_delay}s, backoff={self._backoff_multiplier}x, max={self._max_delay}s")
+    
+    def wait(self) -> None:
+        """
+        Espera el tiempo necesario antes del siguiente request
+        Implementa backoff exponencial si hay errores consecutivos
+        """
+        if self._last_request_time is None:
+            self._last_request_time = time.time()
+            return
+        
+        # Calcular tiempo transcurrido desde el último request
+        elapsed = time.time() - self._last_request_time
+        
+        # Calcular delay necesario (con backoff si hay errores)
+        required_delay = self._current_delay
+        
+        # Si no ha pasado suficiente tiempo, esperar
+        if elapsed < required_delay:
+            wait_time = required_delay - elapsed
+            logger.debug(f"Rate limiting: esperando {wait_time:.2f}s (delay actual: {self._current_delay:.2f}s)")
+            time.sleep(wait_time)
+        
+        self._last_request_time = time.time()
+    
+    def report_success(self) -> None:
+        """
+        Reporta un request exitoso
+        Resetea el backoff exponencial
+        """
+        if self._consecutive_errors > 0:
+            logger.info(f"Request exitoso después de {self._consecutive_errors} errores, reseteando backoff")
+        self._consecutive_errors = 0
+        self._current_delay = self._base_delay
+    
+    def report_error(self) -> None:
+        """
+        Reporta un request fallido
+        Incrementa el backoff exponencial
+        """
+        self._consecutive_errors += 1
+        old_delay = self._current_delay
+        self._current_delay = min(
+            self._current_delay * self._backoff_multiplier,
+            self._max_delay
+        )
+        logger.warning(
+            f"Error #{self._consecutive_errors} detectado, "
+            f"incrementando delay: {old_delay:.2f}s → {self._current_delay:.2f}s"
+        )
+
 
 # Variaciones comunes de nombres para tipos de issues
 TEST_CASE_VARIATIONS = [
@@ -92,6 +248,10 @@ class IssueService:
         """
         self._connection = connection
         self._project_service = project_service
+        
+        # Inicializar cache con TTL y rate limiter
+        self._field_metadata_cache = FieldMetadataCache()
+        self._rate_limiter = IssueCreationRateLimiter()
     
     def get_issues_by_type(self, project_key: str, issue_type: str, max_results: int = None) -> List[Dict]:
         """
@@ -676,10 +836,14 @@ class IssueService:
             priority: Prioridad (opcional)
             labels: Etiquetas (opcional)
             custom_fields: Campos personalizados adicionales (opcional)
+            field_schemas: Schemas de campos (opcional, para formateo)
             
         Returns:
             Dict: Resultado de la creación con 'success', 'key', 'id' o 'error'
         """
+        # Aplicar rate limiting antes de hacer el request
+        self._rate_limiter.wait()
+        
         try:
             url = f"{self._connection.base_url}/rest/api/3/issue"
             
@@ -768,6 +932,8 @@ class IssueService:
             
             if response.status_code == 201:
                 issue_data = response.json()
+                # Reportar éxito al rate limiter
+                self._rate_limiter.report_success()
                 return {
                     'success': True,
                     'key': issue_data.get('key'),
@@ -830,6 +996,8 @@ class IssueService:
                     if response.status_code == 201:
                         issue_data = response.json()
                         logger.info(f"Issue creado exitosamente después de convertir campos a ADF: {issue_data.get('key')}")
+                        # Reportar éxito al rate limiter
+                        self._rate_limiter.report_success()
                         return {
                             'success': True,
                             'key': issue_data.get('key'),
@@ -837,9 +1005,10 @@ class IssueService:
                             'self': issue_data.get('self')
                         }
                     else:
-                        # Si el reintento también falla, loguear el error
+                        # Si el reintento también falla, loguear el error y reportar error al rate limiter
                         retry_error_text = response.text
                         logger.error(f"Error al crear issue después de reintento con ADF: {response.status_code} - {retry_error_text}")
+                        self._rate_limiter.report_error()
                         try:
                             retry_error_json = response.json()
                             retry_errors = retry_error_json.get('errors', {})
@@ -866,16 +1035,146 @@ class IssueService:
                     error_message += f" - {error_text[:200]}"
                 
                 logger.error(f"Error final al crear issue: {error_message}")
+                # Reportar error al rate limiter
+                self._rate_limiter.report_error()
                 return {
                     'success': False,
                     'error': error_message
                 }
         except Exception as e:
             logger.error(f"Error al crear issue: {str(e)}")
+            # Reportar error al rate limiter
+            self._rate_limiter.report_error()
             return {
                 'success': False,
                 'error': str(e)
             }
+    
+    def _get_available_fields_metadata(self, project_key: str, issue_type: str, use_cache: bool = True) -> Optional[Dict]:
+        """
+        Obtiene metadata de campos disponibles para un tipo de issue
+        Usa cache con TTL para optimizar performance
+        
+        Args:
+            project_key: Clave del proyecto
+            issue_type: Tipo de issue
+            use_cache: Si es True, usa cache (default: True)
+            
+        Returns:
+            Dict con metadata de campos disponibles, o None si falla
+        """
+        cache_key = f"{project_key}:{issue_type}"
+        
+        # Intentar obtener del cache si está habilitado
+        if use_cache:
+            cached_data = self._field_metadata_cache.get(cache_key)
+            if cached_data is not None:
+                return cached_data
+        
+        # Si no está en cache o cache deshabilitado, obtener de Jira
+        try:
+            logger.info(f"Obteniendo metadata de campos para {cache_key} desde Jira API...")
+            url = f"{self._connection.base_url}/rest/api/3/issue/createmeta"
+            params = {
+                'projectKeys': project_key,
+                'issuetypeNames': issue_type,
+                'expand': 'projects.issuetypes.fields'
+            }
+            
+            response = self._connection.session.get(url, params=params, timeout=Config.JIRA_TIMEOUT_SHORT)
+            
+            if response.status_code == 200:
+                metadata = response.json()
+                projects = metadata.get('projects', [])
+                
+                if projects and projects[0].get('issuetypes'):
+                    for it in projects[0]['issuetypes']:
+                        if it.get('name', '').lower() == issue_type.lower():
+                            fields = it.get('fields', {})
+                            
+                            # Crear diccionario estructurado de campos disponibles
+                            available_fields = {}
+                            for field_id, field_info in fields.items():
+                                available_fields[field_id] = {
+                                    'name': field_info.get('name', ''),
+                                    'required': field_info.get('required', False),
+                                    'schema': field_info.get('schema', {}),
+                                    'operations': field_info.get('operations', []),
+                                    'allowedValues': field_info.get('allowedValues', [])
+                                }
+                            
+                            # Guardar en cache
+                            self._field_metadata_cache.set(cache_key, available_fields)
+                            logger.info(f"Metadata obtenida para {cache_key}: {len(available_fields)} campos disponibles")
+                            return available_fields
+                
+                logger.warning(f"No se encontró metadata para {cache_key} en la respuesta de Jira")
+                return None
+            else:
+                logger.error(f"Error al obtener metadata para {cache_key}: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Excepción al obtener metadata para {cache_key}: {str(e)}", exc_info=True)
+            return None
+    
+    def _validate_and_filter_custom_fields(
+        self, 
+        custom_fields: Dict, 
+        available_fields_metadata: Dict,
+        row_idx: int
+    ) -> Tuple[Dict, List[str]]:
+        """
+        Valida campos personalizados contra metadata de Jira
+        Filtra campos que no están disponibles o no son editables
+        
+        Args:
+            custom_fields: Diccionario de campos personalizados a validar
+            available_fields_metadata: Metadata de campos disponibles obtenida de Jira
+            row_idx: Índice de la fila (para logging)
+            
+        Returns:
+            Tuple[Dict, List[str]]: (campos_validos, campos_filtrados)
+        """
+        if not custom_fields:
+            return {}, []
+        
+        if not available_fields_metadata:
+            logger.warning(f"Fila {row_idx}: No hay metadata disponible, no se puede validar campos. Continuando sin validación.")
+            return custom_fields, []
+        
+        valid_fields = {}
+        filtered_fields = []
+        
+        for field_id, field_value in custom_fields.items():
+            # Verificar si el campo existe en la metadata
+            if field_id not in available_fields_metadata:
+                logger.warning(
+                    f"Fila {row_idx}: Campo '{field_id}' no está disponible en la pantalla de creación, será omitido"
+                )
+                filtered_fields.append(field_id)
+                continue
+            
+            field_info = available_fields_metadata[field_id]
+            
+            # Verificar si el campo es editable (tiene operación 'set')
+            operations = field_info.get('operations', [])
+            if 'set' not in operations:
+                logger.warning(
+                    f"Fila {row_idx}: Campo '{field_id}' ({field_info.get('name', 'N/A')}) es read-only, será omitido"
+                )
+                filtered_fields.append(field_id)
+                continue
+            
+            # Campo válido
+            valid_fields[field_id] = field_value
+        
+        if filtered_fields:
+            logger.info(
+                f"Fila {row_idx}: {len(filtered_fields)} campo(s) filtrado(s) (no disponibles o read-only): {filtered_fields}"
+            )
+        
+        return valid_fields, filtered_fields
     
     def normalize_issue_type(self, csv_type: str, available_types: List[Dict]) -> Optional[str]:
         """
@@ -976,12 +1275,17 @@ class IssueService:
                 'error_count': len(csv_data)
             }
         
-        # Cache para schemas de campos por tipo de issue
+        # Cache para schemas de campos por tipo de issue (legacy, ahora usa FieldMetadataCache)
         field_schemas_cache = {}
+        
+        # Cache para metadata de campos disponibles (con validación previa)
+        available_fields_by_type = {}
         
         # Crear un diccionario de tipos disponibles para búsqueda rápida
         available_type_names = {issue_type.get('name', '').lower(): issue_type.get('name', '')
                                 for issue_type in available_types}
+        
+        logger.info(f"Iniciando carga masiva de {len(csv_data)} issues al proyecto {project_key}")
         
         for idx, row in enumerate(csv_data, start=1):
             try:
@@ -1112,7 +1416,40 @@ class IssueService:
                         if field not in custom_fields and field != 'issuetype':
                             custom_fields[field] = value
                 
-                # Obtener schemas de campos para este tipo de issue si no están en caché
+                # ============================================================================
+                # VALIDACIÓN PREVIA DE CAMPOS (Nueva funcionalidad)
+                # ============================================================================
+                # Obtener metadata de campos disponibles si no está en cache
+                if issue_type not in available_fields_by_type:
+                    logger.info(f"Fila {idx}: Obteniendo metadata de campos para tipo '{issue_type}'...")
+                    available_fields_metadata = self._get_available_fields_metadata(
+                        project_key, 
+                        issue_type, 
+                        use_cache=True
+                    )
+                    available_fields_by_type[issue_type] = available_fields_metadata
+                else:
+                    available_fields_metadata = available_fields_by_type[issue_type]
+                
+                # Validar y filtrar campos personalizados
+                if custom_fields and available_fields_metadata:
+                    valid_custom_fields, filtered_fields = self._validate_and_filter_custom_fields(
+                        custom_fields,
+                        available_fields_metadata,
+                        idx
+                    )
+                    
+                    # Si se filtraron campos, actualizar custom_fields
+                    if filtered_fields:
+                        logger.info(
+                            f"Fila {idx}: Usando {len(valid_custom_fields)} campos válidos "
+                            f"(filtrados {len(filtered_fields)}: {', '.join(filtered_fields)})"
+                        )
+                        custom_fields = valid_custom_fields
+                
+                # ============================================================================
+                # Obtener schemas de campos para formateo (legacy, ahora incluido en metadata)
+                # ============================================================================
                 field_schemas = None
                 cache_key = f"{project_key}:{issue_type}"
                 if cache_key not in field_schemas_cache:
@@ -1170,13 +1507,33 @@ class IssueService:
                         'issue_type': issue_type
                     })
                     results['success_count'] += 1
+                    logger.info(f"Fila {idx}: ✅ Issue creado exitosamente: {issue_result.get('key')}")
                 else:
+                    error_msg = issue_result.get('error', 'Error desconocido')
                     results['failed'].append({
                         'row': idx,
-                        'error': issue_result.get('error', 'Error desconocido'),
+                        'error': error_msg,
                         'summary': summary
                     })
                     results['error_count'] += 1
+                    logger.error(f"Fila {idx}: ❌ Error al crear issue: {error_msg}")
+                    
+                    # Invalidar cache si el error es de campo no encontrado o no disponible
+                    error_lower = error_msg.lower()
+                    if any(keyword in error_lower for keyword in [
+                        'cannot be set',
+                        'not on the appropriate screen',
+                        'unknown field',
+                        'field does not exist'
+                    ]):
+                        logger.warning(
+                            f"Fila {idx}: Error de campo no disponible detectado, "
+                            f"invalidando cache para '{cache_key}'"
+                        )
+                        self._field_metadata_cache.invalidate(cache_key)
+                        # Remover también del cache local de esta ejecución
+                        if issue_type in available_fields_by_type:
+                            del available_fields_by_type[issue_type]
                     
             except Exception as e:
                 logger.error(f"Error al procesar fila {idx}: {str(e)}")
@@ -1189,6 +1546,12 @@ class IssueService:
         
         # Actualizar estado de éxito general
         results['success'] = results['error_count'] == 0
+        
+        # Log final con estadísticas
+        logger.info(
+            f"Carga masiva completada: {results['success_count']}/{results['total']} exitosos, "
+            f"{results['error_count']} errores"
+        )
         
         return results
 

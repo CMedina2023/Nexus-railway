@@ -64,6 +64,14 @@ class Config:
     # Caché de métricas
     JIRA_METRICS_CACHE_TTL_HOURS = int(os.getenv('JIRA_METRICS_CACHE_TTL_HOURS', '6'))  # TTL en horas
     
+    # Caché de metadata de campos (para carga masiva)
+    JIRA_FIELD_METADATA_CACHE_TTL_SECONDS = int(os.getenv('JIRA_FIELD_METADATA_CACHE_TTL_SECONDS', '300'))  # 5 minutos
+    
+    # Rate Limiting para creación de issues
+    JIRA_CREATE_ISSUE_DELAY_SECONDS = float(os.getenv('JIRA_CREATE_ISSUE_DELAY_SECONDS', '0.5'))  # Delay entre issues
+    JIRA_CREATE_ISSUE_BACKOFF_MULTIPLIER = float(os.getenv('JIRA_CREATE_ISSUE_BACKOFF_MULTIPLIER', '1.5'))  # Multiplicador de backoff
+    JIRA_CREATE_ISSUE_MAX_DELAY_SECONDS = float(os.getenv('JIRA_CREATE_ISSUE_MAX_DELAY_SECONDS', '5.0'))  # Delay máximo
+    
     # ============================================================================
     # Flask
     # ============================================================================
