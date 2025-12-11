@@ -337,7 +337,15 @@ class Database:
                 result = cursor.fetchall()
         """
         conn = self.get_connection()
-        cursor = conn.cursor()
+        
+        # Crear cursor apropiado según el tipo de BD
+        if self.is_postgres:
+            # PostgreSQL: Usar RealDictCursor para retornar diccionarios (como SQLite)
+            import psycopg2.extras
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        else:
+            # SQLite: Cursor normal (ya tiene row_factory configurado)
+            cursor = conn.cursor()
         
         # Crear un wrapper del cursor que adapta las consultas automáticamente
         class CursorWrapper:
