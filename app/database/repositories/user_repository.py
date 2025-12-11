@@ -259,10 +259,14 @@ class UserRepository:
         locked_until = datetime.fromisoformat(row['locked_until']) if row.get('locked_until') else None
         last_login = datetime.fromisoformat(row['last_login']) if row.get('last_login') else None
         
+        # Log para debugging del password_hash
+        password_hash = row['password_hash']
+        logger.info(f"Leyendo usuario de BD - Email: {row['email']}, Hash type: {type(password_hash)}, Hash length: {len(password_hash) if password_hash else 0}, Hash starts with: {password_hash[:10] if password_hash else 'None'}")
+        
         return User(
             id=row['id'],
             email=row['email'],
-            password_hash=row['password_hash'],
+            password_hash=password_hash,
             role=row['role'],
             active=active,
             failed_login_attempts=int(row.get('failed_login_attempts', 0)),
