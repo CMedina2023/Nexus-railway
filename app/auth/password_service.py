@@ -45,6 +45,9 @@ class PasswordService:
         if not isinstance(password, str):
             password = str(password)
         
+        # Log para debugging
+        logger.info(f"Hasheando password - Length: {len(password)}")
+        
         # Generar hash con salt automático
         # bcrypt.gensalt() genera un salt aleatorio y lo incluye en el hash
         password_bytes = password.encode('utf-8')
@@ -52,7 +55,9 @@ class PasswordService:
         hashed = bcrypt.hashpw(password_bytes, salt)
         
         # Retornar como string para almacenar en DB
-        return hashed.decode('utf-8')
+        hash_str = hashed.decode('utf-8')
+        logger.info(f"Hash generado - Length: {len(hash_str)}, Starts with: {hash_str[:10]}")
+        return hash_str
     
     @staticmethod
     def verify_password(password: str, password_hash: str) -> bool:
@@ -72,6 +77,7 @@ class PasswordService:
         """
         try:
             if not password or not password_hash:
+                logger.warning(f"Password o hash vacío - password: {bool(password)}, hash: {bool(password_hash)}")
                 return False
             
             if not isinstance(password, str):
@@ -79,16 +85,21 @@ class PasswordService:
             if not isinstance(password_hash, str):
                 password_hash = str(password_hash)
             
+            # Log para debugging
+            logger.info(f"Verificando password - Hash type: {type(password_hash)}, Hash length: {len(password_hash)}, Hash starts with: {password_hash[:10]}")
+            
             # Verificar contraseña (timing-safe)
             password_bytes = password.encode('utf-8')
             hash_bytes = password_hash.encode('utf-8')
             
             # bcrypt.checkpw es timing-safe (siempre tarda lo mismo)
-            return bcrypt.checkpw(password_bytes, hash_bytes)
+            result = bcrypt.checkpw(password_bytes, hash_bytes)
+            logger.info(f"Resultado de verificación: {result}")
+            return result
         
         except Exception as e:
             # Siempre retornar False en caso de error (security by default)
-            logger.warning(f"Error al verificar contraseña: {e}")
+            logger.error(f"Error al verificar contraseña: {e}", exc_info=True)
             return False
     
     @staticmethod

@@ -142,12 +142,6 @@ from app.auth.profile_routes import profile_bp
 app.register_blueprint(profile_bp)
 from app.auth.dashboard_routes import dashboard_bp
 app.register_blueprint(dashboard_bp)
-
-# ⚠️ DEBUG: Registrar blueprint de debug (ELIMINAR EN PRODUCCIÓN)
-from app.auth.debug_routes import debug_bp
-app.register_blueprint(debug_bp)
-logger.warning("⚠️ Blueprint de DEBUG registrado - ELIMINAR EN PRODUCCIÓN")
-
 logger.info("Blueprints de autenticación registrados")
 
 

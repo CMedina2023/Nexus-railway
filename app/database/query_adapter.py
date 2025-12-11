@@ -65,3 +65,4 @@ def adapt_query_dict(query: str, params: dict, is_postgres: bool) -> Tuple[str, 
     
     return adapted_query, params
 
+
