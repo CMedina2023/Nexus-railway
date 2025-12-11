@@ -1,246 +1,335 @@
 """
 Gestión de base de datos
 Responsabilidad única: Inicializar y gestionar conexión a base de datos
+Soporta SQLite (desarrollo) y PostgreSQL (producción)
 """
-import sqlite3
 import logging
 from pathlib import Path
 from typing import Optional
 from contextlib import contextmanager
+from urllib.parse import urlparse
+
+from sqlalchemy import create_engine, text, event
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.pool import StaticPool, NullPool
 
 from app.core.config import Config
+from app.database.query_adapter import adapt_query, adapt_query_dict
 
 logger = logging.getLogger(__name__)
 
 
 class Database:
     """
-    Clase para gestión de base de datos SQLite
+    Clase para gestión de base de datos con soporte SQLite y PostgreSQL
     Responsabilidad única: Gestión de conexión y transacciones
     """
     
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_url: str = None):
         """
         Inicializa la conexión a la base de datos
         
         Args:
-            db_path: Ruta al archivo de base de datos (default: Config.DATABASE_URL)
+            db_url: URL de conexión a la base de datos (default: Config.DATABASE_URL)
         """
-        if db_path is None:
-            # Extraer ruta de DATABASE_URL (sqlite:///path/to/db.db)
+        if db_url is None:
             db_url = Config.DATABASE_URL
-            if db_url.startswith('sqlite:///'):
-                db_path = db_url.replace('sqlite:///', '')
-            else:
-                db_path = 'nexus_ai.db'
         
-        # Asegurar que el directorio existe
-        db_file = Path(db_path)
-        db_file.parent.mkdir(parents=True, exist_ok=True)
+        self.db_url = db_url
+        self.is_sqlite = db_url.startswith('sqlite:///')
+        self.is_postgres = db_url.startswith('postgresql://') or db_url.startswith('postgres://')
         
-        self.db_path = str(db_path)
+        # Configurar engine según el tipo de base de datos
+        if self.is_sqlite:
+            # SQLite: Asegurar que el directorio existe
+            db_path = db_url.replace('sqlite:///', '')
+            db_file = Path(db_path)
+            db_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # SQLite con StaticPool para evitar problemas de concurrencia
+            self.engine = create_engine(
+                db_url,
+                connect_args={'check_same_thread': False},
+                poolclass=StaticPool,
+                echo=False
+            )
+            logger.info(f"Conectado a SQLite: {db_path}")
+            
+        elif self.is_postgres:
+            # PostgreSQL: Ajustar URL si es necesario (Render usa postgres://)
+            if db_url.startswith('postgres://'):
+                db_url = db_url.replace('postgres://', 'postgresql://', 1)
+                self.db_url = db_url
+            
+            # PostgreSQL con pool de conexiones
+            self.engine = create_engine(
+                db_url,
+                pool_pre_ping=True,  # Verificar conexiones antes de usar
+                pool_size=10,
+                max_overflow=20,
+                pool_recycle=3600,  # Reciclar conexiones cada hora
+                echo=False
+            )
+            logger.info("Conectado a PostgreSQL")
+            
+        else:
+            raise ValueError(f"Base de datos no soportada: {db_url}")
+        
+        # Crear session factory
+        self.SessionLocal = scoped_session(sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=self.engine
+        ))
+        
+        # Inicializar esquema
         self._init_schema()
     
     def _init_schema(self):
         """Inicializa el esquema de la base de datos"""
         try:
-            conn = self.get_connection()
-            cursor = conn.cursor()
-
-            users_table_sql = '''
-                CREATE TABLE IF NOT EXISTS users (
-                    id TEXT PRIMARY KEY,
-                    email TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK(role IN ('admin', 'usuario', 'analista_qa')),
-                    active INTEGER NOT NULL DEFAULT 1,
-                    failed_login_attempts INTEGER NOT NULL DEFAULT 0,
-                    locked_until TEXT,
-                    last_login TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    created_by TEXT
-                )
-            '''
-            # Asegurar que la tabla de usuarios soporte el nuevo rol
-            self._ensure_users_table_schema(cursor, users_table_sql)
-            
-            # Tabla de usuarios
-            cursor.execute(users_table_sql)
-            
-            # Tabla de configuración de proyectos
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS project_configs (
-                    id TEXT PRIMARY KEY,
-                    project_key TEXT UNIQUE NOT NULL,
-                    jira_base_url TEXT NOT NULL,
-                    shared_email TEXT NOT NULL,
-                    shared_token TEXT NOT NULL,
-                    created_by TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    updated_by TEXT,
-                    active INTEGER NOT NULL DEFAULT 1
-                )
-            ''')
-            
-            # Tabla de configuración personal de Jira por usuario
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_jira_configs (
-                    id TEXT PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    project_key TEXT NOT NULL,
-                    personal_email TEXT NOT NULL,
-                    personal_token TEXT NOT NULL,
-                    use_personal INTEGER NOT NULL DEFAULT 0,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (project_key) REFERENCES project_configs(project_key) ON DELETE CASCADE,
-                    UNIQUE(user_id, project_key)
-                )
-            ''')
-            
-            # Tabla de historias de usuario generadas
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS user_stories (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    project_key TEXT NOT NULL,
-                    area TEXT,
-                    story_title TEXT NOT NULL,
-                    story_content TEXT NOT NULL,
-                    jira_issue_key TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            ''')
-            
-            # Tabla de casos de prueba generados
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS test_cases (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    project_key TEXT NOT NULL,
-                    area TEXT,
-                    test_case_title TEXT NOT NULL,
-                    test_case_content TEXT NOT NULL,
-                    jira_issue_key TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            ''')
-            
-            # Tabla de reportes creados en Jira
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS jira_reports (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    project_key TEXT NOT NULL,
-                    report_type TEXT NOT NULL,
-                    report_title TEXT NOT NULL,
-                    report_content TEXT NOT NULL,
-                    jira_issue_key TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            ''')
-            
-            # Tabla de cargas masivas
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS bulk_uploads (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    project_key TEXT NOT NULL,
-                    upload_type TEXT NOT NULL,
-                    total_items INTEGER NOT NULL,
-                    successful_items INTEGER NOT NULL DEFAULT 0,
-                    failed_items INTEGER NOT NULL DEFAULT 0,
-                    upload_details TEXT,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
-            ''')
-            
-            # Índices para mejorar rendimiento
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_project_configs_key ON project_configs(project_key)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_jira_configs_user ON user_jira_configs(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_stories_user ON user_stories(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_user_stories_project ON user_stories(project_key)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_test_cases_user ON test_cases(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_test_cases_project ON test_cases(project_key)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_jira_reports_user ON jira_reports(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_jira_reports_project ON jira_reports(project_key)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_user ON bulk_uploads(user_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_project ON bulk_uploads(project_key)')
-            
-            conn.commit()
-            conn.close()
-            logger.info(f"Esquema de base de datos inicializado en {self.db_path}")
+            with self.engine.connect() as conn:
+                # Tabla de usuarios
+                if self.is_sqlite:
+                    users_table_sql = '''
+                        CREATE TABLE IF NOT EXISTS users (
+                            id TEXT PRIMARY KEY,
+                            email TEXT UNIQUE NOT NULL,
+                            password_hash TEXT NOT NULL,
+                            role TEXT NOT NULL CHECK(role IN ('admin', 'usuario', 'analista_qa')),
+                            active INTEGER NOT NULL DEFAULT 1,
+                            failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+                            locked_until TEXT,
+                            last_login TEXT,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL,
+                            created_by TEXT
+                        )
+                    '''
+                else:  # PostgreSQL
+                    users_table_sql = '''
+                        CREATE TABLE IF NOT EXISTS users (
+                            id TEXT PRIMARY KEY,
+                            email TEXT UNIQUE NOT NULL,
+                            password_hash TEXT NOT NULL,
+                            role TEXT NOT NULL CHECK(role IN ('admin', 'usuario', 'analista_qa')),
+                            active INTEGER NOT NULL DEFAULT 1,
+                            failed_login_attempts INTEGER NOT NULL DEFAULT 0,
+                            locked_until TIMESTAMP,
+                            last_login TIMESTAMP,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL,
+                            created_by TEXT
+                        )
+                    '''
+                
+                conn.execute(text(users_table_sql))
+                
+                # Tabla de configuración de proyectos
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS project_configs (
+                        id TEXT PRIMARY KEY,
+                        project_key TEXT UNIQUE NOT NULL,
+                        jira_base_url TEXT NOT NULL,
+                        shared_email TEXT NOT NULL,
+                        shared_token TEXT NOT NULL,
+                        created_by TEXT NOT NULL,
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL,
+                        updated_by TEXT,
+                        active INTEGER NOT NULL DEFAULT 1
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+                
+                # Tabla de configuración personal de Jira por usuario
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS user_jira_configs (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        project_key TEXT NOT NULL,
+                        personal_email TEXT NOT NULL,
+                        personal_token TEXT NOT NULL,
+                        use_personal INTEGER NOT NULL DEFAULT 0,
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        FOREIGN KEY (project_key) REFERENCES project_configs(project_key) ON DELETE CASCADE,
+                        UNIQUE(user_id, project_key)
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+                
+                # Tabla de historias de usuario generadas
+                if self.is_sqlite:
+                    user_stories_sql = '''
+                        CREATE TABLE IF NOT EXISTS user_stories (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            area TEXT,
+                            story_title TEXT NOT NULL,
+                            story_content TEXT NOT NULL,
+                            jira_issue_key TEXT,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                else:  # PostgreSQL
+                    user_stories_sql = '''
+                        CREATE TABLE IF NOT EXISTS user_stories (
+                            id SERIAL PRIMARY KEY,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            area TEXT,
+                            story_title TEXT NOT NULL,
+                            story_content TEXT NOT NULL,
+                            jira_issue_key TEXT,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                
+                conn.execute(text(user_stories_sql))
+                
+                # Tabla de casos de prueba generados
+                if self.is_sqlite:
+                    test_cases_sql = '''
+                        CREATE TABLE IF NOT EXISTS test_cases (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            area TEXT,
+                            test_case_title TEXT NOT NULL,
+                            test_case_content TEXT NOT NULL,
+                            jira_issue_key TEXT,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                else:  # PostgreSQL
+                    test_cases_sql = '''
+                        CREATE TABLE IF NOT EXISTS test_cases (
+                            id SERIAL PRIMARY KEY,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            area TEXT,
+                            test_case_title TEXT NOT NULL,
+                            test_case_content TEXT NOT NULL,
+                            jira_issue_key TEXT,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                
+                conn.execute(text(test_cases_sql))
+                
+                # Tabla de reportes creados en Jira
+                if self.is_sqlite:
+                    jira_reports_sql = '''
+                        CREATE TABLE IF NOT EXISTS jira_reports (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            report_type TEXT NOT NULL,
+                            report_title TEXT NOT NULL,
+                            report_content TEXT NOT NULL,
+                            jira_issue_key TEXT NOT NULL,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                else:  # PostgreSQL
+                    jira_reports_sql = '''
+                        CREATE TABLE IF NOT EXISTS jira_reports (
+                            id SERIAL PRIMARY KEY,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            report_type TEXT NOT NULL,
+                            report_title TEXT NOT NULL,
+                            report_content TEXT NOT NULL,
+                            jira_issue_key TEXT NOT NULL,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                
+                conn.execute(text(jira_reports_sql))
+                
+                # Tabla de cargas masivas
+                if self.is_sqlite:
+                    bulk_uploads_sql = '''
+                        CREATE TABLE IF NOT EXISTS bulk_uploads (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            upload_type TEXT NOT NULL,
+                            total_items INTEGER NOT NULL,
+                            successful_items INTEGER NOT NULL DEFAULT 0,
+                            failed_items INTEGER NOT NULL DEFAULT 0,
+                            upload_details TEXT,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                else:  # PostgreSQL
+                    bulk_uploads_sql = '''
+                        CREATE TABLE IF NOT EXISTS bulk_uploads (
+                            id SERIAL PRIMARY KEY,
+                            user_id TEXT NOT NULL,
+                            project_key TEXT NOT NULL,
+                            upload_type TEXT NOT NULL,
+                            total_items INTEGER NOT NULL,
+                            successful_items INTEGER NOT NULL DEFAULT 0,
+                            failed_items INTEGER NOT NULL DEFAULT 0,
+                            upload_details TEXT,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    '''
+                
+                conn.execute(text(bulk_uploads_sql))
+                
+                # Índices para mejorar rendimiento
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_configs_key ON project_configs(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_user_jira_configs_user ON user_jira_configs(user_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_user_stories_user ON user_stories(user_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_user_stories_project ON user_stories(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_test_cases_user ON test_cases(user_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_test_cases_project ON test_cases(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_jira_reports_user ON jira_reports(user_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_jira_reports_project ON jira_reports(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_user ON bulk_uploads(user_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_project ON bulk_uploads(project_key)'))
+                
+                conn.commit()
+                
+            logger.info(f"Esquema de base de datos inicializado correctamente")
         except Exception as e:
-            logger.error(f"Error al inicializar esquema de base de datos: {e}")
+            logger.error(f"Error al inicializar esquema de base de datos: {e}", exc_info=True)
             raise
-
-    def _ensure_users_table_schema(self, cursor, users_table_sql: str):
-        """
-        Verifica y actualiza la tabla de usuarios para soportar nuevos roles.
-        Si la tabla existe y no incluye el rol analista_qa en el CHECK,
-        se recrea preservando los datos.
-        """
-        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'")
-        row = cursor.fetchone()
-        if not row:
-            return  # La tabla no existe, se creará más adelante
-
-        current_sql = row[0] if isinstance(row, tuple) else row['sql']
-        if current_sql and "analista_qa" not in current_sql:
-            logger.info("Actualizando tabla users para incluir rol analista_qa")
-            cursor.execute("ALTER TABLE users RENAME TO users_old")
-            cursor.execute(users_table_sql)
-            cursor.execute('''
-                INSERT INTO users (
-                    id, email, password_hash, role, active,
-                    failed_login_attempts, locked_until, last_login,
-                    created_at, updated_at, created_by
-                )
-                SELECT
-                    id, email, password_hash,
-                    CASE
-                        WHEN role IN ('admin', 'usuario', 'analista_qa') THEN role
-                        ELSE 'usuario'
-                    END as role,
-                    active,
-                    failed_login_attempts,
-                    locked_until,
-                    last_login,
-                    created_at,
-                    updated_at,
-                    created_by
-                FROM users_old
-            ''')
-            cursor.execute("DROP TABLE users_old")
     
-    def get_connection(self) -> sqlite3.Connection:
+    def get_connection(self):
         """
-        Obtiene una conexión a la base de datos
+        Obtiene una conexión raw a la base de datos (para compatibilidad con código existente)
         
         Returns:
-            sqlite3.Connection: Conexión a la base de datos
+            Connection: Conexión a la base de datos
         """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Para acceso por nombre de columna
-        return conn
+        return self.engine.raw_connection()
     
     @contextmanager
     def get_cursor(self):
         """
-        Context manager para gestionar cursores de forma segura
+        Context manager para gestionar cursores de forma segura (compatibilidad con código existente)
         
         Usage:
             with db.get_cursor() as cursor:
@@ -249,15 +338,64 @@ class Database:
         """
         conn = self.get_connection()
         cursor = conn.cursor()
+        
+        # Crear un wrapper del cursor que adapta las consultas automáticamente
+        class CursorWrapper:
+            def __init__(self, cursor, is_postgres):
+                self._cursor = cursor
+                self._is_postgres = is_postgres
+            
+            def execute(self, query, params=None):
+                if params:
+                    if isinstance(params, dict):
+                        query, params = adapt_query_dict(query, params, self._is_postgres)
+                    else:
+                        query, params = adapt_query(query, params, self._is_postgres)
+                    return self._cursor.execute(query, params)
+                return self._cursor.execute(query)
+            
+            def __getattr__(self, name):
+                # Delegar todos los otros métodos al cursor original
+                return getattr(self._cursor, name)
+        
+        wrapped_cursor = CursorWrapper(cursor, self.is_postgres)
+        
         try:
-            yield cursor
+            yield wrapped_cursor
             conn.commit()
         except Exception as e:
             conn.rollback()
             logger.error(f"Error en transacción: {e}")
             raise
         finally:
+            cursor.close()
             conn.close()
+    
+    @contextmanager
+    def get_session(self):
+        """
+        Context manager para gestionar sesiones SQLAlchemy
+        
+        Usage:
+            with db.get_session() as session:
+                session.execute(text("SELECT * FROM users"))
+                session.commit()
+        """
+        session = self.SessionLocal()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error en transacción: {e}")
+            raise
+        finally:
+            session.close()
+    
+    def close(self):
+        """Cierra todas las conexiones"""
+        self.SessionLocal.remove()
+        self.engine.dispose()
 
 
 # Instancia global de la base de datos
@@ -286,14 +424,11 @@ def init_db():
     logger.info("Base de datos inicializada correctamente")
 
 
-def get_db_connection() -> sqlite3.Connection:
+def get_db_connection():
     """
     Obtiene una conexión a la base de datos (alias para compatibilidad con repositorios)
     
     Returns:
-        sqlite3.Connection: Conexión a la base de datos
+        Connection: Conexión a la base de datos
     """
     return get_db().get_connection()
-
-
-
