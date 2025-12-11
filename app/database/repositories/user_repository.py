@@ -100,14 +100,27 @@ class UserRepository:
         """
         try:
             with self.db.get_cursor() as cursor:
+                logger.info(f"Buscando usuario por email: {email}")
                 cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
                 row = cursor.fetchone()
                 
+                logger.info(f"Resultado de fetchone: {row}, Tipo: {type(row)}")
+                
                 if row:
-                    return self._row_to_user(dict(row))
+                    # Convertir a dict si no lo es ya
+                    if isinstance(row, dict):
+                        row_dict = row
+                    else:
+                        # Para PostgreSQL con RealDictCursor, row ya es dict-like
+                        row_dict = dict(row)
+                    
+                    logger.info(f"Usuario encontrado: {row_dict.get('email')}")
+                    return self._row_to_user(row_dict)
+                
+                logger.warning(f"Usuario NO encontrado en BD para email: {email}")
                 return None
         except Exception as e:
-            logger.error(f"Error al obtener usuario por email: {e}")
+            logger.error(f"Error al obtener usuario por email: {e}", exc_info=True)
             return None
     
     def update(self, user: User) -> User:
