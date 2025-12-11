@@ -266,11 +266,20 @@ class UserRepository:
         if isinstance(active, int):
             active = active == 1
         
-        # Convertir datetime strings
-        created_at = datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.now()
-        updated_at = datetime.fromisoformat(row['updated_at']) if row.get('updated_at') else datetime.now()
-        locked_until = datetime.fromisoformat(row['locked_until']) if row.get('locked_until') else None
-        last_login = datetime.fromisoformat(row['last_login']) if row.get('last_login') else None
+        # Convertir datetime (PostgreSQL retorna datetime objects, SQLite retorna strings)
+        def parse_datetime(value):
+            if value is None:
+                return None
+            if isinstance(value, datetime):
+                return value
+            if isinstance(value, str):
+                return datetime.fromisoformat(value)
+            return None
+        
+        created_at = parse_datetime(row.get('created_at')) or datetime.now()
+        updated_at = parse_datetime(row.get('updated_at')) or datetime.now()
+        locked_until = parse_datetime(row.get('locked_until'))
+        last_login = parse_datetime(row.get('last_login'))
         
         # Log para debugging del password_hash
         password_hash = row['password_hash']
