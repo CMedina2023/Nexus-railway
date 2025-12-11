@@ -1,204 +1,170 @@
-# ⚡ INICIO RÁPIDO - DESPLIEGUE EN RENDER
+# 🎯 INICIO RÁPIDO - Railway Deploy
 
-> **Guía ultra-rápida para desplegar Nexus AI en Render en 15 minutos**
-
----
-
-## ✅ TU PROYECTO ESTÁ LISTO
-
-**Todos los archivos de configuración ya están creados.**  
-Solo necesitas seguir estos pasos.
-
----
-
-## 🚀 5 PASOS PARA DESPLEGAR
-
-### 1️⃣ GENERAR CLAVES (2 minutos)
+## 📦 Paso 1: Preparar el código
 
 ```bash
-python scripts/generar_claves.py
-```
+# Asegúrate de estar en la rama correcta
+git status
 
-**Guarda las claves** que aparecen (las necesitarás en el paso 4).
-
----
-
-### 2️⃣ SUBIR A GITHUB (3 minutos)
-
-```bash
+# Commit y push de todos los cambios
 git add .
-git commit -m "Preparar para despliegue en Render"
+git commit -m "Configure for Railway deployment"
 git push origin main
 ```
 
-Si no tienes repositorio en GitHub:
-1. Ve a [github.com](https://github.com) → New repository
-2. Crea el repositorio
-3. Ejecuta los comandos que GitHub te muestra
+## 🔑 Paso 2: Generar claves secretas
 
----
-
-### 3️⃣ CREAR BASE DE DATOS EN RENDER (3 minutos)
-
-1. Ve a [render.com](https://render.com) → **Sign Up** (con GitHub)
-2. Click en **"New +"** → **"PostgreSQL"**
-3. Configura:
-   - Name: `nexus-ai-db`
-   - Plan: **Free**
-4. Click en **"Create Database"**
-5. **Copia la "Internal Database URL"** (la necesitarás en el paso 4)
-
----
-
-### 4️⃣ CREAR WEB SERVICE EN RENDER (5 minutos)
-
-1. Click en **"New +"** → **"Web Service"**
-2. Conecta tu repositorio de GitHub
-3. Configura:
-   - Name: `nexus-ai`
-   - Build Command: `chmod +x build.sh && ./build.sh`
-   - Start Command: `gunicorn -w 4 -b 0.0.0.0:$PORT run:app`
-   - Plan: **Free**
-
-4. **Agregar Variables de Entorno** (scroll hacia abajo):
-
-   Click en **"Add Environment Variable"** para cada una:
-
-   | Key | Value |
-   |-----|-------|
-   | `DATABASE_URL` | (URL que copiaste en paso 3) |
-   | `GOOGLE_API_KEY` | (Tu API Key de Google) |
-   | `SECRET_KEY` | (Primera clave del paso 1) |
-   | `ENCRYPTION_KEY` | (Segunda clave del paso 1) |
-   | `FLASK_ENV` | `production` |
-   | `SESSION_COOKIE_SECURE` | `True` |
-
-5. Click en **"Create Web Service"**
-
----
-
-### 5️⃣ CREAR USUARIO ADMIN (2 minutos)
-
-Espera a que el build termine (5-10 min). Cuando veas **"Live"** en verde:
-
-1. Ve a tu Web Service → **"Shell"**
-2. Click en **"Launch Shell"**
-3. Ejecuta:
-
+Ejecuta este comando para generar SECRET_KEY:
 ```bash
-python scripts/init_auth.py
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
 ```
 
-4. Sigue las instrucciones para crear tu usuario admin
+Ejecuta este comando para generar ENCRYPTION_KEY:
+```bash
+python -c "from cryptography.fernet import Fernet; print('ENCRYPTION_KEY=' + Fernet.generate_key().decode())"
+```
+
+**💾 GUARDA ESTAS CLAVES**, las necesitarás en Railway.
+
+## 🚂 Paso 3: Crear proyecto en Railway
+
+1. Abre tu navegador en: https://railway.app/dashboard
+2. Click en **"New Project"**
+3. Selecciona **"Deploy from GitHub repo"**
+4. Busca y selecciona **"Nexus-railway"**
+5. Espera a que termine el primer deploy (probablemente fallará, ¡es normal!)
+
+## 🗄️ Paso 4: Agregar PostgreSQL
+
+1. En tu proyecto de Railway, click en **"+ New"**
+2. Selecciona **"Database"**
+3. Click en **"Add PostgreSQL"**
+4. Espera unos segundos a que se active
+
+## ⚙️ Paso 5: Configurar variables de entorno
+
+1. Click en tu servicio **web** (no en PostgreSQL)
+2. Ve a la pestaña **"Variables"**
+3. Click en **"+ New Variable"**
+4. Agrega estas 3 variables (usa las que generaste en Paso 2):
+
+```
+GOOGLE_API_KEY=tu_google_api_key_aqui
+SECRET_KEY=tu_secret_key_generada
+ENCRYPTION_KEY=tu_encryption_key_generada
+```
+
+5. Click en **"Add"** para cada una
+
+### ¿Dónde conseguir GOOGLE_API_KEY?
+- Ve a: https://aistudio.google.com/app/apikey
+- Click "Create API Key"
+- Copia la clave
+
+### Opcional: Variables adicionales recomendadas
+
+```
+FLASK_ENV=production
+SESSION_COOKIE_SECURE=True
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+```
+
+## 🌐 Paso 6: Generar dominio público
+
+1. En tu servicio web, ve a **"Settings"**
+2. Scroll hasta **"Networking"**
+3. Click en **"Generate Domain"**
+4. Copia la URL (algo como: `https://nexus-railway-production.up.railway.app`)
+
+## ✅ Paso 7: Redeploy y verificar
+
+1. Ve a la pestaña **"Deployments"**
+2. Si el último deploy falló, click en **"Deploy"** (menú de 3 puntos)
+3. Selecciona **"Redeploy"**
+4. Espera a que termine (mira los logs)
+5. Busca este mensaje en los logs:
+   ```
+   [INFO] Listening at: http://0.0.0.0:XXXX
+   ```
+6. Abre la URL de tu app en el navegador
+7. ✅ ¡Deberías ver la página de login de Nexus AI!
+
+## 👤 Paso 8: Crear usuario admin
+
+### Opción A: Desde Railway Dashboard
+
+1. En tu servicio web, ve a **"Settings"**
+2. Scroll hasta **"Service"**
+3. Click en **"Open Shell"**
+4. Ejecuta:
+   ```bash
+   python scripts/make_admin.py
+   ```
+5. Sigue las instrucciones en pantalla
+
+### Opción B: Desde Railway CLI
+
+```bash
+# Instalar Railway CLI (solo una vez)
+npm install -g @railway/cli
+
+# Login
+railway login
+
+# Vincular al proyecto
+railway link
+
+# Ejecutar script
+railway run python scripts/make_admin.py
+```
+
+## 🎉 ¡Listo!
+
+Tu aplicación Nexus AI debería estar corriendo en Railway.
+
+### URLs importantes:
+- **Tu app:** https://tu-proyecto.up.railway.app
+- **Railway Dashboard:** https://railway.app/project/[tu-proyecto]
+
+### Verificar que todo funciona:
+- [ ] La página de login carga
+- [ ] Puedes hacer login con el usuario admin
+- [ ] El dashboard muestra sin errores
+- [ ] Puedes generar historias de usuario (test Gemini)
+- [ ] Los PDFs se generan correctamente
+
+## 🆘 ¿Problemas?
+
+### El deploy falla
+- Verifica los logs en Railway → Deployments
+- Confirma que todas las variables de entorno están configuradas
+- Asegúrate de que PostgreSQL está activo
+
+### Error de conexión a base de datos
+- Verifica que PostgreSQL esté en el mismo proyecto
+- Confirma que `DATABASE_URL` aparece en las variables (automática)
+
+### Error "$PORT is not valid"
+- ✅ Ya está solucionado en tu código
+- Si persiste, verifica que `app/core/config.py` tenga:
+  ```python
+  FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', '5000')))
+  ```
+
+### La app no carga
+- Verifica que el dominio esté generado
+- Espera 1-2 minutos después del deploy
+- Verifica los logs para ver errores
+
+## 📚 Más información
+
+Para detalles completos, consulta:
+- **RAILWAY_DEPLOY.md** - Guía completa paso a paso
+- **RAILWAY_CHECKLIST.md** - Checklist detallado
+- **RAILWAY_RESUMEN.md** - Resumen de cambios
 
 ---
 
-## ✅ ¡LISTO!
+**¡Éxito con tu deploy!** 🚀
 
-Tu aplicación está en: `https://tu-app.onrender.com`
-
-**Prueba**:
-1. Accede a la URL
-2. Inicia sesión con tu usuario admin
-3. Sube un documento y genera una historia
-
----
-
-## 🆘 ¿PROBLEMAS?
-
-### Error: "Application failed to start"
-→ Ve a **Logs** en Render y busca el error en rojo  
-→ Verifica que todas las variables de entorno estén configuradas
-
-### Error: "502 Bad Gateway"
-→ Verifica que el Start Command sea exactamente:  
-`gunicorn -w 4 -b 0.0.0.0:$PORT run:app`
-
-### Error: "Database connection failed"
-→ Verifica que DATABASE_URL sea la **Internal** (no External)
-
-### Más ayuda
-→ Lee la guía completa: `GUIA_DESPLIEGUE_RENDER.md`
-
----
-
-## 📚 DOCUMENTACIÓN COMPLETA
-
-Si necesitas más detalles:
-
-- **Principiantes**: `GUIA_DESPLIEGUE_RENDER.md` (paso a paso detallado)
-- **Checklist**: `CHECKLIST_DESPLIEGUE.md` (lista de verificación)
-- **Referencia**: `DEPLOY_README.md` (comandos y tablas)
-
----
-
-## 🔑 ¿CÓMO OBTENER GOOGLE API KEY?
-
-1. Ve a: https://makersuite.google.com/app/apikey
-2. Inicia sesión con Google
-3. Click en **"Create API Key"**
-4. Copia la clave
-
----
-
-## 💡 TIPS
-
-### Mantener la App Activa (Plan Gratuito)
-
-El plan gratuito "duerme" la app después de 15 min sin uso.
-
-**Solución**: Usa [UptimeRobot](https://uptimerobot.com/) (gratis)
-- Crea una cuenta
-- Agrega tu URL de Render
-- Configura ping cada 5 minutos
-
-### Hacer Backups
-
-El plan gratuito NO incluye backups automáticos.
-
-**Solución**: Haz backups manuales semanales
-1. Ve a tu PostgreSQL database en Render
-2. Copia la "External Database URL"
-3. Ejecuta: `pg_dump "URL" > backup.sql`
-
----
-
-## 🎯 CHECKLIST RÁPIDO
-
-Antes de empezar:
-
-- [ ] Python instalado
-- [ ] Git instalado
-- [ ] Cuenta de GitHub
-- [ ] Código en GitHub
-- [ ] Google API Key obtenida
-
-Durante el despliegue:
-
-- [ ] Claves generadas
-- [ ] Base de datos PostgreSQL creada
-- [ ] Web Service creado
-- [ ] Variables de entorno configuradas
-- [ ] Build completado (status "Live")
-- [ ] Usuario admin creado
-
-Verificación:
-
-- [ ] URL accesible
-- [ ] Login funciona
-- [ ] Generar historia funciona
-
----
-
-## 📞 SOPORTE
-
-- 📖 Guía completa: `GUIA_DESPLIEGUE_RENDER.md`
-- ✅ Checklist: `CHECKLIST_DESPLIEGUE.md`
-- 🔐 Generar claves: `GENERAR_CLAVES.md`
-- 📚 Render Docs: https://render.com/docs
-
----
-
-
-*Tiempo total estimado: 15 minutos*
-
+Si tienes dudas, revisa los logs en Railway o consulta la documentación completa.

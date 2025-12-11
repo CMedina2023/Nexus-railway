@@ -1,0 +1,44 @@
+# Archivos y directorios que no se deben incluir en el deploy
+
+# Tests
+tests/
+*.pyc
+__pycache__/
+
+# Documentación
+.docs/
+docs/
+mockups/
+README.md
+
+# Archivos locales
+.env
+.env.local
+nexus_ai.db
+*.db
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# Backups
+backups/
+
+# Temporal
+temp_uploads/
+sessions/
+*.log
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Render config (no necesario para Railway)
+render.yaml
+Dockerfile
