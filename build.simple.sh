@@ -2,10 +2,7 @@
 # exit on error
 set -o errexit
 
-echo "==> Instalando Playwright (solo navegador)..."
-# Instalar solo el navegador sin dependencias del sistema
-# Esto evita errores de permisos
-playwright install chromium --with-deps || playwright install chromium || echo "Playwright install failed, continuing..."
+echo "==> Build simple para Railway (sin Playwright)"
 
 echo "==> Creando directorios necesarios..."
 mkdir -p temp_uploads
@@ -27,8 +24,7 @@ try:
     logger.info('Base de datos inicializada correctamente')
 except Exception as e:
     logger.error(f'Error inicializando base de datos: {e}')
-    # No raise para no detener el build completo
-    logger.warning('Continuando a pesar del error...')
+    logger.warning('Continuando sin inicializar BD (se creará en runtime)...')
 "
 
 echo "==> Build completado exitosamente"
