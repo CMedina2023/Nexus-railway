@@ -36,7 +36,7 @@ playwright>=1.40.0
 
 # Servidor de producción
 gunicorn>=21.2.0
-gevent==23.9.1
+eventlet>=0.33.3
 
 # Base de datos PostgreSQL (para producción)
 psycopg2-binary>=2.9.9
