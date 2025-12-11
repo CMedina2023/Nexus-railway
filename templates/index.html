@@ -10878,8 +10878,16 @@
             }
         }
 
+        // ✅ FIX: Variable para rastrear si los listeners ya fueron configurados
+        let paginationListenersSetup = false;
+        
         // Event listeners para paginación (usando event delegation)
         function setupPaginationListeners() {
+            // ✅ FIX: Evitar configurar múltiples veces los event listeners
+            if (paginationListenersSetup) {
+                return;
+            }
+            
             // Paginación de casos de prueba
             const testCasesPrev = document.getElementById('test-cases-prev');
             const testCasesNext = document.getElementById('test-cases-next');
@@ -10925,6 +10933,9 @@
                     }
                 };
             }
+            
+            // ✅ FIX: Marcar como configurado
+            paginationListenersSetup = true;
         }
 
         function getStatusBadge(status) {
@@ -10973,6 +10984,10 @@
                 guiaHeader.style.display = 'block';
             }
             
+            // ✅ FIX: Mostrar la sección de proyectos nuevamente
+            if (projectsSection) {
+                projectsSection.style.display = 'block';
+            }
             
             // Ocultar botón de descarga
             const downloadButton = document.getElementById('download-button');
@@ -10989,6 +11004,7 @@
             // Limpiar widgets personalizados
             if (typeof activeWidgets !== 'undefined') {
                 activeWidgets = [];
+                widgetDataCache = {}; // ✅ FIX: Limpiar también el cache de datos de widgets
                 if (typeof renderActiveWidgets === 'function') {
                     renderActiveWidgets();
                 }
@@ -10996,15 +11012,36 @@
             
             // Limpiar filtros y resetear pasos
             reportActiveFilters = [];
+            reportActiveFiltersTestCases = []; // ✅ FIX: Limpiar filtros de test cases
+            reportActiveFiltersBugs = []; // ✅ FIX: Limpiar filtros de bugs
             reportFilterCount = 0;
             reportAvailableFields = [];
-            const filtersGrid = document.getElementById('filters-grid');
-            if (filtersGrid) {
-                filtersGrid.innerHTML = '';
+            reportAvailableFieldsTestCases = []; // ✅ FIX: Limpiar campos disponibles de test cases
+            reportAvailableFieldsBugs = []; // ✅ FIX: Limpiar campos disponibles de bugs
+            
+            // Limpiar grids de filtros para ambas pestañas
+            const filtersGridTestCase = document.getElementById('filters-grid-test-case');
+            const filtersGridBug = document.getElementById('filters-grid-bug');
+            if (filtersGridTestCase) {
+                filtersGridTestCase.innerHTML = '';
             }
+            if (filtersGridBug) {
+                filtersGridBug.innerHTML = '';
+            }
+            
             const activeFiltersContainer = document.getElementById('active-report-filters');
             if (activeFiltersContainer) {
-                activeFiltersContainer.innerHTML = '';
+                activeFiltersContainer.innerHTML = '<div style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Filtros Activos:</div>';
+            }
+            
+            // Resetear contadores de filtros en las pestañas
+            const testCaseFilterCount = document.getElementById('test-case-filter-count');
+            const bugFilterCount = document.getElementById('bug-filter-count');
+            if (testCaseFilterCount) {
+                testCaseFilterCount.textContent = '0';
+            }
+            if (bugFilterCount) {
+                bugFilterCount.textContent = '0';
             }
             
             // Resetear pasos
@@ -11035,6 +11072,28 @@
                 metricsContent.style.display = 'none';
             }
             
+            // Resetear proyecto actual
+            currentProjectKey = null;
+            
+            // ✅ FIX: Resetear la bandera de paginación para permitir reconfiguración
+            paginationListenersSetup = false;
+            
+            // Resetear datos de paginación
+            testCasesPagination = {
+                currentPage: 1,
+                itemsPerPage: 10,
+                totalItems: 0,
+                data: [],
+                totals: null
+            };
+            
+            defectsPagination = {
+                currentPage: 1,
+                itemsPerPage: 10,
+                totalItems: 0,
+                data: []
+            };
+            
             // Destruir gráficos
             if (grTestCasesChart) {
                 grTestCasesChart.destroy();
@@ -11044,6 +11103,15 @@
                 grBugsSeverityChart.destroy();
                 grBugsSeverityChart = null;
             }
+            
+            // Destruir gráficos de widgets
+            activeWidgets.forEach(widgetId => {
+                const chartVar = window[`widgetChart_${widgetId}`];
+                if (chartVar) {
+                    chartVar.destroy();
+                    window[`widgetChart_${widgetId}`] = null;
+                }
+            });
         }
 
         // ============================================

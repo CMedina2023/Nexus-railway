@@ -6,10 +6,9 @@ echo "==> Instalando dependencias de Python..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "==> Instalando Playwright (solo navegador)..."
-# Instalar solo el navegador sin dependencias del sistema
-# Esto evita el error de permisos en Render
-PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium --no-shell
+echo "==> Instalando Playwright con dependencias del sistema..."
+# Instalar chromium con todas las dependencias necesarias
+playwright install --with-deps chromium
 
 echo "==> Creando directorios necesarios..."
 mkdir -p temp_uploads
