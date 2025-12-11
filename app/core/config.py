@@ -77,7 +77,8 @@ class Config:
     # ============================================================================
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'temp_uploads')
     MAX_UPLOAD_SIZE_MB = int(os.getenv('MAX_UPLOAD_SIZE_MB', '16'))
-    FLASK_PORT = int(os.getenv('FLASK_PORT', '5000'))
+    # Railway usa PORT, Render y otros usan FLASK_PORT
+    FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', '5000')))
     FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
     SECRET_KEY = os.getenv('SECRET_KEY', '')  # Mínimo 32 caracteres aleatorios
     
