@@ -3,13 +3,12 @@ Repositorio para Historias de Usuario
 Responsabilidad única: Acceso a datos de historias generadas (SRP)
 """
 import logging
-import sqlite3
 import json
 from typing import List, Optional
 from datetime import datetime
 
 from app.models.user_story import UserStory
-from app.database.db import get_db_connection
+from app.database.db import get_db_connection, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +42,15 @@ class UserStoryRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            # Detectar tipo de base de datos
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 INSERT INTO user_stories (
                     user_id, project_key, area, story_title, story_content,
                     jira_issue_key, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 story.user_id,
                 story.project_key,
@@ -65,7 +68,7 @@ class UserStoryRepository:
             logger.info(f"Historia creada: ID={story.id}, user_id={story.user_id}, project={story.project_key}")
             return story
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al crear historia: {e}", exc_info=True)
             raise
@@ -78,11 +81,14 @@ class UserStoryRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
                        jira_issue_key, created_at, updated_at
                 FROM user_stories
-                WHERE id = ?
+                WHERE id = {placeholder}
             ''', (story_id,))
             
             row = cursor.fetchone()
@@ -108,11 +114,14 @@ class UserStoryRepository:
         cursor = conn.cursor()
         
         try:
-            query = '''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            query = f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
                        jira_issue_key, created_at, updated_at
                 FROM user_stories
-                WHERE user_id = ?
+                WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
             '''
             
@@ -165,7 +174,9 @@ class UserStoryRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('SELECT story_content FROM user_stories WHERE user_id = ?', (user_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'SELECT story_content FROM user_stories WHERE user_id = {placeholder}', (user_id,))
             rows = cursor.fetchall()
             
             total_count = 0
@@ -215,11 +226,14 @@ class UserStoryRepository:
         try:
             story.updated_at = datetime.now()
             
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 UPDATE user_stories
-                SET story_title = ?, story_content = ?, jira_issue_key = ?,
-                    updated_at = ?
-                WHERE id = ?
+                SET story_title = {placeholder}, story_content = {placeholder}, jira_issue_key = {placeholder},
+                    updated_at = {placeholder}
+                WHERE id = {placeholder}
             ''', (
                 story.story_title,
                 story.story_content,
@@ -232,7 +246,7 @@ class UserStoryRepository:
             logger.info(f"Historia actualizada: ID={story.id}")
             return story
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al actualizar historia: {e}", exc_info=True)
             raise
@@ -245,7 +259,9 @@ class UserStoryRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('DELETE FROM user_stories WHERE id = ?', (story_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'DELETE FROM user_stories WHERE id = {placeholder}', (story_id,))
             conn.commit()
             
             deleted = cursor.rowcount > 0
@@ -253,7 +269,7 @@ class UserStoryRepository:
                 logger.info(f"Historia eliminada: ID={story_id}")
             return deleted
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar historia: {e}", exc_info=True)
             raise
@@ -276,7 +292,7 @@ class UserStoryRepository:
             conn.commit()
             logger.info(f"Se eliminaron {deleted_count} historias de usuario")
             return deleted_count
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar todas las historias: {e}", exc_info=True)
             raise

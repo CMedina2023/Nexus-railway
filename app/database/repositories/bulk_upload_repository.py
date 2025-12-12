@@ -3,12 +3,11 @@ Repositorio para Cargas Masivas
 Responsabilidad única: Acceso a datos de cargas masivas (SRP)
 """
 import logging
-import sqlite3
 from typing import List, Optional
 from datetime import datetime
 
 from app.models.bulk_upload import BulkUpload
-from app.database.db import get_db_connection
+from app.database.db import get_db_connection, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +41,15 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 INSERT INTO bulk_uploads (
                     user_id, project_key, upload_type, total_items,
                     successful_items, failed_items, upload_details,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 upload.user_id,
                 upload.project_key,
@@ -66,7 +68,7 @@ class BulkUploadRepository:
             logger.info(f"Carga masiva creada: ID={upload.id}, user_id={upload.user_id}, type={upload.upload_type}, total={upload.total_items}")
             return upload
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al crear carga masiva: {e}", exc_info=True)
             raise
@@ -79,12 +81,15 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 SELECT id, user_id, project_key, upload_type, total_items,
                        successful_items, failed_items, upload_details,
                        created_at, updated_at
                 FROM bulk_uploads
-                WHERE id = ?
+                WHERE id = {placeholder}
             ''', (upload_id,))
             
             row = cursor.fetchone()
@@ -110,12 +115,15 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
-            query = '''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            query = f'''
                 SELECT id, user_id, project_key, upload_type, total_items,
                        successful_items, failed_items, upload_details,
                        created_at, updated_at
                 FROM bulk_uploads
-                WHERE user_id = ?
+                WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
             '''
             
@@ -175,11 +183,14 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
             if upload_type:
-                cursor.execute('SELECT COUNT(*) FROM bulk_uploads WHERE user_id = ? AND upload_type = ?', 
+                cursor.execute(f'SELECT COUNT(*) FROM bulk_uploads WHERE user_id = {placeholder} AND upload_type = {placeholder}', 
                              (user_id, upload_type))
             else:
-                cursor.execute('SELECT COUNT(*) FROM bulk_uploads WHERE user_id = ?', (user_id,))
+                cursor.execute(f'SELECT COUNT(*) FROM bulk_uploads WHERE user_id = {placeholder}', (user_id,))
             return cursor.fetchone()[0]
         finally:
             conn.close()
@@ -195,8 +206,11 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
             if upload_type:
-                cursor.execute('SELECT COUNT(*) FROM bulk_uploads WHERE upload_type = ?', (upload_type,))
+                cursor.execute(f'SELECT COUNT(*) FROM bulk_uploads WHERE upload_type = {placeholder}', (upload_type,))
             else:
                 cursor.execute('SELECT COUNT(*) FROM bulk_uploads')
             return cursor.fetchone()[0]
@@ -211,11 +225,14 @@ class BulkUploadRepository:
         try:
             upload.updated_at = datetime.now()
             
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 UPDATE bulk_uploads
-                SET successful_items = ?, failed_items = ?, upload_details = ?,
-                    updated_at = ?
-                WHERE id = ?
+                SET successful_items = {placeholder}, failed_items = {placeholder}, upload_details = {placeholder},
+                    updated_at = {placeholder}
+                WHERE id = {placeholder}
             ''', (
                 upload.successful_items,
                 upload.failed_items,
@@ -228,7 +245,7 @@ class BulkUploadRepository:
             logger.info(f"Carga masiva actualizada: ID={upload.id}")
             return upload
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al actualizar carga masiva: {e}", exc_info=True)
             raise
@@ -241,7 +258,9 @@ class BulkUploadRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('DELETE FROM bulk_uploads WHERE id = ?', (upload_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'DELETE FROM bulk_uploads WHERE id = {placeholder}', (upload_id,))
             conn.commit()
             
             deleted = cursor.rowcount > 0
@@ -249,7 +268,7 @@ class BulkUploadRepository:
                 logger.info(f"Carga masiva eliminada: ID={upload_id}")
             return deleted
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar carga masiva: {e}", exc_info=True)
             raise
@@ -272,7 +291,7 @@ class BulkUploadRepository:
             conn.commit()
             logger.info(f"Se eliminaron {deleted_count} cargas masivas")
             return deleted_count
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar todas las cargas masivas: {e}", exc_info=True)
             raise

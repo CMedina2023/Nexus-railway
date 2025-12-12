@@ -3,13 +3,12 @@ Repositorio para Casos de Prueba
 Responsabilidad única: Acceso a datos de casos de prueba generados (SRP)
 """
 import logging
-import sqlite3
 import json
 from typing import List, Optional
 from datetime import datetime
 
 from app.models.test_case import TestCase
-from app.database.db import get_db_connection
+from app.database.db import get_db_connection, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +42,14 @@ class TestCaseRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 INSERT INTO test_cases (
                     user_id, project_key, area, test_case_title, test_case_content,
                     jira_issue_key, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 test_case.user_id,
                 test_case.project_key,
@@ -65,7 +67,7 @@ class TestCaseRepository:
             logger.info(f"Caso de prueba creado: ID={test_case.id}, user_id={test_case.user_id}, project={test_case.project_key}")
             return test_case
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al crear caso de prueba: {e}", exc_info=True)
             raise
@@ -78,11 +80,14 @@ class TestCaseRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 SELECT id, user_id, project_key, area, test_case_title, test_case_content,
                        jira_issue_key, created_at, updated_at
                 FROM test_cases
-                WHERE id = ?
+                WHERE id = {placeholder}
             ''', (test_case_id,))
             
             row = cursor.fetchone()
@@ -108,11 +113,14 @@ class TestCaseRepository:
         cursor = conn.cursor()
         
         try:
-            query = '''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            query = f'''
                 SELECT id, user_id, project_key, area, test_case_title, test_case_content,
                        jira_issue_key, created_at, updated_at
                 FROM test_cases
-                WHERE user_id = ?
+                WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
             '''
             
@@ -165,7 +173,9 @@ class TestCaseRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('SELECT test_case_content FROM test_cases WHERE user_id = ?', (user_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'SELECT test_case_content FROM test_cases WHERE user_id = {placeholder}', (user_id,))
             rows = cursor.fetchall()
             
             total_count = 0
@@ -215,11 +225,14 @@ class TestCaseRepository:
         try:
             test_case.updated_at = datetime.now()
             
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 UPDATE test_cases
-                SET test_case_title = ?, test_case_content = ?, jira_issue_key = ?,
-                    updated_at = ?
-                WHERE id = ?
+                SET test_case_title = {placeholder}, test_case_content = {placeholder}, jira_issue_key = {placeholder},
+                    updated_at = {placeholder}
+                WHERE id = {placeholder}
             ''', (
                 test_case.test_case_title,
                 test_case.test_case_content,
@@ -232,7 +245,7 @@ class TestCaseRepository:
             logger.info(f"Caso de prueba actualizado: ID={test_case.id}")
             return test_case
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al actualizar caso de prueba: {e}", exc_info=True)
             raise
@@ -245,7 +258,9 @@ class TestCaseRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('DELETE FROM test_cases WHERE id = ?', (test_case_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'DELETE FROM test_cases WHERE id = {placeholder}', (test_case_id,))
             conn.commit()
             
             deleted = cursor.rowcount > 0
@@ -253,7 +268,7 @@ class TestCaseRepository:
                 logger.info(f"Caso de prueba eliminado: ID={test_case_id}")
             return deleted
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar caso de prueba: {e}", exc_info=True)
             raise
@@ -276,7 +291,7 @@ class TestCaseRepository:
             conn.commit()
             logger.info(f"Se eliminaron {deleted_count} casos de prueba")
             return deleted_count
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar todos los casos de prueba: {e}", exc_info=True)
             raise
