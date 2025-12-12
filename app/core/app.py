@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict
 import time
-from playwright.sync_api import sync_playwright
+from weasyprint import HTML, CSS
 
 # Imports de la estructura modular
 from app.core.config import Config
@@ -3022,108 +3022,65 @@ def jira_download_report():
                                      widget_data=widget_data,
                                      date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        # Generar PDF usando Playwright
+        # Generar PDF usando WeasyPrint
         logger.info(f"Iniciando generación de PDF para proyecto {project_key}")
         
-        with sync_playwright() as p:
-            logger.info("Lanzando navegador Chromium...")
+        # Crear objeto HTML desde el string renderizado
+        # base_url='.' permite cargar recursos relativos si los hubiera
+        html = HTML(string=html_content, base_url='.')
+        
+        # Definir estilos CSS para landscape (A4 horizontal)
+        css = CSS(string='''
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+        ''')
+        
+        # Generar PDF en memoria
+        logger.info("Generando PDF...")
+        pdf_buffer = html.write_pdf(stylesheets=[css])
+        
+        logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
             
-            # Configuración del navegador con opciones adicionales para Windows
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu'
-                ]
+        # Guardar reporte en base de datos local para métricas por usuario
+        try:
+            user_id = get_current_user_id()
+            report_repo = JiraReportRepository()
+            
+            # Crear registro del reporte descargado
+            jira_report = JiraReport(
+                user_id=user_id,
+                project_key=project_key,
+                report_type='pdf_report',  # Tipo específico para reportes PDF descargados
+                report_title=f'Reporte PDF - {project_key}',
+                report_content=json.dumps({
+                    'total_test_cases': report.get('total_test_cases', 0),
+                    'total_defects': report.get('total_defects', 0),
+                    'filters': filters,
+                    'active_widgets': active_widgets,
+                    'generated_at': datetime.now().isoformat()
+                }, ensure_ascii=False),
+                jira_issue_key='N/A'  # Reportes PDF son locales, no se suben a Jira
             )
+            report_repo.create(jira_report)
+            logger.info(f"Reporte PDF guardado en BD local para user_id={user_id}, proyecto={project_key}")
+        except Exception as e:
+            logger.error(f"Error al guardar reporte PDF en BD local: {e}", exc_info=True)
+            # No fallar la operación si falla el guardado en BD local
+        
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=reporte_jira_{project_key}_{datetime.now().strftime("%Y%m%d")}.pdf'
+            }
+        )
             
-            logger.info("Navegador lanzado, creando nueva página...")
-            page = browser.new_page()
-            
-            # Configurar timeout más corto
-            page.set_default_timeout(30000)  # 30 segundos
-            
-            # Cargar el HTML en la página
-            logger.info("Cargando contenido HTML...")
-            try:
-                page.set_content(html_content, wait_until='domcontentloaded', timeout=15000)
-            except Exception as load_error:
-                logger.warning(f"Advertencia al cargar contenido: {load_error}")
-                # Intentar con un método más simple
-                page.set_content(html_content)
-            
-            # Esperar a que los gráficos se rendericen (si hay imágenes)
-            if chart_images:
-                logger.info("Esperando a que se carguen las imágenes...")
-                page.wait_for_timeout(1500)  # Esperar 1.5 segundos para que las imágenes se carguen
-            else:
-                page.wait_for_timeout(500)  # Esperar medio segundo para renderizado básico
-            
-            # Generar PDF en formato landscape para que quepa en una sola página
-            logger.info("Generando PDF...")
-            pdf_buffer = page.pdf(
-                format='A4',
-                landscape=True,
-                print_background=True,
-                margin={'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'},
-                prefer_css_page_size=False
-            )
-            
-            logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
-            browser.close()
-            
-            # Guardar reporte en base de datos local para métricas por usuario
-            try:
-                user_id = get_current_user_id()
-                report_repo = JiraReportRepository()
-                
-                # Crear registro del reporte descargado
-                jira_report = JiraReport(
-                    user_id=user_id,
-                    project_key=project_key,
-                    report_type='pdf_report',  # Tipo específico para reportes PDF descargados
-                    report_title=f'Reporte PDF - {project_key}',
-                    report_content=json.dumps({
-                        'total_test_cases': report.get('total_test_cases', 0),
-                        'total_defects': report.get('total_defects', 0),
-                        'filters': filters,
-                        'active_widgets': active_widgets,
-                        'generated_at': datetime.now().isoformat()
-                    }, ensure_ascii=False),
-                    jira_issue_key='N/A'  # Reportes PDF son locales, no se suben a Jira
-                )
-                report_repo.create(jira_report)
-                logger.info(f"Reporte PDF guardado en BD local para user_id={user_id}, proyecto={project_key}")
-            except Exception as e:
-                logger.error(f"Error al guardar reporte PDF en BD local: {e}", exc_info=True)
-                # No fallar la operación si falla el guardado en BD local
-            
-            return Response(
-                pdf_buffer,
-                mimetype='application/pdf',
-                headers={
-                    'Content-Disposition': f'attachment; filename=reporte_jira_{project_key}_{datetime.now().strftime("%Y%m%d")}.pdf'
-                }
-            )
-            
-    except ImportError as ie:
-        logger.error(f"ImportError - Playwright no está instalado: {ie}", exc_info=True)
-        return jsonify({"success": False, "error": "Playwright no está instalado. Instala con: pip install playwright && playwright install chromium"}), 500
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Error al generar reporte de Jira con Playwright: {error_msg}", exc_info=True)
-        
-        # Mensajes de error más específicos
-        if "Target page, context or browser has been closed" in error_msg:
-            error_msg = "El navegador se cerró inesperadamente. Intenta nuevamente."
-        elif "Executable doesn't exist" in error_msg or "Failed to launch" in error_msg:
-            error_msg = "Chromium no está instalado. Ejecuta: playwright install chromium"
-        elif "timeout" in error_msg.lower():
-            error_msg = "Tiempo de espera agotado al generar el PDF. Intenta con menos datos."
-        
-        return jsonify({"success": False, "error": error_msg}), 500
+        logger.error(f"Error al generar reporte de Jira con WeasyPrint: {error_msg}", exc_info=True)
+        return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
 
 
 @app.route('/api/metrics/download-report', methods=['POST'])
@@ -3149,82 +3106,38 @@ def metrics_download_report():
                                      chart_images=chart_images,
                                      date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        # Generar PDF usando Playwright
+        # Generar PDF usando WeasyPrint
         logger.info("Iniciando generación de PDF de métricas")
         
-        with sync_playwright() as p:
-            logger.info("Lanzando navegador Chromium...")
+        # Crear objeto HTML desde el string renderizado
+        html = HTML(string=html_content, base_url='.')
+        
+        # Definir estilos CSS para landscape (A4 horizontal)
+        css = CSS(string='''
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+        ''')
+        
+        # Generar PDF en memoria
+        logger.info("Generando PDF...")
+        pdf_buffer = html.write_pdf(stylesheets=[css])
+        
+        logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
             
-            # Configuración del navegador con opciones adicionales para Windows
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu'
-                ]
-            )
+        return Response(
+            pdf_buffer,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=metricas_nexus_ai_{datetime.now().strftime("%Y%m%d")}.pdf'
+            }
+        )
             
-            logger.info("Navegador lanzado, creando nueva página...")
-            page = browser.new_page()
-            
-            # Configurar timeout más corto
-            page.set_default_timeout(30000)  # 30 segundos
-            
-            # Cargar el HTML en la página
-            logger.info("Cargando contenido HTML...")
-            try:
-                page.set_content(html_content, wait_until='domcontentloaded', timeout=15000)
-            except Exception as load_error:
-                logger.warning(f"Advertencia al cargar contenido: {load_error}")
-                # Intentar con un método más simple
-                page.set_content(html_content)
-            
-            # Esperar a que los gráficos se rendericen (si hay imágenes)
-            if chart_images:
-                logger.info("Esperando a que se carguen las imágenes...")
-                page.wait_for_timeout(1500)
-            else:
-                page.wait_for_timeout(500)  # Esperar medio segundo para renderizado básico
-            
-            # Generar PDF en formato landscape
-            logger.info("Generando PDF...")
-            pdf_buffer = page.pdf(
-                format='A4',
-                landscape=True,
-                print_background=True,
-                margin={'top': '10mm', 'right': '10mm', 'bottom': '10mm', 'left': '10mm'},
-                prefer_css_page_size=False
-            )
-            
-            logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
-            browser.close()
-            
-            return Response(
-                pdf_buffer,
-                mimetype='application/pdf',
-                headers={
-                    'Content-Disposition': f'attachment; filename=metricas_nexus_ai_{datetime.now().strftime("%Y%m%d")}.pdf'
-                }
-            )
-            
-    except ImportError as ie:
-        logger.error(f"ImportError - Playwright no está instalado: {ie}", exc_info=True)
-        return jsonify({"success": False, "error": "Playwright no está instalado. Instala con: pip install playwright && playwright install chromium"}), 500
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Error al generar reporte de métricas con Playwright: {error_msg}", exc_info=True)
-        
-        # Mensajes de error más específicos
-        if "Target page, context or browser has been closed" in error_msg:
-            error_msg = "El navegador se cerró inesperadamente. Intenta nuevamente."
-        elif "Executable doesn't exist" in error_msg or "Failed to launch" in error_msg:
-            error_msg = "Chromium no está instalado. Ejecuta: playwright install chromium"
-        elif "timeout" in error_msg.lower():
-            error_msg = "Tiempo de espera agotado al generar el PDF. Intenta con menos datos."
-        
-        return jsonify({"success": False, "error": error_msg}), 500
+        logger.error(f"Error al generar reporte de métricas con WeasyPrint: {error_msg}", exc_info=True)
+        return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
 
 
 @app.route('/api/jira/download-template', methods=['GET'])
