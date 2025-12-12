@@ -3,12 +3,11 @@ Repositorio para Reportes de Jira
 Responsabilidad única: Acceso a datos de reportes creados en Jira (SRP)
 """
 import logging
-import sqlite3
 from typing import List, Optional
 from datetime import datetime
 
 from app.models.jira_report import JiraReport
-from app.database.db import get_db_connection
+from app.database.db import get_db_connection, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +41,15 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            # Detectar tipo de base de datos
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 INSERT INTO jira_reports (
                     user_id, project_key, report_type, report_title, report_content,
                     jira_issue_key, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 report.user_id,
                 report.project_key,
@@ -64,7 +67,7 @@ class JiraReportRepository:
             logger.info(f"Reporte creado: ID={report.id}, user_id={report.user_id}, type={report.report_type}, jira_key={report.jira_issue_key}")
             return report
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al crear reporte: {e}", exc_info=True)
             raise
@@ -77,11 +80,14 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 SELECT id, user_id, project_key, report_type, report_title, report_content,
                        jira_issue_key, created_at, updated_at
                 FROM jira_reports
-                WHERE id = ?
+                WHERE id = {placeholder}
             ''', (report_id,))
             
             row = cursor.fetchone()
@@ -107,11 +113,14 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
-            query = '''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            query = f'''
                 SELECT id, user_id, project_key, report_type, report_title, report_content,
                        jira_issue_key, created_at, updated_at
                 FROM jira_reports
-                WHERE user_id = ?
+                WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
             '''
             
@@ -170,11 +179,14 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
             if report_type:
-                cursor.execute('SELECT COUNT(*) FROM jira_reports WHERE user_id = ? AND report_type = ?', 
+                cursor.execute(f'SELECT COUNT(*) FROM jira_reports WHERE user_id = {placeholder} AND report_type = {placeholder}', 
                              (user_id, report_type))
             else:
-                cursor.execute('SELECT COUNT(*) FROM jira_reports WHERE user_id = ?', (user_id,))
+                cursor.execute(f'SELECT COUNT(*) FROM jira_reports WHERE user_id = {placeholder}', (user_id,))
             return cursor.fetchone()[0]
         finally:
             conn.close()
@@ -190,8 +202,11 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
             if report_type:
-                cursor.execute('SELECT COUNT(*) FROM jira_reports WHERE report_type = ?', (report_type,))
+                cursor.execute(f'SELECT COUNT(*) FROM jira_reports WHERE report_type = {placeholder}', (report_type,))
             else:
                 cursor.execute('SELECT COUNT(*) FROM jira_reports')
             return cursor.fetchone()[0]
@@ -206,10 +221,13 @@ class JiraReportRepository:
         try:
             report.updated_at = datetime.now()
             
-            cursor.execute('''
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            cursor.execute(f'''
                 UPDATE jira_reports
-                SET report_title = ?, report_content = ?, updated_at = ?
-                WHERE id = ?
+                SET report_title = {placeholder}, report_content = {placeholder}, updated_at = {placeholder}
+                WHERE id = {placeholder}
             ''', (
                 report.report_title,
                 report.report_content,
@@ -221,7 +239,7 @@ class JiraReportRepository:
             logger.info(f"Reporte actualizado: ID={report.id}")
             return report
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al actualizar reporte: {e}", exc_info=True)
             raise
@@ -234,7 +252,9 @@ class JiraReportRepository:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('DELETE FROM jira_reports WHERE id = ?', (report_id,))
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            cursor.execute(f'DELETE FROM jira_reports WHERE id = {placeholder}', (report_id,))
             conn.commit()
             
             deleted = cursor.rowcount > 0
@@ -242,7 +262,7 @@ class JiraReportRepository:
                 logger.info(f"Reporte eliminado: ID={report_id}")
             return deleted
             
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar reporte: {e}", exc_info=True)
             raise
@@ -265,7 +285,7 @@ class JiraReportRepository:
             conn.commit()
             logger.info(f"Se eliminaron {deleted_count} reportes de Jira")
             return deleted_count
-        except sqlite3.Error as e:
+        except Exception as e:
             conn.rollback()
             logger.error(f"Error al eliminar todos los reportes: {e}", exc_info=True)
             raise

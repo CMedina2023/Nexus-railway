@@ -1,7 +1,0 @@
-CLAVES SECRETAS - NEXUS AI
-======================================================================
-
-SECRET_KEY=db771fad12cc76f124d5d49df12fb8a5c9f3b5d0ffae444fc2fa856ac9ba0323
-ENCRYPTION_KEY=uY8Hpl4rwgszaMnJ7_KR62KcqXndd4K1c0kTqUUHNyg=
-
-======================================================================
