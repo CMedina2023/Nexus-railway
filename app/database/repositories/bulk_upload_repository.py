@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.models.bulk_upload import BulkUpload
 from app.database.db import get_db_connection, get_db
+from app.database.query_adapter import parse_datetime_field
 
 logger = logging.getLogger(__name__)
 
@@ -309,8 +310,8 @@ class BulkUploadRepository:
             successful_items=row[5],
             failed_items=row[6],
             upload_details=row[7],
-            created_at=datetime.fromisoformat(row[8]) if row[8] else None,
-            updated_at=datetime.fromisoformat(row[9]) if row[9] else None
+            created_at=parse_datetime_field(row[8]),
+            updated_at=parse_datetime_field(row[9])
         )
 
 
