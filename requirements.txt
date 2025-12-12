@@ -31,7 +31,7 @@ cryptography>=41.0.0
 # Validación
 email-validator>=2.1.0
 
-# Playwright para generación de PDFs
+# Generación de PDFs
 weasyprint>=60.0.0
 
 # Servidor de producción

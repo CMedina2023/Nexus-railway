@@ -2,10 +2,7 @@
 # exit on error
 set -o errexit
 
-echo "==> Instalando Playwright (solo navegador)..."
-# Instalar solo el navegador sin dependencias del sistema
-# Esto evita errores de permisos
-playwright install chromium --with-deps || playwright install chromium || echo "Playwright install failed, continuing..."
+# (Playwright eliminado ya que se usa WeasyPrint)
 
 echo "==> Creando directorios necesarios..."
 mkdir -p temp_uploads
