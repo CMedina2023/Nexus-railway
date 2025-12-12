@@ -548,7 +548,8 @@ class IssueService:
             # Intentar convertir a ADF si el valor parece ser texto largo
             if len(field_value) > 50 or '\n' in field_value or '\t' in field_value:
                 # Convertir a ADF para campos de texto largo
-                logger.debug(f"Campo '{field_id}' detectado como requeridor de ADF (longitud: {len(field_value)}, tiene saltos de línea: {'\\n' in field_value})")
+                has_newlines = '\n' in field_value
+                logger.debug(f"Campo '{field_id}' detectado como requeridor de ADF (longitud: {len(field_value)}, tiene saltos de línea: {has_newlines})")
                 return self._format_description_to_adf(field_value)
         
         # Campo de tipo "option" (select/dropdown) - requiere formato {"name": "valor"} o {"id": "id"}
