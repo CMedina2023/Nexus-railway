@@ -9,6 +9,7 @@ from datetime import datetime
 
 from app.database.db import get_db
 from app.models.user import User
+from app.database.query_adapter import parse_datetime_field
 
 logger = logging.getLogger(__name__)
 
@@ -267,19 +268,10 @@ class UserRepository:
             active = active == 1
         
         # Convertir datetime (PostgreSQL retorna datetime objects, SQLite retorna strings)
-        def parse_datetime(value):
-            if value is None:
-                return None
-            if isinstance(value, datetime):
-                return value
-            if isinstance(value, str):
-                return datetime.fromisoformat(value)
-            return None
-        
-        created_at = parse_datetime(row.get('created_at')) or datetime.now()
-        updated_at = parse_datetime(row.get('updated_at')) or datetime.now()
-        locked_until = parse_datetime(row.get('locked_until'))
-        last_login = parse_datetime(row.get('last_login'))
+        created_at = parse_datetime_field(row.get('created_at')) or datetime.now()
+        updated_at = parse_datetime_field(row.get('updated_at')) or datetime.now()
+        locked_until = parse_datetime_field(row.get('locked_until'))
+        last_login = parse_datetime_field(row.get('last_login'))
         
         # Log para debugging del password_hash
         password_hash = row['password_hash']

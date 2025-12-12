@@ -9,6 +9,7 @@ from datetime import datetime
 
 from app.models.test_case import TestCase
 from app.database.db import get_db_connection, get_db
+from app.database.query_adapter import parse_datetime_field
 
 logger = logging.getLogger(__name__)
 
@@ -308,8 +309,8 @@ class TestCaseRepository:
             test_case_title=row[4],
             test_case_content=row[5],
             jira_issue_key=row[6],
-            created_at=datetime.fromisoformat(row[7]) if row[7] else None,
-            updated_at=datetime.fromisoformat(row[8]) if row[8] else None
+            created_at=parse_datetime_field(row[7]),
+            updated_at=parse_datetime_field(row[8])
         )
 
 

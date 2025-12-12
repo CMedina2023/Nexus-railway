@@ -3,7 +3,8 @@ Adaptador de consultas SQL para soportar múltiples bases de datos
 Responsabilidad única: Convertir placeholders entre SQLite y PostgreSQL
 """
 import re
-from typing import Tuple, Any
+from typing import Tuple, Any, Optional
+from datetime import datetime
 
 
 def adapt_query(query: str, params: tuple, is_postgres: bool) -> Tuple[str, tuple]:
@@ -64,5 +65,41 @@ def adapt_query_dict(query: str, params: dict, is_postgres: bool) -> Tuple[str, 
         adapted_query = adapted_query.replace(f':{placeholder}', f'%({placeholder})s')
     
     return adapted_query, params
+
+
+def parse_datetime_field(value: Any) -> Optional[datetime]:
+    """
+    Convierte un valor de fecha de la base de datos a datetime
+    
+    Maneja tanto strings (SQLite) como objetos datetime (PostgreSQL)
+    
+    Args:
+        value: Valor de fecha desde la base de datos
+        
+    Returns:
+        datetime object o None si el valor es None
+    """
+    if value is None:
+        return None
+    
+    # Si ya es un datetime, devolverlo tal cual (PostgreSQL)
+    if isinstance(value, datetime):
+        return value
+    
+    # Si es un string, convertirlo (SQLite)
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value)
+        except (ValueError, AttributeError):
+            # Intentar otros formatos comunes si fromisoformat falla
+            try:
+                return datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                try:
+                    return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    return None
+    
+    return None
 
 

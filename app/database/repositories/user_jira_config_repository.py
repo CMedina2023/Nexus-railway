@@ -8,6 +8,7 @@ from datetime import datetime
 
 from app.database.db import get_db
 from app.models.user_jira_config import UserJiraConfig
+from app.database.query_adapter import parse_datetime_field
 
 logger = logging.getLogger(__name__)
 
@@ -174,8 +175,8 @@ class UserJiraConfigRepository:
         if isinstance(use_personal, int):
             use_personal = use_personal == 1
         
-        created_at = datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.now()
-        updated_at = datetime.fromisoformat(row['updated_at']) if row.get('updated_at') else datetime.now()
+        created_at = parse_datetime_field(row.get('created_at')) or datetime.now()
+        updated_at = parse_datetime_field(row.get('updated_at')) or datetime.now()
         
         return UserJiraConfig(
             id=row['id'],
