@@ -296,7 +296,9 @@ class ParallelIssueFetcher:
         if not issuetype_parts:
             return jql  # No hay issuetypes conocidos, retornar original
         
-        simplified = f'project = {project_key} AND ({' OR '.join(issuetype_parts)})'
+        # Construir la parte de issuetypes fuera del f-string para evitar error de sintaxis
+        issuetype_clause = ' OR '.join(issuetype_parts)
+        simplified = f'project = {project_key} AND ({issuetype_clause})'
         if additional_filters:
             simplified += f' AND {additional_filters}'
         
