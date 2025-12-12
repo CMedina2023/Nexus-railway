@@ -137,8 +137,7 @@ FLASK_ENV=production
 # Seguridad
 SESSION_COOKIE_SECURE=True
 
-# Playwright (para PDFs)
-PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
 
 # Gemini
 GEMINI_MODEL=gemini-2.0-flash-exp
@@ -206,7 +205,7 @@ El proceso sigue estos pasos:
 1. **Clone** - Railway clona tu repositorio
 2. **Setup** - Instala Python 3.11 y dependencias del sistema
 3. **Install** - Ejecuta `pip install -r requirements.txt`
-4. **Build** - Ejecuta `build.sh` (instala Playwright y crea BD)
+4. **Build** - Ejecuta `build.sh` (instala dependencias y crea BD)
 5. **Start** - Ejecuta Gunicorn con tu aplicación
 
 ### 6.3 Monitorear el deploy
@@ -305,16 +304,15 @@ git push
 FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', '5000')))
 ```
 
-#### ❌ Error: "Playwright installation failed"
+#### ❌ Error: "WeasyPrint installation failed"
 
-**Causa:** Falta de dependencias del sistema.
+**Causa:** Falta de dependencias del sistema (Cairo, Pango, etc).
 
 **Solución:**
-1. Verifica que `nixpacks.toml` incluya:
-   ```toml
-   nixPkgs = ["python311", "playwright-driver", "chromium"]
+1. Verifica que el `Dockerfile` instale las librerías necesarias:
+   ```dockerfile
+   RUN apt-get install -y libcairo2 libpango-1.0-0 ...
    ```
-2. Verifica que `build.sh` instale Playwright correctamente
 
 ### 7.4 Ver logs en tiempo real
 
