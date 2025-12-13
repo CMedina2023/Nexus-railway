@@ -3086,7 +3086,7 @@ def jira_download_report():
 @app.route('/api/metrics/download-report', methods=['POST'])
 @login_required
 def metrics_download_report():
-    """Genera y descarga un reporte de métricas en formato PDF usando Playwright"""
+    """Genera y descarga un reporte de métricas en formato PDF usando WeasyPrint"""
     try:
         
         data = request.get_json()
@@ -3094,6 +3094,14 @@ def metrics_download_report():
         generator_metrics = data.get('generator_metrics', {})
         jira_metrics = data.get('jira_metrics', {})
         chart_images = data.get('chart_images', {})
+        
+        # Log para depuración
+        logger.info(f"Tipos seleccionados: {selected_types}")
+        logger.info(f"Métricas del generador: {generator_metrics}")
+        logger.info(f"Métricas de Jira (claves): {list(jira_metrics.keys()) if jira_metrics else 'vacío'}")
+        if jira_metrics:
+            logger.info(f"Métricas de Jira - reports: {jira_metrics.get('reports', {})}")
+            logger.info(f"Métricas de Jira - uploads: {jira_metrics.get('uploads', {})}")
         
         if not selected_types:
             return jsonify({"success": False, "error": "No se seleccionaron tipos de métricas"}), 400
