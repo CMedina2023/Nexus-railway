@@ -885,89 +885,42 @@ class ParallelIssueFetcher:
         """
         logger.info(f"Iniciando obtención paralela de issues con JQL: {jql[:100]}...")
         
-        # Obtener total usando approximate-count (evita bug de total=0)
-        total = self._get_approximate_count(jql)
+        # CAMBIO CRÍTICO: NO usar approximate-count porque en Railway retorna 0 cuando hay issues
+        # En su lugar, SIEMPRE obtener la primera página para verificar si hay issues
+        # y usar paginación por ID que es más confiable
         
-        # Obtener primera página para tener las issues iniciales
         try:
             logger.info(f"[DEBUG JQL] Obteniendo primera página de issues con JQL: {jql}")
             # Obtener primera página sin fields para verificar que hay issues
             initial_page = self._fetch_page(jql, start_at=0, max_results=1, progress_callback=None, fields=None)
             initial_issues = initial_page.get('issues', [])
+            total_from_response = initial_page.get('total', 0)
             
-            logger.info(f"[DEBUG JQL] Total aproximado obtenido: {total}")
+            logger.info(f"[DEBUG JQL] Total de la respuesta: {total_from_response}")
             logger.info(f"[DEBUG JQL] Issues en petición inicial: {len(initial_issues)}")
             
-            # Función helper para detectar si el total es sospechoso (puede ser un límite artificial)
-            def is_suspicious_total(t: int) -> bool:
-                """Detecta si el total puede ser un límite artificial de Jira"""
-                if t == 0:
-                    return False
-                # IMPORTANTE: Cuando se especifican 'fields' en la query, Jira SIEMPRE limita a 100 issues por página
-                # Por lo tanto, cualquier total que sea múltiplo de 100 puede ser sospechoso
-                # Si es exactamente 100, 1000, 5000 (límites comunes de Jira)
-                if t in [100, 1000, 5000]:
-                    return True
-                # Si es un múltiplo exacto de 100, puede ser sospechoso (especialmente cuando hay fields)
-                if t % 100 == 0:
-                    return True
-                return False
-            
-            # Si total es 0 y no hay issues, no hay resultados
-            if total == 0 and len(initial_issues) == 0:
+            # Si no hay issues en la primera página, no hay resultados
+            if len(initial_issues) == 0:
                 logger.warning(f"[DEBUG JQL] No hay issues que coincidan con el JQL: {jql[:100]}...")
                 return []
             
-            # Si total es 0 pero hay issues, usar paginación por ID (más confiable que secuencial)
-            if total == 0 and len(initial_issues) > 0:
-                logger.warning(f"[DEBUG JQL] ⚠️ Total aproximado=0 pero hay {len(initial_issues)} issue(s). Usando paginación por ID.")
-                # Estimar un total razonable para la paginación por ID
-                estimated_total = 1000  # Estimación conservadora
-                # Obtener fields directamente si están requeridos
-                return self._fetch_all_issues_by_id_range(
-                    jql, 
-                    estimated_total, 
-                    progress_callback,
-                    fields=self._required_fields if self._required_fields else None
-                )
+            # SIEMPRE usar paginación por ID porque es más confiable
+            # No importa lo que diga approximate-count o el campo 'total'
+            logger.info(f"[DEBUG JQL] ⚠️ Hay {len(initial_issues)} issue(s). Usando paginación por ID (más confiable).")
             
-            # Si total es sospechoso (múltiplo de 100), usar paginación por ID para estar seguros
-            if is_suspicious_total(total):
-                logger.warning(f"[DEBUG JQL] ⚠️ Total sospechoso: {total}. Usando paginación por ID.")
-                # Obtener fields directamente si están requeridos
-                return self._fetch_all_issues_by_id_range(
-                    jql, 
-                    total, 
-                    progress_callback,
-                    fields=self._required_fields if self._required_fields else None
-                )
+            # Usar el total de la respuesta si es confiable, sino estimar
+            estimated_total = total_from_response if total_from_response > 0 else 1000
             
-            logger.info(f"Total de issues a obtener: {total}")
-            
-            # ESTRATEGIA: Usar paginación basada en ID para evitar bugs de startAt/nextPageToken
-            # Como usamos id > last_id en lugar de startAt, podemos obtener fields directamente
-            if self._required_fields:
-                logger.info(f"[DEBUG PAGINACIÓN] ⚠️ Fields especificados detectados. Usando paginación por ID con fields directamente:")
-                logger.info(f"[DEBUG PAGINACIÓN] Como usamos 'id > last_id' en lugar de 'startAt', podemos obtener fields directamente")
-                logger.info(f"[DEBUG PAGINACIÓN] Esto evita las {total} requests individuales y es mucho más rápido")
-                
-                # Obtener todas las issues CON fields directamente usando paginación por ID
-                all_issues = self._fetch_all_issues_by_id_range(
-                    jql,
-                    total,
-                    progress_callback,
-                    fields=self._required_fields  # Obtener fields directamente
-                )
-                
-                logger.info(f"[DEBUG PAGINACIÓN] ✓ Obtenidas {len(all_issues)} issues con campos completos directamente")
-                return all_issues
-            else:
-                # Si no hay fields requeridos, usar paginación por ID también
-                logger.info(f"[DEBUG PAGINACIÓN] Usando paginación basada en ID (sin fields requeridos)")
-                return self._fetch_all_issues_by_id_range(jql, total, progress_callback)
+            # Obtener fields directamente si están requeridos
+            return self._fetch_all_issues_by_id_range(
+                jql, 
+                estimated_total, 
+                progress_callback,
+                fields=self._required_fields if self._required_fields else None
+            )
             
         except Exception as e:
-            logger.error(f"Error al obtener total de issues: {e}")
+            logger.error(f"Error al obtener issues: {e}", exc_info=True)
             raise
         
         # Calcular número de páginas necesarias

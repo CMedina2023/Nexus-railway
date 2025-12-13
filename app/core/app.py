@@ -3106,6 +3106,26 @@ def metrics_download_report():
         if not selected_types:
             return jsonify({"success": False, "error": "No se seleccionaron tipos de métricas"}), 400
         
+        # Asegurar estructura correcta de jira_metrics para el template
+        if not jira_metrics:
+            jira_metrics = {}
+        
+        # Asegurar que existan las claves principales con estructura por defecto
+        if 'reports' not in jira_metrics:
+            jira_metrics['reports'] = {
+                'count': 0,
+                'byProject': {},
+                'lastDate': None
+            }
+        
+        if 'uploads' not in jira_metrics:
+            jira_metrics['uploads'] = {
+                'count': 0,
+                'itemsCount': 0,
+                'byProject': {},
+                'issueTypesDistribution': {}
+            }
+        
         # Renderizar HTML del reporte de métricas
         html_content = render_template('metrics_report.html', 
                                      selected_types=selected_types,
