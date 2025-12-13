@@ -49,12 +49,10 @@ def list_users():
     """Lista todos los usuarios en la base de datos"""
     db = get_db()
     
-    # Obtener todos los usuarios directamente desde la BD
-    conn = db.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, email, role, active, created_at FROM users ORDER BY created_at DESC")
-    users = cursor.fetchall()
-    conn.close()
+    # Obtener todos los usuarios directamente desde la BD usando get_cursor()
+    with db.get_cursor() as cursor:
+        cursor.execute("SELECT id, email, role, active, created_at FROM users ORDER BY created_at DESC")
+        users = cursor.fetchall()
     
     if not users:
         print("   No hay usuarios registrados")
@@ -63,6 +61,7 @@ def list_users():
     print("\n   Email                      | Rol       | Activo | Creado")
     print("   " + "-" * 65)
     for user_row in users:
+        # Acceder a los campos (funciona tanto con dict como con sqlite3.Row)
         email = user_row['email']
         role = user_row['role']
         active = "Sí" if user_row['active'] else "No"

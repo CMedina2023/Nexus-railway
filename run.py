@@ -3,6 +3,12 @@ Punto de entrada principal de la aplicación Flask
 """
 import sys
 import pathlib
+import os
+import warnings
+
+# Silenciar advertencias de GLib en Windows
+os.environ['G_MESSAGES_DEBUG'] = ''
+warnings.filterwarnings('ignore', category=UserWarning, module='weasyprint')
 
 # Añadir el directorio raíz al path para importaciones correctas
 BASE_DIR = pathlib.Path(__file__).parent

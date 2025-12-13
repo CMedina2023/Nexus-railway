@@ -29,23 +29,22 @@ def format_datetime(dt_str: str) -> str:
 def view_table(table_name: str):
     """Muestra los datos de una tabla específica"""
     db = get_db()
-    conn = db.get_connection()
-    cursor = conn.cursor()
     
     try:
-        # Obtener todas las filas
-        cursor.execute(f"SELECT * FROM {table_name}")
-        rows = cursor.fetchall()
-        
-        if not rows:
-            print(f"   La tabla '{table_name}' está vacía")
-            return
-        
-        # Obtener nombres de columnas
-        columns = [description[0] for description in cursor.description]
+        with db.get_cursor() as cursor:
+            # Obtener todas las filas
+            cursor.execute(f"SELECT * FROM {table_name}")
+            rows = cursor.fetchall()
+            
+            if not rows:
+                print(f"   La tabla '{table_name}' está vacía")
+                return
+            
+            # Obtener nombres de columnas
+            columns = [description[0] for description in cursor.description]
         
         # Mostrar encabezado
-        print(f"\n📊 Tabla: {table_name}")
+        print(f"\n[TABLE] Tabla: {table_name}")
         print(f"   Total de registros: {len(rows)}")
         print("   " + "=" * 80)
         
@@ -63,7 +62,7 @@ def view_table(table_name: str):
                 if col.endswith('_at') or col == 'last_login' or col == 'locked_until':
                     value = format_datetime(value) if value else "N/A"
                 elif col == 'active' or col == 'use_personal':
-                    value = "Sí" if value else "No"
+                    value = "Si" if value else "No"
                 elif col == 'password_hash' or col == 'shared_token' or col == 'personal_token':
                     value = "***HIDDEN***" if value else "N/A"
                 elif value is None:
@@ -75,39 +74,32 @@ def view_table(table_name: str):
                 
                 print(f"      {col:<25}: {value}")
     
-    except sqlite3.OperationalError as e:
-        print(f"❌ Error: La tabla '{table_name}' no existe")
-        print(f"   {e}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
         import traceback
         traceback.print_exc()
-    finally:
-        conn.close()
 
 
 def list_tables():
     """Lista todas las tablas en la base de datos"""
     db = get_db()
-    conn = db.get_connection()
-    cursor = conn.cursor()
     
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-    tables = cursor.fetchall()
-    conn.close()
+    with db.get_cursor() as cursor:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = cursor.fetchall()
     
     if not tables:
         print("   No hay tablas en la base de datos")
         return []
     
-    table_names = [table[0] for table in tables]
+    table_names = [table['name'] if isinstance(table, dict) or hasattr(table, '__getitem__') else table[0] for table in tables]
     return table_names
 
 
 def view_all():
     """Muestra un resumen de todas las tablas"""
     print("\n" + "=" * 80)
-    print("📊 VISUALIZACIÓN DE BASE DE DATOS - NEXUS AI")
+    print("[DATABASE] VISUALIZACION DE BASE DE DATOS - NEXUS AI")
     print("=" * 80)
     
     tables = list_tables()
@@ -116,53 +108,52 @@ def view_all():
         print("\n   No hay tablas en la base de datos")
         return
     
-    print(f"\n📋 Tablas encontradas: {len(tables)}")
+    print(f"\n[INFO] Tablas encontradas: {len(tables)}")
     for table in tables:
         db = get_db()
-        conn = db.get_connection()
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT COUNT(*) FROM {table}")
-        count = cursor.fetchone()[0]
-        conn.close()
+        with db.get_cursor() as cursor:
+            cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
+            result = cursor.fetchone()
+            count = result['count'] if isinstance(result, dict) or hasattr(result, '__getitem__') else result[0]
         print(f"   - {table}: {count} registros")
     
     # Mostrar resumen de usuarios
     if 'users' in tables:
         print("\n" + "-" * 80)
-        print("👥 RESUMEN DE USUARIOS")
+        print("[USERS] RESUMEN DE USUARIOS")
         print("-" * 80)
         
         db = get_db()
-        conn = db.get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT role, COUNT(*) as count FROM users GROUP BY role")
-        role_counts = cursor.fetchall()
+        with db.get_cursor() as cursor:
+            cursor.execute("SELECT role, COUNT(*) as count FROM users GROUP BY role")
+            role_counts = cursor.fetchall()
+            
+            cursor.execute("SELECT COUNT(*) as count FROM users WHERE active = 1")
+            active_result = cursor.fetchone()
+            active_count = active_result['count'] if isinstance(active_result, dict) or hasattr(active_result, '__getitem__') else active_result[0]
+            
+            cursor.execute("SELECT COUNT(*) as count FROM users WHERE active = 0")
+            inactive_result = cursor.fetchone()
+            inactive_count = inactive_result['count'] if isinstance(inactive_result, dict) or hasattr(inactive_result, '__getitem__') else inactive_result[0]
         
-        cursor.execute("SELECT COUNT(*) FROM users WHERE active = 1")
-        active_count = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM users WHERE active = 0")
-        inactive_count = cursor.fetchone()[0]
-        
-        conn.close()
-        
-        print(f"\n   Total usuarios: {sum(r[1] for r in role_counts)}")
+        total = sum(r['count'] if isinstance(r, dict) or hasattr(r, '__getitem__') else r[1] for r in role_counts)
+        print(f"\n   Total usuarios: {total}")
         print(f"   Activos: {active_count}")
         print(f"   Inactivos: {inactive_count}")
         print(f"\n   Por rol:")
-        for role, count in role_counts:
+        for r in role_counts:
+            role = r['role'] if isinstance(r, dict) or hasattr(r, '__getitem__') else r[0]
+            count = r['count'] if isinstance(r, dict) or hasattr(r, '__getitem__') else r[1]
             print(f"      - {role}: {count}")
     
-    print("\n💡 Usa --table <nombre> para ver detalles de una tabla específica")
+    print("\n[TIP] Usa --table <nombre> para ver detalles de una tabla especifica")
     print("   Ejemplo: python scripts/view_db.py --table users")
 
 
 def main():
-    import sqlite3
-    
     if len(sys.argv) > 1 and sys.argv[1] == '--table':
         if len(sys.argv) < 3:
-            print("❌ Error: Debes especificar el nombre de la tabla")
+            print("[ERROR] Error: Debes especificar el nombre de la tabla")
             print("\nTablas disponibles:")
             for table in list_tables():
                 print(f"   - {table}")

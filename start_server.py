@@ -5,6 +5,11 @@ Lee el puerto de la variable PORT y ejecuta Gunicorn
 """
 import os
 import sys
+import warnings
+
+# Silenciar advertencias de GLib en Windows
+os.environ['G_MESSAGES_DEBUG'] = ''
+warnings.filterwarnings('ignore', category=UserWarning, module='weasyprint')
 
 # Obtener el puerto de la variable de entorno
 port = os.getenv('PORT', '8000')
