@@ -53,6 +53,13 @@ class Database:
                 poolclass=StaticPool,
                 echo=False
             )
+            
+            # Configurar row_factory para retornar diccionarios en SQLite
+            @event.listens_for(self.engine, "connect")
+            def set_sqlite_pragma(dbapi_conn, connection_record):
+                import sqlite3
+                dbapi_conn.row_factory = sqlite3.Row
+            
             logger.info(f"Conectado a SQLite: {db_path}")
             
         elif self.is_postgres:
@@ -344,7 +351,7 @@ class Database:
             import psycopg2.extras
             cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         else:
-            # SQLite: Cursor normal (ya tiene row_factory configurado)
+            # SQLite: row_factory ya está configurado en el engine (ver __init__)
             cursor = conn.cursor()
         
         # Crear un wrapper del cursor que adapta las consultas automáticamente
