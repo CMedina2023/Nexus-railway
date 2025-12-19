@@ -1,0 +1,297 @@
+<div class="modal-overlay" id="guide-modal" onclick="closeGuideModal(event)">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 class="modal-title">Guía de Uso</h2>
+                <button class="modal-close" onclick="closeGuideModal()">✕</button>
+            </div>
+            <div class="modal-content">
+                <div class="guia-section">
+                    <div class="guia-section-title">
+                        <div class="guia-section-icon">🚀</div>
+                        <span>Inicio Rápido</span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        El Generador H/CP te permite crear automáticamente Historias de Usuario y Casos de Prueba a
+                        partir de documentos. Sigue estos pasos para comenzar:
+                    </p>
+
+                    <div class="guia-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Sube tu documento</div>
+                            <div class="step-description">
+                                Haz clic en el área de carga de archivos y selecciona un documento en formato PDF o DOCX
+                                que contenga los requerimientos o especificaciones del proyecto.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Espera el análisis automático</div>
+                            <div class="step-description">
+                                El sistema analizará automáticamente el contenido de tu documento y determinará qué tipo
+                                de contenido puede generar (historias de usuario, casos de prueba, o ambos).
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona qué generar</div>
+                            <div class="step-description">
+                                El agente te mostrará opciones basadas en el análisis. Puedes elegir:
+                                <ul class="step-list">
+                                    <li>Generar solo Historias de Usuario</li>
+                                    <li>Generar solo Matriz de Pruebas (Casos de Prueba)</li>
+                                    <li>Generar ambos tipos de contenido</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Descarga tus resultados</div>
+                            <div class="step-description">
+                                Una vez completado el procesamiento, el archivo se descargará automáticamente. Las
+                                Historias de Usuario se generan en formato Word (.docx) y las Matrices de Prueba en
+                                formato ZIP (contiene CSV y JSON).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guia-section">
+                    <div class="guia-section-title">
+                        <div class="guia-section-icon">📝</div>
+                        <span>Generar Historias de Usuario</span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Las Historias de Usuario se generan siguiendo el formato estándar COMO/QUIERO/PARA con criterios
+                        de aceptación detallados.
+                    </p>
+
+                    <div class="guia-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Prepara tu documento</div>
+                            <div class="step-description">
+                                Asegúrate de que tu documento contenga:
+                                <ul class="step-list">
+                                    <li>Requerimientos funcionales claros</li>
+                                    <li>Descripción de funcionalidades</li>
+                                    <li>Reglas de negocio</li>
+                                    <li>Casos de uso o escenarios</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Sube el documento</div>
+                            <div class="step-description">
+                                Arrastra y suelta o selecciona tu archivo PDF o DOCX en el área de carga.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona "Generar Historias de Usuario"</div>
+                            <div class="step-description">
+                                Una vez que el sistema analice tu documento, haz clic en el botón "📝 Generar Historias
+                                de Usuario" que aparecerá en el chat.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-tip">
+                        <div class="guia-tip-title">
+                            <span>💡</span>
+                            <span>Consejo</span>
+                        </div>
+                        <div class="guia-tip-text">
+                            Cuanto más detallado y estructurado sea tu documento, mejores y más completas serán las
+                            historias de usuario generadas. Incluye contexto de negocio cuando sea posible.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guia-section">
+                    <div class="guia-section-title">
+                        <div class="guia-section-icon">🧪</div>
+                        <span>Generar Matriz de Pruebas</span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        La Matriz de Pruebas genera casos de prueba funcionales y no funcionales con pasos detallados y
+                        resultados esperados.
+                    </p>
+
+                    <div class="guia-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Prepara tu documento</div>
+                            <div class="step-description">
+                                Tu documento debe contener información sobre:
+                                <ul class="step-list">
+                                    <li>Funcionalidades a probar</li>
+                                    <li>Flujos de usuario</li>
+                                    <li>Validaciones y reglas de negocio</li>
+                                    <li>Requisitos de rendimiento o seguridad (para pruebas no funcionales)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Sube el documento</div>
+                            <div class="step-description">
+                                Carga tu archivo PDF o DOCX con los requerimientos de prueba.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona "Generar Matriz de Pruebas"</div>
+                            <div class="step-description">
+                                Haz clic en el botón "🧪 Generar Matriz de Pruebas" después del análisis del documento.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Descarga y revisa</div>
+                            <div class="step-description">
+                                El archivo ZIP descargado contiene:
+                                <ul class="step-list">
+                                    <li>Archivo CSV: Para importar en herramientas de gestión de pruebas (JIRA,
+                                        TestRail, etc.)</li>
+                                    <li>Archivo JSON: Para integraciones con APIs o sistemas automatizados</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guia-section">
+                    <div class="guia-section-title">
+                        <div class="guia-section-icon">⚡</div>
+                        <span>Generar Ambos (Historias + Casos de Prueba)</span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Puedes generar ambos tipos de contenido en una sola operación cuando tu documento contiene
+                        información completa del proyecto.
+                    </p>
+
+                    <div class="guia-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Documento completo</div>
+                            <div class="step-description">
+                                Asegúrate de que tu documento incluya tanto requerimientos funcionales como
+                                especificaciones de prueba.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Selecciona "Ambos"</div>
+                            <div class="step-description">
+                                Después del análisis, haz clic en el botón "⚡ Ambos (Historias + Matriz)" para generar
+                                ambos tipos de contenido simultáneamente.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Descarga los archivos</div>
+                            <div class="step-description">
+                                Recibirás dos archivos de descarga:
+                                <ul class="step-list">
+                                    <li>Un archivo .docx con las Historias de Usuario</li>
+                                    <li>Un archivo .zip con la Matriz de Pruebas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guia-section">
+                    <div class="guia-section-title">
+                        <div class="guia-section-icon">❓</div>
+                        <span>Preguntas Frecuentes</span>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-content">
+                            <div class="step-title">¿Qué formatos de archivo acepta?</div>
+                            <div class="step-description">
+                                Actualmente acepta archivos PDF (.pdf) y documentos de Word (.docx). El tamaño máximo es
+                                de 16MB.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-content">
+                            <div class="step-title">¿Cuánto tiempo tarda en generar el contenido?</div>
+                            <div class="step-description">
+                                El tiempo depende del tamaño y complejidad del documento. Generalmente toma entre 30
+                                segundos y 3 minutos. Documentos más grandes pueden tardar más tiempo.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-content">
+                            <div class="step-title">¿Puedo editar las historias o casos generados?</div>
+                            <div class="step-description">
+                                Sí, los archivos generados son completamente editables. Las Historias de Usuario están
+                                en formato Word y los Casos de Prueba en CSV/JSON, ambos pueden ser modificados según
+                                tus necesidades.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="guia-step">
+                        <div class="step-content">
+                            <div class="step-title">¿Las métricas se guardan automáticamente?</div>
+                            <div class="step-description">
+                                Sí, cada vez que generas contenido, las métricas se actualizan automáticamente. Puedes
+                                ver el historial y estadísticas en la sección "Métricas" del menú lateral.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="guia-warning">
+                    <div class="guia-warning-title">
+                        <span>⚠️</span>
+                        <span>Importante</span>
+                    </div>
+                    <div class="guia-warning-text">
+                        Asegúrate de que tu documento contenga texto legible y estructurado. Los documentos escaneados o
+                        con imágenes sin texto extraíble pueden no funcionar correctamente. El sistema funciona mejor
+                        con documentos que tienen texto seleccionable.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

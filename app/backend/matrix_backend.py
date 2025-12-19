@@ -925,7 +925,9 @@ def generate_test_cases_html_document(test_cases: List[dict], project_name="Sist
     """
     # Leer el template HTML (mismo que para historias)
     template_paths = [
+        'docs/mockups/story_format_mockup.html',
         'mockups/story_format_mockup.html',
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs', 'mockups', 'story_format_mockup.html'),
         os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mockups', 'story_format_mockup.html')
     ]
     

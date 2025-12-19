@@ -1,0 +1,226 @@
+<section id="crear-casos-prueba" class="content-section">
+            <div class="section-header" style="margin-bottom: 2rem;">
+                <h1><i class="fas fa-vial"></i> Crear Casos de Prueba</h1>
+                <p>Genera una matriz completa de casos de prueba funcionales y no funcionales basada en documentos de
+                    requerimientos y flujos específicos.</p>
+            </div>
+
+            <div class="form-card"
+                style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;">
+                <form id="tests-form">
+                    <!-- Upload de archivo -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label"
+                            style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Documento
+                            de Requerimientos</label>
+                        <div id="tests-drop-zone" class="csv-drop-zone">
+                            <input type="file" id="tests-file" name="file" accept=".docx,.pdf" style="display: none;">
+                            <div class="drop-zone-content">
+                                <div class="drop-zone-icon">☁️</div>
+                                <p class="drop-zone-text">Arrastra tu archivo DOCX o PDF aquí</p>
+                                <p class="drop-zone-hint">o haz clic para explorar tus archivos</p>
+                                <div class="file-format-badge">
+                                    <span class="file-icon">📄</span>
+                                    <span>Formatos soportados: .docx, .pdf</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tests-file-info" class="file-info-card" style="display: none;">
+                            <div class="file-info-content">
+                                <span class="file-info-icon">📎</span>
+                                <span id="tests-file-name" class="file-name"></span>
+                                <button id="tests-remove-file-btn" class="remove-file-btn" type="button">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Área -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" for="tests-area"
+                            style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Área</label>
+                        <select id="tests-area" name="area" class="form-select"
+                            style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit;">
+                            <option value="">-- Selecciona un área --</option>
+                            <option value="Finanzas">💰 Finanzas</option>
+                            <option value="Recursos Humanos">👥 Recursos Humanos</option>
+                            <option value="Tesoreria">🏦 Tesorería</option>
+                            <option value="TI">💻 TI</option>
+                        </select>
+                    </div>
+
+                    <!-- Contexto adicional -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" for="tests-context"
+                            style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Contexto adicional
+                            <span
+                                style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400; background: rgba(107, 114, 128, 0.1); padding: 0.15rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">Opcional</span>
+                        </label>
+                        <textarea id="tests-context" name="contexto" class="form-textarea"
+                            style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit; min-height: 100px; resize: vertical; line-height: 1.6;"
+                            placeholder="Describe brevemente el sistema, como 'Sistema de gestión de usuarios en un portal web'"></textarea>
+                        <div
+                            style="background: rgba(79, 172, 254, 0.1); border: 1px solid rgba(79, 172, 254, 0.15); border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                            💡 Proporciona información adicional sobre el contexto del sistema que ayudará a generar
+                            casos de prueba más precisos y relevantes.
+                        </div>
+                    </div>
+
+                    <!-- Flujo a considerar -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label" for="tests-flow"
+                            style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            Flujo a considerar
+                            <span
+                                style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400; background: rgba(107, 114, 128, 0.1); padding: 0.15rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">Opcional</span>
+                        </label>
+                        <textarea id="tests-flow" name="flujo" class="form-textarea"
+                            style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit; min-height: 100px; resize: vertical; line-height: 1.6;"
+                            placeholder="Describe el flujo específico, como 'El usuario inicia sesión, ingresa sus credenciales y navega al panel principal'"></textarea>
+                        <div
+                            style="background: rgba(79, 172, 254, 0.1); border: 1px solid rgba(79, 172, 254, 0.15); border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                            💡 Describe el flujo de usuario o proceso específico que debe ser probado. Esto ayudará a
+                            generar casos de prueba más enfocados y detallados.
+                        </div>
+                    </div>
+
+                    <!-- Tipo de prueba -->
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label class="form-label"
+                            style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Tipo
+                            de prueba</label>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div
+                                style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; transition: all 0.3s ease;">
+                                <input type="checkbox" id="tests-funcional" name="test_types" value="funcional" checked
+                                    style="width: 20px; height: 20px; accent-color: var(--accent);">
+                                <label for="tests-funcional"
+                                    style="color: var(--text-secondary); font-weight: 500; cursor: pointer;">Pruebas
+                                    Funcionales</label>
+                            </div>
+                            <div
+                                style="color: var(--text-muted); font-size: 0.85rem; margin-left: 2.75rem; margin-top: -0.5rem;">
+                                Flujo principal, casos alternativos, validaciones, manejo de errores
+                            </div>
+
+                            <div
+                                style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; transition: all 0.3s ease;">
+                                <input type="checkbox" id="tests-no-funcional" name="test_types" value="no_funcional"
+                                    checked style="width: 20px; height: 20px; accent-color: var(--accent);">
+                                <label for="tests-no-funcional"
+                                    style="color: var(--text-secondary); font-weight: 500; cursor: pointer;">Pruebas No
+                                    Funcionales</label>
+                            </div>
+                            <div
+                                style="color: var(--text-muted); font-size: 0.85rem; margin-left: 2.75rem; margin-top: -0.5rem;">
+                                Rendimiento, seguridad, usabilidad, compatibilidad, confiabilidad
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary" id="tests-generate-btn"
+                            style="width: 100%; padding: 1rem 2rem; border: none; border-radius: 12px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.95rem;">
+                            <i class="fas fa-eye"></i> Generar e Ir a Vista Previa
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Vista Previa de Casos de Prueba (oculta inicialmente, reemplaza el formulario) -->
+            <div id="tests-preview-section" style="display: none; margin-top: 2rem;">
+                <!-- Header con estadísticas -->
+                <div class="form-card"
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">🧪</span>
+                        <span style="font-size: 1.5rem; font-weight: 600;">Vista Previa de Casos de Prueba</span>
+                    </div>
+                    <div style="display: flex; gap: 2rem; align-items: center;">
+                        <div style="text-align: center;">
+                            <div id="tests-preview-count"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">0</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Casos
+                                Generados</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de acciones -->
+                <div
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="tests-select-all"
+                                style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Seleccionar todos</span>
+                        </label>
+                        <span id="tests-selected-count" style="color: var(--text-muted);">0 casos seleccionados</span>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="tests-reset-btn" class="btn btn-secondary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🔄</span>
+                            <span>Nueva Generación</span>
+                        </button>
+                        <button id="tests-review-btn" class="btn btn-secondary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>👁️</span>
+                            <span>Revisar Casos</span>
+                        </button>
+                        <button id="tests-upload-jira-btn" class="btn btn-primary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>✅</span>
+                            <span>Aprobar y Subir a Jira</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de vista previa -->
+                <div
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+                    <div
+                        style="overflow-x: auto; max-height: calc(100vh - 400px); min-height: 500px; overflow-y: auto;">
+                        <table id="tests-preview-table" style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: var(--secondary-bg); z-index: 10;">
+                                <tr>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 50px;">
+                                        <input type="checkbox" id="tests-table-select-all"
+                                            style="width: 18px; height: 18px; cursor: pointer;">
+                                    </th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 60px;">
+                                        #</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border);">
+                                        Resumen (Summary)</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border);">
+                                        Descripción</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Tipo</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 130px;">
+                                        Tipo de Prueba</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 130px;">
+                                        Categoría</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Prioridad</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tests-preview-tbody">
+                                <!-- Los casos de prueba se insertarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>

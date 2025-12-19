@@ -1,0 +1,133 @@
+<section id="dashboard" class="content-section active">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <h1>Dashboard</h1>
+                    <p>Bienvenido a Nexus AI Hub - Centro de control de herramientas</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Quick Stats -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-file-alt card-icon"></i>
+                            <h3>Crear Historias de Usuario</h3>
+                        </div>
+                        <p class="card-description">Genera historias de usuario completas a partir de documentos de
+                            requerimientos</p>
+                        <a href="#" class="card-action" data-section="crear-historias">
+                            <span>Ir a Generador</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-vial card-icon"></i>
+                            <h3>Crear Casos de Prueba</h3>
+                        </div>
+                        <p class="card-description">Genera una matriz completa de casos de prueba funcionales y no
+                            funcionales</p>
+                        <a href="#" class="card-action" data-section="crear-casos-prueba">
+                            <span>Ir a Generador</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-file-alt card-icon"></i>
+                            <h3>Reportes Jira</h3>
+                        </div>
+                        <p class="card-description">Visualiza métricas y genera reportes de tus proyectos Jira</p>
+                        <a href="#" class="card-action" data-section="jira-reportes">
+                            <span>Ver Reportes</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-upload card-icon"></i>
+                            <h3>Carga Masiva</h3>
+                        </div>
+                        <p class="card-description">Carga múltiples issues a Jira con mapeo de campos</p>
+                        <a href="#" class="card-action" data-section="jira-carga-masiva">
+                            <span>Iniciar Carga</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line card-icon"></i>
+                            <h3>Métricas</h3>
+                        </div>
+                        <p class="card-description">Analiza el rendimiento y productividad del equipo</p>
+                        <a href="#" class="card-action" data-section="metricas">
+                            <span>Ver Métricas</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Métricas de Uso -->
+                <div class="dashboard-section">
+                    <h2 class="section-title">Métricas de Uso</h2>
+                    <div class="metrics-grid">
+                        <!-- Métricas Generador H/CP -->
+                        <div class="metrics-card">
+                            <div class="metrics-card-header">
+                                <i class="fas fa-robot metrics-icon"></i>
+                                <h3>Generador H/CP</h3>
+                            </div>
+                            <div class="metrics-stats" id="generator-metrics">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="generator-stories">0</span>
+                                    <span class="stat-label">Historias Generadas</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="generator-testcases">0</span>
+                                    <span class="stat-label">Casos de Prueba</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métricas Reportes Jira -->
+                        <div class="metrics-card">
+                            <div class="metrics-card-header">
+                                <i class="fas fa-file-alt metrics-icon"></i>
+                                <h3>Reportes Jira</h3>
+                            </div>
+                            <div class="metrics-stats" id="reports-metrics">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="reports-count">0</span>
+                                    <span class="stat-label">Reportes Generados</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="reports-last">-</span>
+                                    <span class="stat-label">Último Reporte</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Métricas Carga Masiva -->
+                        <div class="metrics-card">
+                            <div class="metrics-card-header">
+                                <i class="fas fa-upload metrics-icon"></i>
+                                <h3>Carga Masiva</h3>
+                            </div>
+                            <div class="metrics-stats" id="upload-metrics">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="upload-count">0</span>
+                                    <span class="stat-label">Cargas Realizadas</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="upload-items">0</span>
+                                    <span class="stat-label">Items Cargados</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>

@@ -1,0 +1,502 @@
+<!-- Modal: Configuración Jira para Subir Historias -->
+<div id="jira-upload-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>⚙️</span>
+                <span>Configurar Carga a Jira</span>
+            </div>
+            <button id="jira-modal-close"
+                style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <!-- Cantidad de historias -->
+            <div id="jira-modal-alert"
+                style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7;">
+                <span>✅</span>
+                <span id="jira-modal-stories-count">0 historias seleccionadas para subir</span>
+            </div>
+
+            <!-- Proyecto de Jira -->
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Proyecto
+                    de Jira *</label>
+                <select id="jira-project-select"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                    required>
+                    <option value="">Seleccionar proyecto...</option>
+                </select>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Selecciona el
+                    proyecto donde se crearán las historias</div>
+            </div>
+
+            <!-- Asignado a -->
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Asignado
+                    a (opcional)</label>
+                <input type="email" id="jira-assignee-input"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                    placeholder="usuario@ejemplo.com">
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Email del usuario
+                    de Jira al que se asignarán las historias</div>
+                <div id="jira-assignee-validation" style="display: none; margin-top: 0.5rem; font-size: 0.85rem;"></div>
+            </div>
+
+            <!-- Mapeo Automático de Campos -->
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Mapeo
+                    Automático de Campos</label>
+                <div
+                    style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 1rem; border-radius: 8px;">
+                    <div
+                        style="font-size: 0.9rem; font-weight: 600; color: var(--accent); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span>✅</span>
+                        <span>Estos campos se mapean automáticamente:</span>
+                    </div>
+                    <div
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem;">
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.05); border-radius: 6px; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Summary</span>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">→</span>
+                            </div>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Resumen</span>
+                        </div>
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.05); border-radius: 6px; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Description</span>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">→</span>
+                            </div>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Descripción</span>
+                        </div>
+                        <div
+                            style="display: flex; flex-direction: column; gap: 0.25rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.05); border-radius: 6px; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="color: var(--accent); font-weight: 600; font-size: 0.9rem;">Issuetype</span>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">→</span>
+                            </div>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;">Tipo de Issue</span>
+                        </div>
+                    </div>
+                    <div
+                        style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-muted); padding-top: 0.75rem; border-top: 1px solid rgba(59, 130, 246, 0.2);">
+                        <strong>Nota:</strong> La prioridad se puede modificar desde la vista previa antes de
+                        subir.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div
+            style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
+            <button id="jira-modal-cancel"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.95rem; font-weight: 500;">Cancelar</button>
+            <button id="jira-modal-upload"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--success); color: white; cursor: pointer; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                <span>✅</span>
+                <span>Subir a Jira</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Revisar Historias HTML -->
+<div id="stories-review-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 95%; max-width: 1200px; height: 90vh; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>👁️</span>
+                <span>Vista Previa de Historias</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="downloadStoriesHTML()"
+                    style="padding: 0.5rem 1rem; border: none; border-radius: 6px; background: var(--accent); color: white; cursor: pointer; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📥</span>
+                    <span>Descargar HTML</span>
+                </button>
+                <button onclick="closeStoriesReview()"
+                    style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+            </div>
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+            <iframe id="stories-html-viewer"
+                style="width: 100%; height: 100%; border: none; background: white;"></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Historia -->
+<div id="edit-story-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>✏️</span>
+                <span>Editar Historia de Usuario</span>
+            </div>
+            <button id="edit-story-modal-close"
+                style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div
+                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 0.75rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #93c5fd; display: flex; align-items: center; gap: 0.5rem;">
+                💡 Puedes editar todos los campos de la historia. Los cambios se guardarán cuando presiones
+                "Guardar Cambios".
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Resumen
+                    (Summary) *</label>
+                <input type="text" id="edit-story-summary"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                    placeholder="Ingresa el resumen de la historia">
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Este será el
+                    título de la historia en Jira</div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Descripción
+                    *</label>
+                <textarea id="edit-story-description" rows="6"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.6;"
+                    placeholder="Describe la historia en detalle..."></textarea>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Incluye la
+                    descripción completa, criterios de aceptación y cualquier detalle relevante</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Tipo
+                        de Issue</label>
+                    <select id="edit-story-issuetype"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;">
+                        <option value="Story">Story</option>
+                        <option value="Task">Task</option>
+                        <option value="Bug">Bug</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Prioridad
+                        *</label>
+                    <select id="edit-story-priority"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;">
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div
+            style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
+            <button id="edit-story-cancel"
+                style="padding: 0.75rem 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 0.95rem; font-weight: 500;">Cancelar</button>
+            <button id="edit-story-save"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                <span>✅</span>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="stories-loading-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="width: 50px; height: 50px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite;">
+    </div>
+</div>
+
+<!-- Modal: Configuración Jira para Subir Casos de Prueba -->
+<div id="jira-upload-tests-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>⚙️</span>
+                <span>Configurar Carga a Jira</span>
+            </div>
+            <button id="jira-tests-modal-close"
+                style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <!-- Cantidad de casos -->
+            <div id="jira-tests-modal-alert"
+                style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7;">
+                <span>✅</span>
+                <span id="jira-tests-modal-cases-count">0 casos seleccionados para subir</span>
+            </div>
+
+            <!-- Paso 1: Selección de proyecto y validación de campos -->
+            <div id="jira-tests-step1" style="display: block;">
+                <!-- Proyecto de Jira -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Proyecto
+                        de Jira *</label>
+                    <select id="jira-tests-project-select"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        required>
+                        <option value="">Seleccionar proyecto...</option>
+                    </select>
+                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Selecciona el
+                        proyecto donde se crearán los casos de prueba</div>
+                </div>
+
+                <!-- Botón Validar Campos -->
+                <div style="margin-bottom: 1.5rem;">
+                    <button id="jira-tests-validate-fields-btn"
+                        style="width: 100%; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                        disabled>
+                        <span>🔍</span>
+                        <span>Validar Campos</span>
+                    </button>
+                </div>
+
+                <!-- Resultado de validación -->
+                <div id="jira-tests-validation-result" style="display: none; margin-bottom: 1.5rem;">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+
+            <!-- Paso 1.5: Configuración de campos select (solo se muestra después de validar campos) -->
+            <div id="jira-tests-step1-5" style="display: none;">
+                <div
+                    style="padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <span>ℹ️</span>
+                        <span style="font-weight: 600; color: var(--accent);">Información importante</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                        Los siguientes campos deben ser configurados manualmente ya que la AI no conoce los
+                        valores específicos de tu proyecto de Jira. Por favor, selecciona los valores
+                        correspondientes de las listas disponibles.
+                    </div>
+                </div>
+
+                <!-- Tipo de Prueba -->
+                <div id="jira-tests-tipo-prueba-container" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tipo
+                        de Prueba *</label>
+                    <select id="jira-tests-tipo-prueba-select"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        required>
+                        <option value="">Cargando valores...</option>
+                    </select>
+                    <div id="jira-tests-tipo-prueba-message"
+                        style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></div>
+                </div>
+
+                <!-- Nivel de Prueba -->
+                <div id="jira-tests-nivel-prueba-container" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Nivel
+                        de Prueba *</label>
+                    <select id="jira-tests-nivel-prueba-select"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        required>
+                        <option value="">Cargando valores...</option>
+                    </select>
+                    <div id="jira-tests-nivel-prueba-message"
+                        style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></div>
+                </div>
+
+                <!-- Tipo de Ejecución -->
+                <div id="jira-tests-tipo-ejecucion-container" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Tipo
+                        de Ejecución *</label>
+                    <select id="jira-tests-tipo-ejecucion-select"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        required>
+                        <option value="">Cargando valores...</option>
+                    </select>
+                    <div id="jira-tests-tipo-ejecucion-message"
+                        style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></div>
+                </div>
+
+                <!-- Ambiente -->
+                <div id="jira-tests-ambiente-container" style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Ambiente
+                        *</label>
+                    <select id="jira-tests-ambiente-select"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        required>
+                        <option value="">Cargando valores...</option>
+                    </select>
+                    <div id="jira-tests-ambiente-message"
+                        style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Paso 2: Validación de assignado (solo se muestra después de validar campos) -->
+            <div id="jira-tests-step2" style="display: none;">
+                <!-- Asignado a -->
+                <div style="margin-bottom: 1.5rem;">
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Asignado
+                        a (opcional)</label>
+                    <input type="email" id="jira-tests-assignee-input"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        placeholder="usuario@ejemplo.com">
+                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Email del
+                        usuario de Jira al que se asignarán los casos de prueba</div>
+                    <div id="jira-tests-assignee-validation"
+                        style="display: none; margin-top: 0.5rem; font-size: 0.85rem;"></div>
+                </div>
+            </div>
+        </div>
+        <div
+            style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
+            <button id="jira-tests-modal-cancel"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 0.95rem; font-weight: 500;">Cancelar</button>
+            <button id="jira-tests-modal-upload"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--success); color: white; cursor: pointer; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; display: none;">
+                <span>✅</span>
+                <span>Subir a Jira</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay para Tests -->
+<div id="tests-loading-overlay"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; text-align: center; max-width: 400px;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+        <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+            Subiendo casos de prueba a Jira...</div>
+        <div style="font-size: 0.9rem; color: var(--text-muted);">Por favor espera, esto puede tomar unos
+            momentos</div>
+    </div>
+</div>
+
+<!-- Modal: Revisar Casos de Prueba HTML -->
+<div id="tests-review-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 95%; max-width: 1200px; height: 90vh; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>👁️</span>
+                <span>Vista Previa de Casos de Prueba</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="downloadTestsHTML()"
+                    style="padding: 0.5rem 1rem; border: none; border-radius: 6px; background: var(--accent); color: white; cursor: pointer; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📥</span>
+                    <span>Descargar HTML</span>
+                </button>
+                <button onclick="closeTestsReview()"
+                    style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+            </div>
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+            <iframe id="tests-html-viewer" style="width: 100%; height: 100%; border: none; background: white;"></iframe>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Caso de Prueba -->
+<div id="edit-test-modal"
+    style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 2000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+        <div
+            style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem;">
+                <span>✏️</span>
+                <span>Editar Caso de Prueba</span>
+            </div>
+            <button id="edit-test-modal-close"
+                style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;">×</button>
+        </div>
+        <div style="padding: 1.5rem;">
+            <div
+                style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 0.75rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #93c5fd; display: flex; align-items: center; gap: 0.5rem;">
+                💡 Puedes editar todos los campos del caso de prueba. Los cambios se guardarán cuando presiones
+                "Guardar Cambios".
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Resumen
+                    (Summary) *</label>
+                <input type="text" id="edit-test-summary"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                    placeholder="Ingresa el resumen del caso de prueba">
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Este será el
+                    título del caso de prueba en Jira</div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Descripción
+                    *</label>
+                <textarea id="edit-test-description" rows="6"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.6;"
+                    placeholder="Describe el caso de prueba en detalle..."></textarea>
+                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Incluye los pasos
+                    a seguir y el resultado esperado</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Prioridad
+                        *</label>
+                    <select id="edit-test-priority"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;">
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Categoría</label>
+                    <input type="text" id="edit-test-categoria"
+                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
+                        placeholder="Ingresa la categoría">
+                </div>
+            </div>
+        </div>
+        <div
+            style="padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
+            <button id="edit-test-cancel"
+                style="padding: 0.75rem 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 0.95rem; font-weight: 500;">Cancelar</button>
+            <button id="edit-test-save"
+                style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer; font-size: 0.95rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                <span>✅</span>
+                <span>Guardar Cambios</span>
+            </button>
+        </div>
+    </div>
+</div>

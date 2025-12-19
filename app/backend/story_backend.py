@@ -1415,7 +1415,9 @@ def generate_html_document(stories, project_name="Sistema de Gestión de Proyect
     """
     # Leer el template HTML
     template_paths = [
+        'docs/mockups/story_format_mockup.html',
         'mockups/story_format_mockup.html',
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'docs', 'mockups', 'story_format_mockup.html'),
         os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mockups', 'story_format_mockup.html')
     ]
     

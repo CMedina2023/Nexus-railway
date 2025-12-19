@@ -1,220 +1,130 @@
 Summary,Description,Issuetype,Priority
-Gestión de Ubicaciones de Inventario (Creación y Edición),"* COMO: Administrador
-* QUIERO: Poder crear, editar y eliminar las ubicaciones de inventario (almacenes, tiendas físicas, centros de distribución)
-* PARA: Configurar la estructura física donde se gestiona el inventario y permitir la sincronización en tiempo real, optimizando la cadena de suministro.
+Visualizar el Inventario Consolidado Multi-Ubicación en Tiempo Real,"* COMO: Usuario
+* QUIERO: Visualizar el inventario consolidado de todos los productos en tiempo real, desglosado por almacén, tienda física y centro de distribución.
+* PARA: Tomar decisiones informadas sobre la disponibilidad de productos y la gestión de pedidos, asegurando que la información de stock sea siempre actual para alimentar y validar la predicción de demanda de la IA.
 * Criterios de Aceptación:
-  • Escenario Principal: necesito añadir un nuevo centro de distribución a la red CUANDO accedo a la sección de """"Gestión de Ubicaciones"""" y creo una nueva ubicación con todos los detalles requeridos (nombre, tipo, dirección, capacidad) ENTONCES la nueva ubicación se registra exitosamente y está disponible para la asignación de inventario y configuración de reglas.
-  • Escenario Alternativo: una tienda física ha cambiado su dirección CUANDO accedo a la sección de """"Gestión de Ubicaciones"""", selecciono la tienda existente y actualizo su dirección ENTONCES la información de la ubicación se actualiza correctamente y los sistemas dependientes (como cálculo de rutas o costos de envío) utilizan la nueva dirección.
-  • Validaciones: intento crear una nueva ubicación sin proporcionar un nombre único CUANDO intento guardar la nueva ubicación ENTONCES el sistema muestra un mensaje de error indicando que el nombre es obligatorio y debe ser único.
-* Prioridad: Alta
-* Complejidad: Moderada
-* Reglas de Negocio Clave:
-  • Cada ubicación de inventario debe tener un nombre único para su identificación.
-  • Es obligatorio especificar el tipo de ubicación (e.g., Almacén, Tienda Física, Centro de Distribución).
-  • Las ubicaciones inactivas no se consideran para transferencias o reservas inteligentes.",Story,High
-Configuración de Parámetros de Sincronización entre Ubicaciones,"* COMO: Administrador
-* QUIERO: Poder definir los parámetros y la frecuencia de sincronización de inventario entre diferentes ubicaciones
-* PARA: Asegurar la consistencia y la visibilidad en tiempo real del stock en toda la red, fundamental para la precisión de las decisiones de IA y la satisfacción del cliente.
-* Criterios de Aceptación:
-  • Escenario Principal: necesito configurar la sincronización de inventario entre un almacén principal y una tienda específica CUANDO accedo a la sección de """"Configuración de Sincronización"""" y defino que la sincronización sea cada 5 minutos bidireccionalmente para esa pareja de ubicaciones ENTONCES la regla de sincronización se guarda y se aplica, garantizando que los niveles de stock se actualicen automáticamente entre ellas.
-  • Escenario Alternativo: la red experimenta un alto volumen de transacciones y necesito reducir la carga del sistema CUANDO modifico la frecuencia de sincronización de un grupo de tiendas de cada 1 minuto a cada 10 minutos ENTONCES el sistema ajusta la programación de sincronización según la nueva configuración, priorizando la estabilidad del sistema.
-  • Validaciones: intento configurar una sincronización con una frecuencia negativa o nula CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que la frecuencia debe ser un valor positivo válido.
+  • Escenario Principal: el sistema ha procesado transacciones de inventario recientes (ej. venta, recepción, transferencia) en diferentes ubicaciones y la sincronización es exitosa CUANDO accedo a la vista de inventario consolidado ENTONCES veo los niveles de stock actualizados para cada ubicación y producto, reflejando los cambios en tiempo real, junto con la hora de la última actualización.
+  • Escenario Alternativo: una ubicación ha experimentado un problema de conectividad temporal y la sincronización está retrasada CUANDO accedo a la vista de inventario consolidado ENTONCES veo los últimos datos conocidos para esa ubicación con una indicación visual clara de la falta de sincronización actual y la hora de la última actualización exitosa.
+  • Validaciones: intento buscar un producto o ubicación sin datos registrados CUANDO realizo la búsqueda o filtro ENTONCES el sistema muestra """"0"""" o """"No disponible"""" para esa entrada, evitando información engañosa y manteniendo la integridad de los datos para la IA.
 * Prioridad: Alta
 * Complejidad: Compleja
 * Reglas de Negocio Clave:
-  • La sincronización por defecto debe ser cada 1 minuto para ubicaciones de alta rotación, salvo que se especifique lo contrario.
-  • Las configuraciones de sincronización deben ser auditables, registrando quién y cuándo se realizaron cambios.
-  • Un fallo en la sincronización debe generar una alerta crítica para el Administrador.",Story,High
-Monitoreo de Estado de Sincronización de Inventario,"* COMO: Administrador
-* QUIERO: Tener un panel visual que muestre el estado de la sincronización de inventario entre todas las ubicaciones
-* PARA: Identificar rápidamente cualquier discrepancia o fallo en la actualización del stock y asegurar la integridad de los datos en tiempo real, lo cual es crítico para la precisión de la IA y la eficiencia operativa.
+  • La sincronización entre ubicaciones debe ocurrir de manera continua o en intervalos no mayores a 60 segundos para ser considerada """"tiempo real"""".
+  • Todos los movimientos de inventario (entradas, salidas, transferencias, ajustes) deben impactar inmediatamente los niveles de stock visibles.
+  • La vista consolidada debe incluir un identificador claro de la ubicación (almacén, tienda, centro de distribución).",Story,High
+Consultar Stock Detallado por Producto en Todas las Ubicaciones,"* COMO: Usuario
+* QUIERO: Buscar un producto específico y ver su stock detallado en cada una de las ubicaciones (almacenes, tiendas, centros de distribución) incluyendo stock disponible y reservado.
+* PARA: Confirmar rápidamente la disponibilidad de un artículo particular antes de comprometerlo a un cliente o iniciar una transferencia, optimizando la respuesta a la demanda y complementando las sugerencias de la IA.
 * Criterios de Aceptación:
-  • Escenario Principal: accedo al panel de control de inventario CUANDO visualizo la sección de """"Estado de Sincronización"""" ENTONCES puedo ver una lista de todas las parejas de ubicaciones configuradas para sincronización, su último estado (éxito/fallo), la hora de la última sincronización y el número de discrepancias detectadas (si las hay).
-  • Escenario Alternativo: una sincronización ha fallado entre un almacén y una tienda CUANDO reviso el panel de estado de sincronización ENTONCES la pareja de ubicaciones se marca con un indicador visual de error y se muestra un mensaje detallado del motivo del fallo, permitiéndome investigar la causa.
-  • Validaciones: no se ha configurado ninguna sincronización entre ubicaciones CUANDO accedo al panel de estado de sincronización ENTONCES el sistema muestra un mensaje indicando que no hay configuraciones de sincronización activas.
+  • Escenario Principal: he seleccionado un producto desde el catálogo general o ingresado su SKU CUANDO accedo a su detalle de inventario ENTONCES veo una lista de todas las ubicaciones donde el producto está disponible, junto con la cantidad exacta en stock disponible para venta y la cantidad reservada en cada una.
+  • Escenario Alternativo: un producto tiene cero stock disponible en todas las ubicaciones CUANDO consulto su inventario ENTONCES el sistema indica claramente que el producto no está disponible para venta en ninguna ubicación, aunque pueda mostrar stock reservado.
+  • Validaciones: ingreso un código de producto inexistente CUANDO realizo la búsqueda ENTONCES el sistema muestra un mensaje de """"Producto no encontrado"""" y no devuelve resultados, garantizando la precisión de la información.
 * Prioridad: Alta
 * Complejidad: Moderada
 * Reglas de Negocio Clave:
-  • Las discrepancias de stock que superen un umbral predefinido (e.g., 5% o 10 unidades) deben resaltar la entrada en el panel.
-  • El panel debe permitir filtrar por estado (exitoso, fallido, pendiente) o por ubicación.
-  • Se debe registrar un historial detallado de todas las sincronizaciones, incluyendo los cambios realizados.",Story,High
-Configuración de Reglas para Reservas Inteligentes,"* COMO: Administrador
-* QUIERO: Poder definir y ajustar las
-* PARA: Optimizar la asignación de stock en función de la ubicación del cliente, costos de envío y disponibilidad, mejorando la rentabilidad y la experiencia de compra.
+  • La búsqueda de productos debe soportar diferentes criterios (SKU, nombre, código de barras) y ser sensible a mayúsculas/minúsculas.
+  • La información de stock debe ser consistente con la mostrada en la vista consolidada en tiempo real.
+  • Se debe poder diferenciar entre stock disponible para venta y stock reservado para pedidos específicos.",Story,High
+Realizar una Reserva de Inventario con Optimización Inteligente,"* COMO: Usuario (ej. un vendedor o agente de servicio al cliente)
+* QUIERO: Crear una reserva de inventario para un cliente, y que el sistema me sugiera la ubicación de origen más óptima considerando la ubicación del cliente, costos de envío y disponibilidad de stock.
+* PARA: Asegurar la entrega más rápida y económica al cliente, minimizando los costos operativos y mejorando la satisfacción, aprovechando las predicciones de demanda y la lógica de la IA para asignar stock de la mejor manera.
 * Criterios de Aceptación:
-  • Escenario Principal: necesito priorizar la ubicación del cliente para reducir los tiempos de entrega CUANDO accedo a la sección de """"Configuración de Reservas Inteligentes"""" y ajusto la ponderación del factor """"proximidad geográfica del cliente"""" a un valor más alto ENTONCES el sistema de reservas inteligentes comienza a dar más peso a la ubicación del cliente al sugerir la ubicación de origen del inventario.
-  • Escenario Alternativo: los costos de envío han aumentado para ciertos tipos de productos CUANDO accedo a la configuración de reservas y establezco un umbral máximo de costo de envío aceptable para categorías de productos específicas ENTONCES el sistema de IA evitará asignar inventario de ubicaciones que superen ese umbral de costo de envío, buscando alternativas más rentables.
-  • Validaciones: intento guardar una configuración de reglas con valores inconsistentes (e.g., un umbral de costo negativo) CUANDO intento aplicar los cambios ENTONCES el sistema muestra una advertencia o un mensaje de error, impidiendo que se guarden configuraciones inválidas.
+  • Escenario Principal: he ingresado el producto, la cantidad y la dirección de envío del cliente CUANDO solicito crear una reserva ENTONCES el sistema me presenta una sugerencia de la ubicación de origen (almacén/tienda) con los detalles del stock disponible, el costo de envío estimado y el tiempo de entrega previsto, basándose en la ubicación del cliente y la disponibilidad general.
+  • Escenario Alternativo: la ubicación sugerida tiene stock limitado o un costo de envío inaceptable, o por razones operativas debo elegir otra CUANDO elijo una ubicación de origen alternativa manualmente ENTONCES el sistema recalcula y muestra los nuevos costos de envío y tiempos de entrega para mi selección, permitiendo al usuario decidir.
+  • Validaciones: intento reservar una cantidad mayor a la disponible en todas las ubicaciones seleccionables CUANDO confirmo la reserva ENTONCES el sistema me alerta sobre la insuficiencia de stock y no permite la reserva hasta que se ajuste la cantidad, evitando falsas promesas al cliente.
 * Prioridad: Alta
 * Complejidad: Compleja
 * Reglas de Negocio Clave:
-  • Las reglas de reservas inteligentes deben ser aplicables a nivel global, por categoría de producto o por tipo de cliente.
-  • Los cambios en las reglas de reserva deben ser registrados y poder revertirse si es necesario.
-  • La configuración debe permitir definir un orden de",Story,High
-Gestión Manual de Reservas de Inventario,"* COMO: Administrador
-* QUIERO: Poder crear, modificar o cancelar manualmente las reservas de inventario
-* PARA: Atender pedidos especiales, resolver incidencias o anular reservas generadas por el sistema cuando sea necesario, garantizando flexibilidad y control sobre el stock reservado.
+  • El algoritmo de sugerencia de la IA debe priorizar la cercanía al cliente, luego el costo de envío, y finalmente la disponibilidad de stock, en ese orden configurable por administración.
+  • Las reservas deben reducir el stock disponible para venta en la ubicación de origen seleccionada y reflejarse como """"stock reservado"""".
+  • Se deben considerar tarifas de envío predefinidas por zona/peso/volumen y la capacidad de transporte de cada ubicación.",Story,High
+Gestionar Reservas de Inventario Existentes,"* COMO: Usuario
+* QUIERO: Consultar, modificar o cancelar reservas de inventario existentes.
+* PARA: Adaptarme a los cambios en los pedidos de los clientes o en la disponibilidad de stock, manteniendo la flexibilidad operativa y la precisión del inventario, y asegurando que las acciones del usuario no interfieran negativamente con las predicciones de la IA.
 * Criterios de Aceptación:
-  • Escenario Principal: un cliente VIP ha solicitado una reserva especial para un artículo específico en una tienda concreta CUANDO accedo a la sección de """"Gestión de Reservas"""", creo una nueva reserva manual para ese artículo, cliente y ubicación ENTONCES el inventario de ese artículo se reserva en la ubicación especificada y se refleja en el stock disponible, asegurando la satisfacción del cliente.
-  • Escenario Alternativo: un pedido ha sido cancelado y su reserva asociada ya no es necesaria CUANDO accedo a la sección de """"Gestión de Reservas"""", busco la reserva correspondiente y la cancelo ENTONCES el inventario reservado se libera y vuelve a estar disponible para la venta, optimizando la utilización del stock.
-  • Validaciones: intento crear una reserva manual para un artículo que no tiene stock disponible en la ubicación seleccionada CUANDO intento guardar la reserva ENTONCES el sistema muestra una alerta indicando que no hay suficiente stock disponible y no permite la reserva, previniendo errores de asignación.
+  • Escenario Principal: existe una reserva activa para un cliente CUANDO la busco por ID de reserva, nombre de cliente o rango de fechas ENTONCES puedo ver los detalles completos de la reserva (productos, cantidad, ubicación de origen, estado, cliente) y tengo opciones claras para modificar la cantidad o cancelarla.
+  • Escenario Alternativo: modifico la cantidad de un producto en una reserva activa CUANDO guardo los cambios ENTONCES el stock disponible se ajusta automáticamente en la ubicación de origen, reflejando la nueva cantidad reservada, y el sistema actualiza su estado.
+  • Validaciones: intento cancelar una reserva que ya ha sido despachada y se encuentra en tránsito o entregada CUANDO solicito la cancelación ENTONCES el sistema me informa que la reserva no puede ser cancelada y me sugiere contactar al equipo de logística o crear una devolución si aplica.
 * Prioridad: Media
 * Complejidad: Moderada
 * Reglas de Negocio Clave:
-  • Las reservas manuales deben requerir un motivo de creación o cancelación.
-  • Cualquier modificación o cancelación de una reserva debe registrarse en un log de auditoría.
-  • Las reservas manuales tienen",Story,Medium
-Configuración de Políticas para Transferencias Automáticas,"* COMO: Administrador
-* QUIERO: Poder definir las políticas y los umbrales que rigen las transferencias automáticas de inventario entre ubicaciones
-* PARA: Optimizar la distribución del stock en función de la demanda predictiva y las
+  • La cancelación de una reserva debe liberar el stock reservado, haciéndolo nuevamente disponible para venta y para futuras asignaciones inteligentes.
+  • Solo los usuarios con permisos adecuados pueden modificar o cancelar reservas, y estos cambios deben quedar registrados en un historial de auditoría.
+  • Las modificaciones de reservas pueden requerir una nueva evaluación de la ubicación de origen si la cantidad o los productos cambian significativamente.",Story,Medium
+Revisar y Aprobar/Rechazar Transferencias de Inventario Sugeridas por IA,"* COMO: Usuario (ej. Gerente de Inventario)
+* QUIERO: Revisar las transferencias de inventario sugeridas automáticamente por el sistema, basadas en la demanda predictiva de la IA, y tener la opción de aprobarlas o rechazarlas.
+* PARA: Optimizar la distribución del inventario entre ubicaciones, prevenir desabastecimientos y excesos de stock, y mantener el control humano sobre las decisiones automatizadas de reabastecimiento estratégico que buscan la eficiencia global.
 * Criterios de Aceptación:
-  • Escenario Principal: la demanda de un producto ha aumentado en una región específica CUANDO accedo a la sección de """"Configuración de Transferencias Automáticas"""" y defino una política para que, si el stock de una tienda baja del 20% de su capacidad máxima, el sistema genere una transferencia desde el almacén más cercano ENTONCES la política se activa y el sistema de IA comienza a sugerir o ejecutar transferencias basadas en esa regla, proactivamente reabasteciendo la tienda.
-  • Escenario Alternativo: deseo evitar transferencias de productos de bajo margen a ubicaciones distantes debido a altos costos logísticos CUANDO configuro una regla que desactiva las transferencias automáticas para ciertos SKU o categorías de productos si la distancia supera un umbral definido ENTONCES el sistema de IA respetará esta restricción al proponer transferencias, priorizando la rentabilidad.
-  • Validaciones: intento configurar una política con un umbral de stock mínimo negativo CUANDO intento guardar la política ENTONCES el sistema muestra un error indicando que el umbral debe ser un valor positivo válido.
+  • Escenario Principal: el sistema ha generado una propuesta de transferencia automática (ej. de almacén central a tienda A por demanda estacional prevista) CUANDO accedo a la bandeja de """"Transferencias Sugeridas"""" ENTONCES veo los detalles completos de la transferencia (productos, cantidades, origen, destino, justificación basada en demanda predictiva) y botones claros para """"Aprobar"""" o """"Rechazar"""".
+  • Escenario Alternativo: apruebo una transferencia sugerida CUANDO la confirmación es exitosa ENTONCES la transferencia pasa a estado """"Pendiente de Ejecución"""", el stock se marca como """"reservado para transferencia"""" en origen y se genera una tarea para el equipo de logística.
+  • Validaciones: intento aprobar una transferencia sin stock suficiente disponible en la ubicación de origen (ej. debido a una venta reciente) CUANDO confirmo la aprobación ENTONCES el sistema me alerta sobre la insuficiencia de stock y me permite ajustar la cantidad de la transferencia o cancelarla antes de aprobar, evitando movimientos erróneos.
 * Prioridad: Alta
 * Complejidad: Compleja
 * Reglas de Negocio Clave:
-  • Las políticas de transferencia automática deben poder activarse/desactivarse por producto, categoría, ubicación o globalmente.
-  • Cada política debe tener un costo estimado de transferencia asociado para evaluar su impacto financiero.
-  • Las políticas pueden incluir un periodo de gracia antes de ejecutar una transferencia para permitir ajustes manuales.",Story,High
-Aprobación/Rechazo de Transferencias Automáticas Sugeridas,"* COMO: Administrador
-* QUIERO: Poder revisar y aprobar o rechazar las sugerencias de transferencias de inventario generadas automáticamente por el sistema de IA
-* PARA: Mantener un control final sobre los movimientos de stock importantes y evitar transferencias ineficientes o costosas, asegurando una gestión prudente del inventario.
+  • Las sugerencias de transferencia deben incluir la fuente de la predicción de demanda (ej. """"demanda estacional"""", """"próxima promoción"""", """"nivel mínimo de stock"""") y la fecha de la predicción.
+  • La aprobación de una transferencia debe bloquear el stock en la ubicación de origen hasta que se complete el movimiento físico.
+  • Debe haber un umbral mínimo de stock disponible para que una ubicación sea considerada como origen de transferencia para no impactar las ventas locales.",Story,High
+Iniciar una Transferencia Manual de Inventario entre Ubicaciones,"* COMO: Usuario
+* QUIERO: Iniciar una transferencia manual de inventario entre dos ubicaciones (almacén, tienda, centro de distribución).
+* PARA: Responder a situaciones inesperadas o necesidades urgentes de reabastecimiento que no fueron anticipadas por el sistema o la IA, manteniendo la flexibilidad operativa y la capacidad de reacción ante eventos no modelados.
 * Criterios de Aceptación:
-  • Escenario Principal: el sistema de IA ha sugerido una transferencia de 50 unidades de un producto desde el almacén A al almacén B debido a la demanda predictiva CUANDO accedo a la bandeja de """"Sugerencias de Transferencia"""", reviso los detalles y apruebo la transferencia ENTONCES la transferencia se marca como """"Aprobada"""" y se programa para su ejecución, actualizando los niveles de inventario en tránsito.
-  • Escenario Alternativo: una transferencia sugerida por el sistema implicaría un costo de envío excesivo o iría en contra de una promoción de stock local CUANDO accedo a la bandeja de """"Sugerencias de Transferencia"""", reviso los detalles y rechazo la transferencia ENTONCES la transferencia se marca como """"Rechazada"""" con un motivo y el sistema no la ejecutará, preservando la estrategia de negocio.
-  • Validaciones: intento aprobar una transferencia sugerida para la cual el stock de origen ya no está disponible CUANDO intento aprobar la transferencia ENTONCES el sistema muestra una alerta indicando que el stock es insuficiente y no permite la aprobación.
-* Prioridad: Alta
-* Complejidad: Moderada
-* Reglas de Negocio Clave:
-  • Todas las sugerencias de transferencia deben mostrar el costo logístico estimado y el impacto en la disponibilidad de stock.
-  • Las sugerencias deben tener un plazo para su aprobación; si expira, se considerarán automáticamente rechazadas.
-  • El motivo del rechazo debe ser obligatorio para futuras mejoras del modelo de IA.",Story,High
-Visualización y Auditoría del Historial de Transferencias,"* COMO: Administrador
-* QUIERO: Poder consultar el historial completo de todas las transferencias de inventario (manuales y automáticas)
-* PARA: Realizar auditorías, analizar patrones de movimiento de stock y evaluar la eficiencia de las políticas de transferencia, contribuyendo a la mejora continua de la logística.
-* Criterios de Aceptación:
-  • Escenario Principal: necesito revisar las transferencias realizadas de un producto específico durante el último mes CUANDO accedo a la sección de """"Historial de Transferencias"""", aplico los filtros por producto y rango de fechas ENTONCES se muestra una lista detallada de todas las transferencias que cumplen los criterios, incluyendo origen, destino, cantidad, fecha y estado.
-  • Escenario Alternativo: deseo saber qué transferencias fueron rechazadas por un motivo específico CUANDO filtro el historial por estado """"Rechazado"""" y por un motivo de rechazo particular ENTONCES el sistema muestra solo las transferencias que fueron denegadas con ese motivo, facilitando el análisis de decisiones.
-  • Validaciones: busco transferencias con un rango de fechas inválido (fecha de inicio posterior a fecha fin) CUANDO aplico el filtro ENTONCES el sistema muestra un mensaje de error indicando la inconsistencia en el rango de fechas.
+  • Escenario Principal: necesito mover stock de la Tienda A al Centro de Distribución B por una necesidad específica CUANDO selecciono el origen, destino, los productos y las cantidades para la transferencia ENTONCES el sistema crea una nueva orden de transferencia con estado """"Pendiente de Despacho"""" y descuenta el stock del origen, marcándolo como """"En Tránsito"""".
+  • Escenario Alternativo: una transferencia manual ha sido despachada desde el origen CUANDO el sistema registra el despacho ENTONCES el stock se descuenta del origen y se marca como """"En Tránsito"""" hasta que se reciba en el destino, y esta información es visible para todos los usuarios.
+  • Validaciones: intento transferir una cantidad mayor a la disponible en la ubicación de origen CUANDO intento guardar la transferencia ENTONCES el sistema me muestra un error y me impide crear la transferencia hasta que la cantidad sea ajustada a un valor válido.
 * Prioridad: Media
 * Complejidad: Moderada
 * Reglas de Negocio Clave:
-  • El historial debe incluir quién inició/aprobó/rechazó la transferencia y cuándo.
-  • Se debe poder exportar el historial de transferencias a formatos comunes (CSV, Excel) para análisis externo.
-  • El sistema debe mantener el historial de transferencias por un período mínimo de 5 años para fines de auditoría.",Story,Medium
-Configuración de Alertas para Lotes y Fechas de Vencimiento,"* COMO: Administrador
-* QUIERO: Poder configurar los umbrales y tipos de alertas automáticas para el control de lotes y fechas de vencimiento
-* PARA: Recibir notificaciones proactivas sobre productos próximos a caducar o caducados, minimizando las pérdidas por deterioro y asegurando la calidad del producto.
+  • El stock """"En Tránsito"""" debe ser visible para todos los usuarios, pero no disponible para venta o reserva en ninguna de las ubicaciones.
+  • Se debe poder adjuntar notas o comentarios a cada transferencia manual para justificar su creación.
+  • La recepción de la transferencia en el destino debe actualizar el stock en esa ubicación, moviendo el stock de """"En Tránsito"""" a """"Disponible"""".",Story,Medium
+Dar Seguimiento al Estado y Historial de las Transferencias de Inventario,"* COMO: Usuario
+* QUIERO: Consultar el estado actual y el historial completo de todas las transferencias de inventario, tanto manuales como automáticas.
+* PARA: Monitorear el movimiento de stock, asegurar que las operaciones se ejecuten según lo previsto, resolver rápidamente cualquier discrepancia o retraso, y evaluar la eficiencia de las sugerencias de transferencia de la IA.
 * Criterios de Aceptación:
-  • Escenario Principal: deseo ser notificado sobre productos que van a vencer en 30 días CUANDO accedo a la sección de """"Configuración de Alertas de Vencimiento"""" y establezco el umbral de alerta temprana en 30 días antes de la fecha de caducidad ENTONCES el sistema generará y enviará alertas a los usuarios configurados para recibir notificaciones sobre lotes que cumplan esa condición.
-  • Escenario Alternativo: quiero diferenciar las alertas por categoría de producto, siendo más estricto con los perecederos CUANDO configuro un umbral de alerta de 60 días para productos alimenticios y 15 días para productos no perecederos ENTONCES el sistema aplica las reglas de alerta específicas para cada categoría, optimizando la gestión de inventario.
-  • Validaciones: intento configurar un umbral de días negativo para una alerta CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el número de días debe ser un valor positivo.
-* Prioridad: Alta
-* Complejidad: Moderada
-* Reglas de Negocio Clave:
-  • Las alertas pueden configurarse por correo electrónico, notificaciones dentro del sistema o SMS para alertas críticas.
-  • Se debe poder asignar diferentes grupos de usuarios o roles para recibir tipos específicos de alertas (e.g., Almacén, Compras).
-  • Las alertas de productos ya vencidos deben tener la máxima",Story,High
-Gestión de Información de Lotes y Fechas de Vencimiento,"* COMO: Administrador
-* QUIERO: Poder registrar, modificar y consultar la información de lotes y sus fechas de vencimiento para cada producto en el inventario
-* PARA: Mantener un control preciso de la trazabilidad y la frescura del inventario, lo cual es esencial para cumplir con normativas y reducir el riesgo de ventas de productos caducados.
-* Criterios de Aceptación:
-  • Escenario Principal: ha llegado un nuevo cargamento de productos con un nuevo lote y fecha de vencimiento CUANDO accedo a la vista de inventario, selecciono el producto y añado los detalles del nuevo lote (número de lote, fecha de fabricación, fecha de vencimiento, cantidad) ENTONCES la información del lote se registra correctamente y el sistema puede comenzar a monitorear su fecha de vencimiento.
-  • Escenario Alternativo: se ha detectado un error en la fecha de vencimiento de un lote previamente registrado CUANDO accedo a la información del lote erróneo y edito la fecha de vencimiento a la correcta ENTONCES la fecha de vencimiento se actualiza y el sistema ajusta las alertas correspondientes, garantizando la precisión del inventario.
-  • Validaciones: intento registrar un lote con una fecha de vencimiento anterior a la fecha actual CUANDO intento guardar la información ENTONCES el sistema muestra una advertencia o un mensaje de error indicando una fecha de vencimiento inválida.
-* Prioridad: Alta
-* Complejidad: Moderada
-* Reglas de Negocio Clave:
-  • Cada entrada de lote debe estar asociada a un producto y una ubicación específicos.
-  • La información del lote debe ser inmutable una vez que el inventario ha sido consumido, excepto para correcciones justificadas.
-  • El sistema debe soportar el control de lotes para productos configurados con esta característica.",Story,High
-Revisión y Gestión de Inventario Próximo a Vencer o Vencido,"* COMO: Administrador
-* QUIERO: Tener una vista consolidada del inventario que está próximo a vencer o ya ha caducado
-* PARA: Tomar decisiones informadas sobre la disposición de estos productos, minimizar las pérdidas por deterioro y optimizar el espacio de almacenamiento.
-* Criterios de Aceptación:
-  • Escenario Principal: necesito identificar todo el stock que vencerá en los próximos 90 días CUANDO accedo al reporte de """"Inventario Próximo a Vencer"""" y filtro por ese rango de tiempo ENTONCES se muestra una lista de productos, lotes, cantidades, ubicaciones y sus respectivas fechas de vencimiento, permitiendo planificar acciones preventivas.
-  • Escenario Alternativo: se ha detectado inventario ya vencido en el almacén CUANDO accedo al reporte de """"Inventario Vencido"""" ENTONCES veo una lista clara de todos los lotes de productos que han caducado, con detalles de cantidad y ubicación, para iniciar su disposición inmediata.
-  • Validaciones: intento filtrar por un rango de fechas inválido (e.g., fecha de fin anterior a fecha de inicio) CUANDO aplico el filtro ENTONCES el sistema muestra un mensaje de error indicando la inconsistencia.
-* Prioridad: Alta
-* Complejidad: Moderada
-* Reglas de Negocio Clave:
-  • El reporte debe permitir la exportación de datos para análisis externo.
-  • Debe incluir opciones para marcar lotes como """"En cuarentena"""" o """"Para disposición"""" directamente desde el reporte.
-  • La vista debe indicar el impacto financiero estimado del inventario próximo a vencer o vencido.",Story,High
-Configuración de Políticas de Disposición para Inventario Vencido,"* COMO: Administrador
-* QUIERO: Poder definir políticas y flujos de trabajo para la disposición del inventario vencido
-* PARA: Estandarizar el proceso de manejo de productos caducados, asegurar el cumplimiento normativo y minimizar el impacto financiero.
-* Criterios de Aceptación:
-  • Escenario Principal: necesito establecer un proceso para el descarte de productos químicos vencidos CUANDO accedo a la sección de """"Políticas de Disposición"""" y configuro una política que requiere aprobación doble y genera una orden de destrucción con seguimiento de residuos ENTONCES la política se guarda y se activa, guiando al personal en el proceso correcto de disposición.
-  • Escenario Alternativo: algunos productos cercanos a vencer podrían ser vendidos con descuento antes de caducar CUANDO configuro una política para que, si un producto está a 30 días de su vencimiento, se sugiera automáticamente una reducción del 50% de su precio ENTONCES el sistema de IA considerará esta regla en sus sugerencias de precios o promociones, optimizando la venta antes del vencimiento.
-  • Validaciones: intento crear una política de disposición sin especificar los roles de aprobación requeridos CUANDO intento guardar la política ENTONCES el sistema muestra un error indicando que los roles de aprobación son obligatorios.
-* Prioridad: Media
-* Complejidad: Compleja
-* Reglas de Negocio Clave:
-  • Las políticas de disposición deben ser configurables por categoría de producto o por impacto financiero.
-  • Cada paso en el flujo de disposición debe ser registrado para auditoría.
-  • Se debe poder definir si la disposición implica una baja de stock o una transferencia a una ubicación de cuarentena.",Story,Medium
-Configuración de Tipos de Ubicaciones de Inventario,"* COMO: Administrador
-* QUIERO: Poder definir y gestionar los diferentes tipos de ubicaciones de inventario (e.g., Almacén Central, Tienda Pequeña, Punto de Recogida)
-* PARA: Clasificar y agrupar las ubicaciones con características similares, facilitando la aplicación de
-* Criterios de Aceptación:
-  • Escenario Principal: necesitamos diferenciar las tiendas físicas por su tamaño y capacidad logística CUANDO accedo a la sección de """"Gestión de Tipos de Ubicación"""", creo un nuevo tipo llamado """"Tienda Premium"""" y le asigno atributos específicos (ej. mayor capacidad de recepción,
+  • Escenario Principal: hay transferencias en proceso y completadas CUANDO accedo al panel de seguimiento de transferencias ENTONCES veo una lista clara de todas las transferencias con su ID, origen, destino, fecha de creación, productos involucrados y estado actual (ej. Pendiente de Aprobación, En Tránsito, Recibida).
+  • Escenario Alternativo: una transferencia está """"En Tránsito"""" CUANDO hago clic en sus detalles ENTONCES puedo ver la fecha de despacho, la fecha estimada de llegada y, si está disponible, el progreso o la información de seguimiento del proveedor logístico.
+  • Validaciones: busco una transferencia por un ID inexistente o un filtro que no arroja resultados CUANDO realizo la búsqueda ENTONCES el sistema me informa que no se encontraron resultados para los criterios especificados, evitando confusión.
 * Prioridad: Media
 * Complejidad: Moderada
 * Reglas de Negocio Clave:
-  • Cada tipo de ubicación puede tener atributos predefinidos que influyen en las reglas de inventario (e.g., capacidad, horario, tipo de productos almacenables).
-  • Los tipos de ubicación deben ser jerárquicos o tener relaciones configurables (e.g., un """"Almacén Regional"""" es un subtipo de """"Almacén"""").
-  • Cualquier cambio en un tipo de ubicación debe registrarse y aplicarse automáticamente a todas las ubicaciones asignadas.",Story,Medium
-Configuración de Umbrales de Disponibilidad para Reservas Inteligentes,"* COMO: Administrador
-* QUIERO: Poder establecer umbrales de stock mínimo o porcentajes de disponibilidad para que el sistema de reservas inteligentes asigne inventario
-* PARA: Evitar la sobre-promesa de stock y garantizar que siempre haya una cantidad mínima de productos disponible para ventas en tienda o pedidos prioritarios, manteniendo el equilibrio entre la venta online y física.
+  • El estado de la transferencia debe actualizarse automáticamente al despachar y recibir el inventario en cada ubicación.
+  • Se debe poder filtrar las transferencias por estado, origen, destino, rango de fechas y tipo (manual/automática).
+  • Cada transferencia debe tener un identificador único y un historial de cambios.",Story,Medium
+Registrar y Gestionar Lotes de Productos con Fechas de Vencimiento,"* COMO: Usuario (ej. Operador de Almacén)
+* QUIERO: Registrar productos recibidos con su número de lote y fecha de vencimiento.
+* PARA: Asegurar la trazabilidad, controlar la calidad y optimizar la rotación del inventario siguiendo el principio FIFO/FEFO, lo cual es crucial para la eficiencia, la seguridad alimentaria/sanitaria, y para informar la IA de predicción sobre la vida útil del inventario.
 * Criterios de Aceptación:
-  • Escenario Principal: quiero asegurar que cada tienda siempre tenga al menos 5 unidades de un producto de alta rotación para ventas en persona CUANDO accedo a la """"Configuración de Umbrales de Reserva"""" y defino un umbral de """"disponibilidad mínima en tienda"""" de 5 unidades para ese SKU ENTONCES el sistema de reservas inteligentes no asignará ese producto a pedidos online si el stock en la tienda cae por debajo de 5 unidades, priorizando la venta física.
-  • Escenario Alternativo: un producto tiene una demanda muy alta y deseo que la IA solo reserve el 70% del stock disponible para pedidos online CUANDO configuro un umbral de reserva del 70% del inventario disponible para ese producto ENTONCES el sistema de reservas inteligentes dejará un 30% del stock disponible en la ubicación para otras necesidades, como clientes de alto valor o compras de última hora.
-  • Validaciones: intento configurar un umbral porcentual fuera del rango de 0-100% CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el porcentaje debe estar entre 0 y 100.
+  • Escenario Principal: estoy recibiendo un nuevo envío de productos que requieren control de lote CUANDO ingreso la información del producto, cantidad, número de lote y fecha de vencimiento al sistema ENTONCES el sistema almacena esta información y la asocia correctamente al stock de esa ubicación y producto.
+  • Escenario Alternativo: necesito buscar un producto por su número de lote para una auditoría o retiro CUANDO uso la función de búsqueda por lote ENTONCES el sistema me muestra la ubicación del lote, la cantidad disponible y su fecha de vencimiento, permitiendo una rápida identificación.
+  • Validaciones: intento registrar un lote con una fecha de vencimiento pasada o inválida CUANDO confirmo la entrada ENTONCES el sistema me alerta sobre la fecha de vencimiento inválida y me impide guardar hasta corregirla o justificarla con un motivo específico (ej. """"destrucción inmediata"""").
 * Prioridad: Alta
 * Complejidad: Moderada
 * Reglas de Negocio Clave:
-  • Los umbrales pueden ser configurados globalmente, por ubicación, por categoría de producto o por SKU.
-  • Los umbrales de disponibilidad para reservas inteligentes deben coexistir con los umbrales de reorden y generar alertas si se cruzan.
-  • Las ventas directas en tienda no deben verse afectadas por los umbrales de reserva, salvo que se especifique una política de """"solo reserva"""".",Story,High
-Gestión de Costos de Envío por Ubicación para Reservas Inteligentes,"* COMO: Administrador
-* QUIERO: Poder definir y actualizar los costos de envío asociados a cada ubicación de inventario y destino
-* PARA: Permitir que el sistema de reservas inteligentes optimice las decisiones de asignación de stock, priorizando las opciones más rentables y competitivas para el negocio y el cliente.
+  • Para productos configurados con control de lote, la fecha de vencimiento y el número de lote son campos obligatorios al momento de la recepción.
+  • El sistema debe permitir la gestión de múltiples lotes del mismo producto en la misma ubicación, diferenciándolos por su identificador de lote.
+  • Los productos deben ser despachados siguiendo una política de """"Primero en Vencer, Primero en Salir"""" (FEFO) por defecto, a menos que se especifique una excepción explícita.",Story,High
+Recibir Alertas Automáticas sobre Productos Próximos a Vencer,"* COMO: Usuario (ej. Gerente de Calidad o de Inventario)
+* QUIERO: Recibir alertas automáticas y personalizables sobre lotes de productos cuyas fechas de vencimiento están próximas o ya han expirado.
+* PARA: Tomar acciones proactivas como promociones, transferencias rápidas o disposición controlada antes de que los productos caduquen, minimizando pérdidas, maximizando el valor del inventario y proporcionando datos de alta calidad para las predicciones de la IA.
 * Criterios de Aceptación:
-  • Escenario Principal: una nueva tarifa de envío se ha negociado con un transportista para una región específica desde el almacén principal CUANDO accedo a la sección de """"Costos de Envío por Ubicación"""", selecciono el almacén principal y la región de destino, y actualizo la tarifa ENTONCES el sistema de reservas inteligentes utilizará la nueva tarifa en sus cálculos para la asignación de inventario, optimizando los costos de cumplimiento.
-  • Escenario Alternativo: deseo establecer un costo de envío fijo para entregas desde tiendas locales en un radio específico CUANDO configuro una regla de costo de envío por distancia que aplica una tarifa plana para un radio de 5km desde cualquier tienda física ENTONCES las reservas inteligentes considerarán esta tarifa plana al asignar pedidos para entrega local, promoviendo la eficiencia logística.
-  • Validaciones: intento introducir un costo de envío negativo CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el costo de envío debe ser un valor positivo.
+  • Escenario Principal: un lote de producto tiene una fecha de vencimiento dentro del umbral de alerta configurado (ej. 30 días) CUANDO el sistema procesa las fechas de vencimiento diariamente ENTONCES recibo una notificación (ej. correo electrónico, alerta en el panel del sistema) detallando el lote, producto, cantidad, ubicación y fecha de vencimiento, con un enlace para gestionar el lote.
+  • Escenario Alternativo: un lote ha vencido CUANDO el sistema detecta su fecha de vencimiento ENTONCES genera una alerta de """"Producto Vencido"""" con una
+* Prioridad: Alta
+* Complejidad: Moderada
+* Reglas de Negocio Clave:
+  • El umbral de alerta (ej. 30, 60, 90 días antes del vencimiento) debe ser configurable por tipo de producto, categoría o a nivel global.
+  • Las alertas deben incluir enlaces directos a la gestión de inventario del lote afectado y ser personalizables para diferentes roles de usuario.
+  • Las alertas por vencimiento deben activar un proceso de negocio definido para la gestión de productos próximos a caducar.",Story,High
+Consultar Reporte de Inventario por Lote y Fecha de Vencimiento,"* COMO: Usuario
+* QUIERO: Generar un reporte de inventario que muestre los productos organizados por lote y su fecha de vencimiento, con opciones de filtrado.
+* PARA: Obtener una visión clara del riesgo de caducidad en el inventario, planificar estrategias de venta o descarte de forma proactiva y asegurar la salud general del stock, lo que indirectamente beneficia la precisión de la IA al tener datos limpios y procesables.
+* Criterios de Aceptación:
+  • Escenario Principal: necesito revisar el inventario perecedero o con riesgo de caducidad CUANDO solicito un reporte de inventario por lote y fecha de vencimiento ENTONCES el sistema genera un reporte que lista productos, cantidades, números de lote, ubicaciones y sus respectivas fechas de vencimiento, ordenado por fecha de vencimiento (ascendente por defecto).
+  • Escenario Alternativo: quiero filtrar el reporte para una revisión específica CUANDO aplico filtros por ubicación, producto o rango de fechas de vencimiento ENTONCES el reporte muestra solo los lotes que cumplen con los criterios especificados, facilitando el análisis dirigido.
+  • Validaciones: el sistema no encuentra lotes para los criterios de filtro aplicados CUANDO intento generar el reporte ENTONCES el sistema muestra un mensaje claro indicando que no hay datos para mostrar con esos criterios, evitando reportes vacíos o engañosos.
 * Prioridad: Media
-* Complejidad: Moderada
+* Complejidad: Simple
 * Reglas de Negocio Clave:
-  • Los costos de envío pueden ser definidos por peso, volumen, distancia, zona geográfica o tipo de servicio.
-  • Se debe poder importar masivamente las tarifas de envío desde un archivo (CSV, Excel).
-  • El sistema debe mantener un historial de cambios en las tarifas de envío para auditoría y análisis de impacto.",Story,Medium
-Monitoreo y Evaluación del Desempeño del Modelo de Predicción de Demanda (IA),"* COMO: Administrador
-* QUIERO: Acceder a métricas y reportes sobre la precisión y el desempeño del modelo de IA de predicción de demanda
-* PARA: Evaluar la efectividad de las predicciones en la gestión de inventario y tomar decisiones informadas sobre ajustes del modelo o estrategias de reabastecimiento, asegurando que la IA contribuya positivamente al negocio.
-* Criterios de Aceptación:
-  • Escenario Principal: accedo al panel de control de IA CUANDO visualizo las métricas de """"Precisión de Predicción de Demanda"""" para el último trimestre ENTONCES puedo ver gráficos que muestran la desviación promedio, el MAPE (Mean Absolute Percentage Error) y el sesgo de las predicciones de la IA comparadas con la demanda real.
-  • Escenario Alternativo: el sistema ha generado transferencias automáticas basadas en la predicción de demanda CUANDO reviso un reporte que compara las transferencias sugeridas por la IA y la demanda real resultante en esas ubicaciones ENTONCES puedo ver el impacto de las predicciones de la IA en los niveles de stock y en las ventas, identificando áreas de mejora.
-  • Validaciones: no hay suficientes datos históricos para calcular métricas de precisión fiables CUANDO intento generar un reporte de desempeño del modelo ENTONCES el sistema muestra un mensaje indicando que se necesitan más datos históricos o que el modelo está en fase de entrenamiento.
-* Prioridad: Alta
-* Complejidad: Compleja
-* Reglas de Negocio Clave:
-  • Las métricas de desempeño deben ser actualizadas al menos una vez al día.
-  • Se debe poder filtrar las métricas por categoría de producto, ubicación o período de tiempo.
-  • Cualquier cambio significativo en el desempeño del modelo debe generar una alerta para el Administrador.",Story,High
-Ajuste de Parámetros del Modelo de Predicción de Demanda (IA),"* COMO: Administrador
-* QUIERO: Poder ajustar ciertos parámetros y configuraciones del modelo de IA de predicción de demanda
-* PARA: Refinar las predicciones basándome en el análisis de desempeño y el conocimiento de negocio, mejorando la precisión y la utilidad de la IA en la toma de decisiones de inventario.
-* Criterios de Aceptación:
-  • Escenario Principal: he identificado que el modelo de IA está subestimando la demanda para productos de temporada CUANDO accedo a la sección de """"Configuración del Modelo de IA"""" y aumento el factor de ponderación para datos históricos recientes durante la temporada alta ENTONCES el modelo de IA reajusta sus predicciones, dando más peso a los patrones de demanda estacionales actuales.
-  • Escenario Alternativo: una campaña de marketing masiva está planificada para un producto en particular CUANDO introduzco un """"factor de impulso de marketing"""" adicional para ese producto durante el período de la campaña ENTONCES el modelo de IA integra este factor en sus predicciones, anticipando un aumento en la demanda durante la promoción.
-  • Validaciones: intento aplicar un conjunto de parámetros que han demostrado ser inestables o contraproducentes en pruebas de simulación CUANDO intento guardar los parámetros ENTONCES el sistema muestra una advertencia o impide la aplicación, recomendando la revisión de los parámetros.
-* Prioridad: Alta
-* Complejidad: Compleja
-* Reglas de Negocio Clave:
-  • Los ajustes de parámetros deben realizarse con precaución y requerir confirmación explícita.
-  • El sistema debe permitir realizar simulaciones de impacto antes de aplicar los cambios en producción.
-  • Todos los cambios de parámetros deben ser registrados en un log de auditoría con la fecha, hora y el usuario que realizó el cambio.",Story,High
+  • El reporte debe ser exportable en formatos comunes (ej. CSV, PDF) y estar disponible para su descarga.
+  • Los productos con fechas de vencimiento más cercanas deben aparecer primero en el reporte por defecto.
+  • El reporte debe distinguir claramente entre stock disponible para venta y stock ya reservado, afectado por alertas de vencimiento, o en cuarentena.",Story,Medium

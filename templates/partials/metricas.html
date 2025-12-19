@@ -1,0 +1,254 @@
+<section id="metricas" class="content-section">
+    <div class="metricas-container">
+        <div class="metricas-header">
+            <h1 class="metricas-title">Métricas de Productividad</h1>
+            <p class="metricas-subtitle">Seguimiento completo de todas las herramientas y actividades</p>
+
+        </div>
+
+        <!-- Filtros/Tabs de Métricas -->
+        <div class="metrics-filters">
+            <button class="metric-filter-btn active" data-filter="generator">
+                <i class="fas fa-robot"></i>
+                <span>Generador H/CP</span>
+            </button>
+            <button class="metric-filter-btn" data-filter="jira-reports">
+                <i class="fas fa-file-alt"></i>
+                <span>Reportes Jira</span>
+            </button>
+            <button class="metric-filter-btn" data-filter="jira-uploads">
+                <i class="fas fa-upload"></i>
+                <span>Carga Masiva</span>
+            </button>
+        </div>
+
+        <!-- Contenedor de Métricas por Filtro -->
+        <div id="metrics-content-wrapper">
+            <!-- Métricas Generador H/CP -->
+            <div class="metrics-section active" id="metrics-generator">
+                <div class="metrics-grid">
+                    <div class="metric-card stories">
+                        <div class="metric-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="metric-label">Historias de Usuario</div>
+                        <div class="metric-value" id="stories-count">0</div>
+                        <div class="metric-description">Total de historias de usuario generadas</div>
+                    </div>
+
+                    <div class="metric-card test-cases">
+                        <div class="metric-icon"><i class="fas fa-vial"></i></div>
+                        <div class="metric-label">Casos de Prueba</div>
+                        <div class="metric-value" id="test-cases-count">0</div>
+                        <div class="metric-description">Total de casos de prueba generados</div>
+                    </div>
+
+                    <div class="metric-card total">
+                        <div class="metric-icon"><i class="fas fa-chart-bar"></i></div>
+                        <div class="metric-label">Total Generado</div>
+                        <div class="metric-value" id="total-count">0</div>
+                        <div class="metric-description">Suma de todas las generaciones</div>
+                    </div>
+                </div>
+
+                <div class="metrics-actions">
+                    {% if user_info and user_info.role == 'admin' %}
+                    <button class="reset-btn" onclick="resetMetrics()">
+                        <i class="fas fa-redo"></i>
+                        <span>Reiniciar Métricas</span>
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Gráfico de distribución por área -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Distribución de Solicitudes por Área</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="area-distribution-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="metrics-history">
+                    <h2 class="history-title">
+                        <i class="fas fa-history"></i>
+                        <span>Historial de Generaciones</span>
+                    </h2>
+                    <ul class="history-list" id="history-list">
+                        <li class="history-item" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No hay historial aún. Las generaciones aparecerán aquí.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Métricas Reportes Jira -->
+            <div class="metrics-section" id="metrics-jira-reports">
+                <div class="metrics-grid">
+                    <div class="metric-card reports-total">
+                        <div class="metric-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="metric-label">Total de Reportes</div>
+                        <div class="metric-value" id="jira-reports-total">0</div>
+                        <div class="metric-description">Reportes generados en total</div>
+                    </div>
+
+                    <div class="metric-card reports-projects">
+                        <div class="metric-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="metric-label">Proyectos Reportados</div>
+                        <div class="metric-value" id="jira-reports-projects-count">0</div>
+                        <div class="metric-description">Cantidad de proyectos únicos</div>
+                    </div>
+
+                    <div class="metric-card reports-frequency">
+                        <div class="metric-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="metric-label">Frecuencia Semanal</div>
+                        <div class="metric-value" id="jira-reports-weekly">0</div>
+                        <div class="metric-description">Reportes en los últimos 7 días</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de distribución por proyecto -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Distribución de Reportes por Proyecto</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="reports-by-project-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de tendencia temporal -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Tendencia de Reportes Generados</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="reports-trend-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Métricas por Proyecto -->
+                <div class="jira-metrics-by-project">
+                    <h3 class="jira-metrics-subtitle">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Métricas por Proyecto</span>
+                    </h3>
+                    <div id="jira-reports-by-project" class="jira-project-metrics-list">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No hay reportes generados aún</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Reportes -->
+                <div class="metrics-history">
+                    <h2 class="history-title">
+                        <i class="fas fa-history"></i>
+                        <span>Historial de Reportes Generados</span>
+                    </h2>
+                    <ul class="history-list" id="jira-reports-history-list">
+                        <li class="history-item" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No hay historial aún. Los reportes aparecerán aquí.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Métricas Carga Masiva -->
+            <div class="metrics-section" id="metrics-jira-uploads">
+                <div class="metrics-grid">
+                    <div class="metric-card uploads-total">
+                        <div class="metric-icon"><i class="fas fa-upload"></i></div>
+                        <div class="metric-label">Total de Cargas</div>
+                        <div class="metric-value" id="jira-uploads-total">0</div>
+                        <div class="metric-description">Cargas masivas realizadas</div>
+                    </div>
+
+                    <div class="metric-card uploads-items">
+                        <div class="metric-icon"><i class="fas fa-list"></i></div>
+                        <div class="metric-label">Items Cargados</div>
+                        <div class="metric-value" id="jira-uploads-items">0</div>
+                        <div class="metric-description">Total de issues creados</div>
+                    </div>
+
+                    <div class="metric-card uploads-projects">
+                        <div class="metric-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="metric-label">Proyectos con Carga</div>
+                        <div class="metric-value" id="jira-uploads-projects-count">0</div>
+                        <div class="metric-description">Proyectos únicos con cargas</div>
+                    </div>
+
+                    <div class="metric-card uploads-avg">
+                        <div class="metric-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="metric-label">Promedio por Carga</div>
+                        <div class="metric-value" id="jira-uploads-avg">0</div>
+                        <div class="metric-description">Items promedio por carga</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de distribución por tipo de issue -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Distribución por Tipo de Issue</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="uploads-by-type-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de distribución por proyecto -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Items Cargados por Proyecto</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="uploads-by-project-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de tendencia temporal -->
+                <div class="metrics-chart-container">
+                    <h2 class="chart-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Tendencia de Cargas Masivas</span>
+                    </h2>
+                    <div class="chart-wrapper">
+                        <canvas id="uploads-trend-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Métricas por Proyecto -->
+                <div class="jira-metrics-by-project">
+                    <h3 class="jira-metrics-subtitle">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Métricas por Proyecto</span>
+                    </h3>
+                    <div id="jira-uploads-by-project" class="jira-project-metrics-list">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No hay cargas masivas realizadas aún</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de Cargas -->
+                <div class="metrics-history">
+                    <h2 class="history-title">
+                        <i class="fas fa-history"></i>
+                        <span>Historial de Cargas Masivas</span>
+                    </h2>
+                    <ul class="history-list" id="jira-uploads-history-list">
+                        <li class="history-item" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                            No hay historial aún. Las cargas aparecerán aquí.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

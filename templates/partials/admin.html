@@ -1,0 +1,88 @@
+<section id="admin" class="content-section">
+        <div class="admin-header">
+            <h1><i class="fas fa-shield-alt"></i> Panel de Administración</h1>
+            <p>Gestión de usuarios y configuración del sistema</p>
+        </div>
+
+        <div id="admin-alert-container"></div>
+
+        <!-- Estadísticas -->
+        <div class="admin-stats-grid" id="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-value" id="admin-stat-total">-</div>
+                <div class="admin-stat-label">Total Usuarios</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-value" id="admin-stat-active">-</div>
+                <div class="admin-stat-label">Usuarios Activos</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-value" id="admin-stat-inactive">-</div>
+                <div class="admin-stat-label">Usuarios Inactivos</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-value" id="admin-stat-admins">-</div>
+                <div class="admin-stat-label">Administradores</div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="admin-filters">
+            <div class="admin-filters-grid">
+                <div class="admin-filter-group">
+                    <label for="admin-search-input"><i class="fas fa-search"></i> Buscar por email</label>
+                    <input type="text" id="admin-search-input" placeholder="email@ejemplo.com">
+                </div>
+                <div class="admin-filter-group">
+                    <label for="admin-role-filter"><i class="fas fa-user-tag"></i> Filtrar por rol</label>
+                    <select id="admin-role-filter">
+                        <option value="">Todos los roles</option>
+                        <option value="admin">Administrador</option>
+                        <option value="analista_qa">Analista QA</option>
+                        <option value="usuario">Usuario</option>
+                    </select>
+                </div>
+                <div class="admin-filter-group">
+                    <label for="admin-status-filter"><i class="fas fa-toggle-on"></i> Estado</label>
+                    <select id="admin-status-filter">
+                        <option value="">Todos</option>
+                        <option value="active">Activos</option>
+                        <option value="inactive">Inactivos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="admin-users-table">
+            <div class="admin-table-header">
+                <h2><i class="fas fa-users"></i> Usuarios</h2>
+                <button class="admin-btn admin-btn-primary" onclick="adminLoadUsers()">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+            <div class="admin-table-container">
+                <div id="admin-loading" class="admin-loading" style="display: block;">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+                </div>
+                <table id="admin-users-table" class="admin-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Creado</th>
+                            <th>Último Login</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-tbody">
+                    </tbody>
+                </table>
+                <div id="admin-empty-state" class="admin-empty-state" style="display: none;">
+                    <i class="fas fa-users-slash"></i>
+                    <p>No se encontraron usuarios</p>
+                </div>
+            </div>
+        </div>
+    </section>

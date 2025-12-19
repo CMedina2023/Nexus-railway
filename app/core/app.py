@@ -846,6 +846,44 @@ def process_story_generation(result, output_filename, filepath):
     story_count = len(valid_stories)
     story_word = "historia" if story_count == 1 else "historias"
     
+    # -------------------------------------------------------------------------
+    # GUARDAR EN BASE DE DATOS
+    # -------------------------------------------------------------------------
+    try:
+        user_id = get_current_user_id()
+        if user_id:
+            logger.info(f"Guardando {story_count} historias para usuario ID {user_id}")
+            repo = UserStoryRepository()
+            
+            for story_text in valid_stories:
+                # Intentar extraer título (primeras palabras)
+                title = "Historia Generada"
+                lines = story_text.split('\n')
+                for line in lines:
+                    clean_line = line.strip()
+                    if clean_line and not clean_line.startswith('#') and len(clean_line) > 5:
+                        title = clean_line[:100]
+                        break
+                
+                # Crear objeto UserStory
+                new_story = UserStory(
+                    user_id=user_id,
+                    project_key="GEN-AI",
+                    area="Generador",
+                    story_title=title,
+                    story_content=json.dumps([story_text]), # Guardamos como lista JSON para consistencia
+                    jira_issue_key=None
+                )
+                
+                repo.create(new_story)
+            logger.info("Historias guardadas en base de datos exitosamente")
+        else:
+            logger.warning("No se pudo obtener ID de usuario, historias no guardadas en BD")
+    except Exception as e:
+        logger.error(f"Error al guardar historias en BD: {e}", exc_info=True)
+        # No fallamos el proceso completo si falla el guardado en BD
+    # -------------------------------------------------------------------------
+    
     return {
         "status": "success",
         "message": f"Historias generadas exitosamente: {story_count} {story_word}",
@@ -893,6 +931,38 @@ def process_matrix_generation(result, output_filename, filepath):
     
     case_count = len(valid_cases)
     case_word = "caso" if case_count == 1 else "casos"
+    
+    # -------------------------------------------------------------------------
+    # GUARDAR EN BASE DE DATOS
+    # -------------------------------------------------------------------------
+    try:
+        user_id = get_current_user_id()
+        if user_id:
+            logger.info(f"Guardando {case_count} casos de prueba para usuario ID {user_id}")
+            repo = TestCaseRepository()
+            
+            for case_data in valid_cases:
+                # Extraer título
+                title = case_data.get('titulo_caso_prueba', 'Caso de Prueba Generado')
+                
+                # Crear objeto TestCase
+                new_case = TestCase(
+                    user_id=user_id,
+                    project_key="GEN-AI",
+                    area="Generador",
+                    test_case_title=title,
+                    test_case_content=json.dumps(case_data), # Guardamos el objeto como JSON
+                    jira_issue_key=None
+                )
+                
+                repo.create(new_case)
+            logger.info("Casos de prueba guardados en base de datos exitosamente")
+        else:
+            logger.warning("No se pudo obtener ID de usuario, casos no guardados en BD")
+    except Exception as e:
+        logger.error(f"Error al guardar casos de prueba en BD: {e}", exc_info=True)
+        # No fallamos el proceso completo si falla el guardado en BD
+    # -------------------------------------------------------------------------
     
     return {
         "status": "success",
@@ -3233,82 +3303,204 @@ def jira_download_report():
         return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
 
 
-@app.route('/api/metrics/download-report', methods=['POST'])
+
+
+
+@app.route('/api/dashboard/metrics', methods=['GET'])
 @login_required
-def metrics_download_report():
-    """Genera y descarga un reporte de métricas en formato PDF (Playwright en local, WeasyPrint en Railway)"""
+def get_dashboard_metrics():
+    """
+    Obtiene métricas del dashboard para el usuario actual
+    
+    Retorna:
+        - generator_metrics: Métricas del generador (historias y casos de prueba)
+        - jira_metrics: Métricas de Jira (reportes y cargas masivas)
+    """
     try:
+        from app.database.repositories.user_story_repository import UserStoryRepository
+        from app.database.repositories.test_case_repository import TestCaseRepository
+        from app.database.repositories.jira_report_repository import JiraReportRepository
+        from app.database.repositories.bulk_upload_repository import BulkUploadRepository
+        import json
+        from collections import defaultdict
         
-        data = request.get_json()
-        selected_types = data.get('selected_types', [])
-        generator_metrics = data.get('generator_metrics', {})
-        jira_metrics = data.get('jira_metrics', {})
-        chart_images = data.get('chart_images', {})
+        user_id = get_current_user_id()
         
-        # Log para depuración
-        logger.info(f"Tipos seleccionados: {selected_types}")
-        logger.info(f"Métricas del generador: {generator_metrics}")
-        logger.info(f"Métricas de Jira (claves): {list(jira_metrics.keys()) if jira_metrics else 'vacío'}")
-        if jira_metrics:
-            logger.info(f"Métricas de Jira - reports: {jira_metrics.get('reports', {})}")
-            logger.info(f"Métricas de Jira - uploads: {jira_metrics.get('uploads', {})}")
+        # Repositorios
+        story_repo = UserStoryRepository()
+        test_case_repo = TestCaseRepository()
+        report_repo = JiraReportRepository()
+        upload_repo = BulkUploadRepository()
         
-        if not selected_types:
-            return jsonify({"success": False, "error": "No se seleccionaron tipos de métricas"}), 400
+        # ===== MÉTRICAS DEL GENERADOR =====
+        # Obtener historias y casos de prueba del usuario
+        stories = story_repo.get_by_user_id(user_id)
+        test_cases = test_case_repo.get_by_user_id(user_id)
         
-        # Asegurar estructura correcta de jira_metrics para el template
-        if not jira_metrics:
-            jira_metrics = {}
+        # Contar totales
+        total_stories = story_repo.count_by_user(user_id)
+        total_test_cases = test_case_repo.count_by_user(user_id)
         
-        # Asegurar que existan las claves principales con estructura por defecto
-        if 'reports' not in jira_metrics:
-            jira_metrics['reports'] = {
-                'count': 0,
-                'byProject': {},
-                'lastDate': None
-            }
+        # Construir historial de generaciones
+        history = []
         
-        if 'uploads' not in jira_metrics:
-            jira_metrics['uploads'] = {
-                'count': 0,
-                'itemsCount': 0,
-                'byProject': {},
-                'issueTypesDistribution': {}
-            }
+        # Agregar historias al historial
+        for story in stories:
+            try:
+                story_content = json.loads(story.story_content) if isinstance(story.story_content, str) else story.story_content
+                count = len(story_content) if isinstance(story_content, list) else 1
+                history.append({
+                    'type': 'stories',
+                    'count': count,
+                    'area': story.area or 'Sin área',
+                    'date': story.created_at.isoformat() if story.created_at else None
+                })
+            except:
+                history.append({
+                    'type': 'stories',
+                    'count': 1,
+                    'area': story.area or 'Sin área',
+                    'date': story.created_at.isoformat() if story.created_at else None
+                })
         
-        # Renderizar HTML del reporte de métricas
-        html_content = render_template('metrics_report.html', 
-                                     selected_types=selected_types,
-                                     generator_metrics=generator_metrics,
-                                     jira_metrics=jira_metrics,
-                                     chart_images=chart_images,
-                                     date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        # Agregar casos de prueba al historial
+        for test_case in test_cases:
+            try:
+                tc_content = json.loads(test_case.test_case_content) if isinstance(test_case.test_case_content, str) else test_case.test_case_content
+                count = len(tc_content) if isinstance(tc_content, list) else 1
+                history.append({
+                    'type': 'testCases',
+                    'count': count,
+                    'area': test_case.area or 'Sin área',
+                    'date': test_case.created_at.isoformat() if test_case.created_at else None
+                })
+            except:
+                history.append({
+                    'type': 'testCases',
+                    'count': 1,
+                    'area': test_case.area or 'Sin área',
+                    'date': test_case.created_at.isoformat() if test_case.created_at else None
+                })
         
-        # Determinar qué motor de PDF usar
-        pdf_engine = get_pdf_engine()
-        logger.info(f"Iniciando generación de PDF de métricas usando {pdf_engine}")
+        # Ordenar historial por fecha (más reciente primero)
+        history.sort(key=lambda x: x['date'] or '', reverse=True)
         
-        if pdf_engine == 'playwright':
-            # Generar PDF usando Playwright (local)
-            pdf_buffer = generate_pdf_with_playwright(html_content)
-        else:
-            # Generar PDF usando WeasyPrint (Railway)
-            pdf_buffer = generate_pdf_with_weasyprint(html_content)
+        generator_metrics = {
+            'stories': total_stories,
+            'testCases': total_test_cases,
+            'history': history
+        }
         
-        logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
+        # ===== MÉTRICAS DE JIRA =====
+        # Obtener reportes del usuario
+        reports = report_repo.get_by_user_id(user_id)
+        
+        # Agrupar reportes por proyecto y construir historial
+        reports_by_project = defaultdict(lambda: {'count': 0, 'name': '', 'lastDate': None})
+        reports_history = []
+        
+        for report in reports:
+            key = report.project_key
+            reports_by_project[key]['count'] += 1
+            reports_by_project[key]['name'] = report.project_key
             
-        return Response(
-            pdf_buffer,
-            mimetype='application/pdf',
-            headers={
-                'Content-Disposition': f'attachment; filename=metricas_nexus_ai_{datetime.now().strftime("%Y%m%d")}.pdf'
-            }
-        )
+            # Actualizar última fecha
+            if report.created_at:
+                current_last = reports_by_project[key]['lastDate']
+                if not current_last or report.created_at.isoformat() > current_last:
+                    reports_by_project[key]['lastDate'] = report.created_at.strftime('%Y-%m-%d')
+                
+                # Agregar al historial
+                reports_history.append({
+                    'project_key': report.project_key,
+                    'created_at': report.created_at.isoformat(),
+                    'timestamp': report.created_at.timestamp() * 1000
+                })
+        
+        # Ordenar historial por fecha (más reciente primero)
+        reports_history.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        # Última fecha de reporte
+        last_report_date = None
+        if reports:
+            last_report_date = max(r.created_at for r in reports if r.created_at)
+            last_report_date = last_report_date.strftime('%Y-%m-%d') if last_report_date else None
+        
+        # Obtener cargas masivas del usuario
+        uploads = upload_repo.get_by_user_id(user_id)
+        
+        # Calcular totales de items cargados
+        total_items_uploaded = sum(u.successful_items or 0 for u in uploads)
+        
+        # Agrupar cargas por proyecto y construir historial
+        uploads_by_project = defaultdict(lambda: {'count': 0, 'name': '', 'itemsCount': 0, 'lastDate': None, 'issueTypesDistribution': {}})
+        issue_types_distribution = defaultdict(int)
+        uploads_history = []
+        
+        for upload in uploads:
+            key = upload.project_key
+            uploads_by_project[key]['count'] += 1
+            uploads_by_project[key]['name'] = upload.project_key
+            uploads_by_project[key]['itemsCount'] += upload.successful_items or 0
             
+            upload_details = None
+            if upload.created_at:
+                current_last = uploads_by_project[key]['lastDate']
+                if not current_last or upload.created_at.isoformat() > current_last:
+                    uploads_by_project[key]['lastDate'] = upload.created_at.strftime('%Y-%m-%d')
+                
+                
+            # Procesar distribución de tipos de issue
+
+            # Procesar distribución de tipos de issue
+            try:
+                details = json.loads(upload.upload_details) if isinstance(upload.upload_details, str) else upload.upload_details
+                if details and 'issue_types_distribution' in details:
+                    for issue_type, count in details['issue_types_distribution'].items():
+                        issue_types_distribution[issue_type] += count
+                        uploads_by_project[key]['issueTypesDistribution'][issue_type] = \
+                            uploads_by_project[key]['issueTypesDistribution'].get(issue_type, 0) + count
+            except:
+                details = {}
+
+            # Agregar al historial
+            if upload.created_at:
+                uploads_history.append({
+                    'project_key': upload.project_key,
+                    'itemsCount': upload.successful_items or 0,
+                    'created_at': upload.created_at.isoformat(),
+                    'timestamp': upload.created_at.timestamp() * 1000,
+                    'upload_details': details
+                })
+        
+        # Ordenar historial por fecha (más reciente primero)
+        uploads_history.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        jira_metrics = {
+            'reports': {
+                'count': len(reports),
+                'byProject': dict(reports_by_project),
+                'lastDate': last_report_date,
+                'history': reports_history
+            },
+            'uploads': {
+                'count': len(uploads),
+                'itemsCount': total_items_uploaded,
+                'byProject': dict(uploads_by_project),
+                'issueTypesDistribution': dict(issue_types_distribution),
+                'history': uploads_history
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'generator_metrics': generator_metrics,
+            'jira_metrics': jira_metrics
+        }), 200
+        
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"Error al generar reporte de métricas: {error_msg}", exc_info=True)
-        return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
+        logger.error(f"Error al obtener métricas del dashboard: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/jira/download-template', methods=['GET'])

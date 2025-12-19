@@ -1,0 +1,216 @@
+<section id="crear-historias" class="content-section">
+            <!-- Botón de regreso (oculto inicialmente) -->
+            <!-- Formulario de generación (se oculta cuando se muestra vista previa) -->
+            <div id="stories-form-container">
+                <div id="stories-back-btn-container" style="display: none; margin-bottom: 1.5rem;">
+                    <button id="stories-back-btn"
+                        style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--secondary-bg); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem; font-weight: 500;">
+                        <span>←</span>
+                        <span>Volver al Generador</span>
+                    </button>
+                </div>
+
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <h1><i class="fas fa-file-alt"></i> Crear Historias de Usuario</h1>
+                    <p>Genera historias de usuario completas a partir de documentos de requerimientos. Incluye criterios
+                        de aceptación, reglas de negocio y prioridades.</p>
+                </div>
+                <div class="form-card"
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;">
+                    <form id="stories-form">
+                        <!-- Upload de archivo -->
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label"
+                                style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Documento
+                                de Requerimientos</label>
+                            <div id="stories-drop-zone" class="csv-drop-zone">
+                                <input type="file" id="stories-file" name="file" accept=".docx,.pdf"
+                                    style="display: none;">
+                                <div class="drop-zone-content">
+                                    <div class="drop-zone-icon">☁️</div>
+                                    <p class="drop-zone-text">Arrastra tu archivo DOCX o PDF aquí</p>
+                                    <p class="drop-zone-hint">o haz clic para explorar tus archivos</p>
+                                    <div class="file-format-badge">
+                                        <span class="file-icon">📄</span>
+                                        <span>Formatos soportados: .docx, .pdf</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="stories-file-info" class="file-info-card" style="display: none;">
+                                <div class="file-info-content">
+                                    <span class="file-info-icon">📎</span>
+                                    <span id="stories-file-name" class="file-name"></span>
+                                    <button id="stories-remove-file-btn" class="remove-file-btn"
+                                        type="button">✕</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <!-- Rol de usuario -->
+                            <div class="form-group">
+                                <label class="form-label" for="stories-role"
+                                    style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Rol
+                                    de usuario</label>
+                                <select id="stories-role" name="role" class="form-select"
+                                    style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit;">
+                                    <option value="Usuario">Usuario</option>
+                                    <option value="Administrador">Administrador</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                            <!-- Tipo de análisis -->
+                            <div class="form-group">
+                                <label class="form-label" for="stories-type"
+                                    style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Tipo
+                                    de análisis</label>
+                                <select id="stories-type" name="story_type" class="form-select"
+                                    style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit;">
+                                    <option value="funcionalidad">Historias Funcionales</option>
+                                    <option value="característica">Historias No Funcionales</option>
+                                </select>
+                            </div>
+
+                            <!-- Área -->
+                            <div class="form-group">
+                                <label class="form-label" for="stories-area"
+                                    style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">Área</label>
+                                <select id="stories-area" name="area" class="form-select"
+                                    style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit;">
+                                    <option value="">-- Selecciona un área --</option>
+                                    <option value="Finanzas">💰 Finanzas</option>
+                                    <option value="Recursos Humanos">👥 Recursos Humanos</option>
+                                    <option value="Tesoreria">🏦 Tesorería</option>
+                                    <option value="TI">💻 TI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Contexto adicional de negocio -->
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="stories-context"
+                                style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                Contexto adicional de negocio
+                                <span
+                                    style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400; background: rgba(107, 114, 128, 0.1); padding: 0.15rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">Opcional</span>
+                            </label>
+                            <textarea id="stories-context" name="business_context" class="form-textarea"
+                                style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit; min-height: 100px; resize: vertical; line-height: 1.6;"
+                                maxlength="2000"
+                                placeholder="Ejemplo: Tomar en cuenta la regla de negocio 3 sobre validación de usuarios premium, aplicar políticas de seguridad nivel 2, considerar integración con sistema de facturación..."></textarea>
+                            <div class="char-counter" id="stories-context-counter"
+                                style="font-size: 0.8rem; color: var(--text-muted); text-align: right; margin-top: 0.25rem;">
+                                0 / 2000 caracteres</div>
+                            <div
+                                style="background: rgba(79, 172, 254, 0.1); border: 1px solid rgba(79, 172, 254, 0.15); border-radius: 8px; padding: 0.75rem; margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                                💡 Este campo permite agregar contexto específico que complementará el análisis del
+                                documento. Puedes incluir reglas de negocio específicas, políticas empresariales, o
+                                cualquier consideración adicional que el generador debe tomar en cuenta al crear las
+                                historias de usuario.
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                            <button type="submit" class="btn btn-primary" id="stories-generate-btn"
+                                style="width: 100%; padding: 1rem 2rem; border: none; border-radius: 12px; background: var(--accent); color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.95rem;">
+                                <i class="fas fa-eye"></i> Generar e Ir a Vista Previa
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Vista Previa de Historias (oculta inicialmente, reemplaza el formulario) -->
+            <div id="stories-preview-section" style="display: none; margin-top: 2rem;">
+                <!-- Header con estadísticas -->
+                <div class="form-card"
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem;">📋</span>
+                        <span style="font-size: 1.5rem; font-weight: 600;">Vista Previa de Historias de Usuario</span>
+                    </div>
+                    <div style="display: flex; gap: 2rem; align-items: center;">
+                        <div style="text-align: center;">
+                            <div id="stories-preview-count"
+                                style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">0</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Historias
+                                Generadas</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de acciones -->
+                <div
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="stories-select-all"
+                                style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Seleccionar todas</span>
+                        </label>
+                        <span id="stories-selected-count" style="color: var(--text-muted);">0 historias
+                            seleccionadas</span>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="stories-reset-btn" class="btn btn-secondary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🔄</span>
+                            <span>Nueva Generación</span>
+                        </button>
+                        <button id="stories-review-btn" class="btn btn-secondary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>👁️</span>
+                            <span>Revisar Historias</span>
+                        </button>
+                        <button id="stories-upload-jira-btn" class="btn btn-primary"
+                            style="padding: 0.75rem 1.5rem; border: none; border-radius: 8px; background: var(--accent); color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>✅</span>
+                            <span>Aprobar y Subir a Jira</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de vista previa -->
+                <div
+                    style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+                    <div
+                        style="overflow-x: auto; max-height: calc(100vh - 400px); min-height: 500px; overflow-y: auto;">
+                        <table id="stories-preview-table" style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: var(--secondary-bg); z-index: 10;">
+                                <tr>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 50px;">
+                                        <input type="checkbox" id="stories-table-select-all"
+                                            style="width: 18px; height: 18px; cursor: pointer;">
+                                    </th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 60px;">
+                                        #</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border);">
+                                        Resumen (Summary)</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border);">
+                                        Descripción</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Tipo</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Prioridad</th>
+                                    <th
+                                        style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
+                                        Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stories-preview-tbody">
+                                <!-- Las historias se insertarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>

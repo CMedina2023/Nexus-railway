@@ -1,0 +1,239 @@
+<section id="jira-carga-masiva" class="content-section">
+            <div class="carga-masiva-container">
+                <div class="carga-masiva-header">
+                    <h1>Carga Masiva de Issues</h1>
+                    <p class="carga-masiva-subtitle">Mapea los campos de tu CSV a los campos de Jira antes de cargar</p>
+                </div>
+
+                <!-- Step Indicator -->
+                <div class="steps-container" id="carga-masiva-steps">
+                    <div class="step completed" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">Proyecto</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">CSV</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">Validar</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-label">Campos</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="5">
+                        <div class="step-number">5</div>
+                        <div class="step-label">Mapeo</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="6">
+                        <div class="step-number">6</div>
+                        <div class="step-label">Vista Previa</div>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" data-step="7">
+                        <div class="step-number">7</div>
+                        <div class="step-label">Cargar</div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Project Selection -->
+                <div class="step-content active" id="step-1-content">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">📁</span>
+                            <label class="project-label">Paso 1: Selecciona un Proyecto</label>
+                        </div>
+                        <div class="combobox-wrapper">
+                            <input type="text" id="carga-masiva-project-selector-input"
+                                class="carga-masiva-dropdown combobox-input"
+                                placeholder="🔍 Buscar o seleccionar proyecto..." autocomplete="off"
+                                oninput="filterCargaMasivaProjects(this.value)" onfocus="showCargaMasivaDropdown()"
+                                onblur="hideCargaMasivaDropdown()" onkeydown="handleCargaMasivaKeydown(event)">
+                            <div id="carga-masiva-dropdown" class="combobox-dropdown" style="display: none;"></div>
+                            <input type="hidden" id="carga-masiva-project-selector" value="">
+                        </div>
+                        <div id="carga-masiva-projects-loading" class="loading-message"
+                            style="display: none; margin-top: 1rem;">
+                            <span>⏳ Cargando proyectos...</span>
+                        </div>
+                        <div id="carga-masiva-projects-error" class="error-message"
+                            style="display: none; margin-top: 1rem;">
+                            <span>❌ Error al cargar proyectos</span>
+                        </div>
+                        <div id="carga-masiva-access-message" class="loading-message"
+                            style="display: none; margin-top: 1rem;"></div>
+                        <p class="project-hint">Los campos disponibles se validarán después de cargar el CSV</p>
+                    </div>
+                </div>
+
+                <!-- Step 2: CSV Upload -->
+                <div class="step-content" id="step-2-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">📄</span>
+                            <label class="project-label">Paso 2: Carga tu Archivo CSV</label>
+                        </div>
+                        <div id="csv-drop-zone" class="csv-drop-zone">
+                            <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
+                            <div class="drop-zone-content">
+                                <div class="drop-zone-icon">☁️</div>
+                                <p class="drop-zone-text">Arrastra tu archivo CSV aquí</p>
+                                <p class="drop-zone-hint">o haz clic para explorar tus archivos</p>
+                                <div class="file-format-badge">
+                                    <span class="file-icon">📄</span>
+                                    <span>Formato soportado: .csv</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="file-info" class="file-info-card" style="display: none;">
+                            <div class="file-info-content">
+                                <span class="file-info-icon">📎</span>
+                                <span id="file-name" class="file-name"></span>
+                                <button id="remove-file-btn" class="remove-file-btn">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Validation -->
+                <div class="step-content" id="step-3-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">🔍</span>
+                            <label class="project-label">Paso 3: Validación Automática</label>
+                        </div>
+                        <div id="validation-progress" style="text-align: center; padding: 3rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+                            <div
+                                style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
+                                Validando campos...
+                            </div>
+                            <div style="color: var(--text-muted); margin-bottom: 2rem;">
+                                Comparando columnas del CSV con campos disponibles en Jira
+                            </div>
+                            <div id="validation-steps"
+                                style="background: var(--secondary-bg); border-radius: 8px; padding: 1.5rem; text-align: left; max-width: 600px; margin: 0 auto;">
+                                <!-- Se llenará dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Required and Optional Fields -->
+                <div class="step-content" id="step-4-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">📋</span>
+                            <label class="project-label">Paso 4: Campos Requeridos y Opcionales</label>
+                        </div>
+                        <div id="validation-summary" class="validation-summary" style="display: none;"></div>
+                        <div id="required-fields-section" style="margin-bottom: 2rem;"></div>
+                        <div id="optional-fields-section" style="margin-bottom: 2rem;"></div>
+                        <div id="unmapped-csv-columns"
+                            style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);"></div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Field Mapping -->
+                <div class="step-content" id="step-5-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header" style="justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="project-icon">🔗</span>
+                                <label class="project-label">Paso 5: Ajuste Manual de Mapeo</label>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-secondary" id="save-mapping-btn"
+                                    style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                    💾 Guardar Mapeo
+                                </button>
+                                <button class="btn btn-secondary" id="load-mapping-btn"
+                                    style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                    📂 Cargar Mapeo
+                                </button>
+                            </div>
+                        </div>
+                        <div id="mapping-validation-summary" class="validation-summary" style="display: none;"></div>
+                        <div id="mapping-table-container" class="mapping-table-container"></div>
+
+                        <!-- Configuración de Valores por Defecto integrada -->
+                        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                            <h3
+                                style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                                <span>⚙️</span>
+                                <span>Configuración de Valores por Defecto</span>
+                            </h3>
+                            <div
+                                style="margin-bottom: 1rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--accent); border-radius: 8px; color: var(--text-secondary); font-size: 0.9rem;">
+                                ℹ️ Configura valores por defecto para campos requeridos que no están en tu CSV o para
+                                campos opcionales que quieras establecer.
+                            </div>
+                            <div id="config-panel" class="config-grid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Preview -->
+                <div class="step-content" id="step-6-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">👁️</span>
+                            <label class="project-label">Paso 6: Vista Previa</label>
+                        </div>
+                        <div id="preview-summary" style="margin-bottom: 1rem;"></div>
+                        <div id="preview-table-container" class="preview-table-container"></div>
+                    </div>
+                </div>
+
+                <!-- Step 7: Upload -->
+                <div class="step-content" id="step-7-content" style="display: none;">
+                    <div class="carga-masiva-project-card">
+                        <div class="project-selector-header">
+                            <span class="project-icon">🚀</span>
+                            <label class="project-label">Paso 7: Cargar a Jira</label>
+                        </div>
+                        <div id="upload-final-status"></div>
+                    </div>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="actions-bar" id="carga-masiva-actions" style="display: none;">
+                    <div class="actions-left">
+                        <button class="btn btn-secondary" id="prev-step-btn">
+                            ← Anterior
+                        </button>
+                    </div>
+                    <div class="actions-right">
+                        <button class="btn btn-secondary" id="revalidate-btn" style="display: none;">
+                            🔄 Re-validar
+                        </button>
+                        <button class="btn btn-primary" id="upload-csv-btn" style="display: none;">
+                            🚀 Cargar a Jira
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estado de carga -->
+                <div id="upload-status" class="upload-status-card" style="display: none;">
+                    <div class="upload-status-content">
+                        <span id="upload-status-icon" class="upload-status-icon">⏳</span>
+                        <span id="upload-status-message" class="upload-status-message">Procesando...</span>
+                    </div>
+                </div>
+
+                <!-- Enlace para descargar plantilla -->
+                <div class="template-download-section">
+                    <a href="#" id="download-template-link" class="template-download-link">
+                        <span class="download-icon">⬇️</span>
+                        <span>Descargar plantilla de ejemplo</span>
+                    </a>
+                </div>
+            </div>
+        </section>
