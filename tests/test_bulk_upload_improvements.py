@@ -1,5 +1,5 @@
 """
-Test para las mejoras de carga masiva
+tests para las mejoras de carga masiva
 Verifica que las nuevas clases funcionan correctamente
 """
 import unittest
@@ -23,7 +23,7 @@ class TestFieldMetadataCache(unittest.TestCase):
         self.cache = FieldMetadataCache(ttl_seconds=2)  # TTL corto para tests
     
     def test_cache_set_and_get(self):
-        """Test: Guardar y obtener datos del cache"""
+        """tests: Guardar y obtener datos del cache"""
         test_data = {'field1': 'value1', 'field2': 'value2'}
         cache_key = 'test:key'
         
@@ -36,7 +36,7 @@ class TestFieldMetadataCache(unittest.TestCase):
         self.assertEqual(result, test_data)
     
     def test_cache_expiration(self):
-        """Test: Cache expira después del TTL"""
+        """tests: Cache expira después del TTL"""
         test_data = {'field1': 'value1'}
         cache_key = 'test:expiration'
         
@@ -53,7 +53,7 @@ class TestFieldMetadataCache(unittest.TestCase):
         self.assertIsNone(self.cache.get(cache_key))
     
     def test_cache_invalidate(self):
-        """Test: Invalidar cache manualmente"""
+        """tests: Invalidar cache manualmente"""
         test_data = {'field1': 'value1'}
         cache_key = 'test:invalidate'
         
@@ -70,7 +70,7 @@ class TestFieldMetadataCache(unittest.TestCase):
         self.assertIsNone(self.cache.get(cache_key))
     
     def test_cache_clear(self):
-        """Test: Limpiar todo el cache"""
+        """tests: Limpiar todo el cache"""
         # Guardar múltiples entradas
         self.cache.set('key1', {'data': 1})
         self.cache.set('key2', {'data': 2})
@@ -90,7 +90,7 @@ class TestFieldMetadataCache(unittest.TestCase):
         self.assertIsNone(self.cache.get('key3'))
     
     def test_cache_get_nonexistent(self):
-        """Test: Obtener clave que no existe"""
+        """tests: Obtener clave que no existe"""
         result = self.cache.get('nonexistent:key')
         self.assertIsNone(result)
 
@@ -107,7 +107,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         )
     
     def test_initial_wait(self):
-        """Test: Primera espera no debe demorar"""
+        """tests: Primera espera no debe demorar"""
         start = time.time()
         self.limiter.wait()
         elapsed = time.time() - start
@@ -116,7 +116,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         self.assertLess(elapsed, 0.05)
     
     def test_rate_limiting_delay(self):
-        """Test: Delay entre requests"""
+        """tests: Delay entre requests"""
         # Primera llamada
         self.limiter.wait()
         
@@ -129,7 +129,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         self.assertGreaterEqual(elapsed, 0.08)  # Margen de error
     
     def test_backoff_on_errors(self):
-        """Test: Backoff exponencial en errores"""
+        """tests: Backoff exponencial en errores"""
         self.limiter.wait()
         
         # Reportar error
@@ -145,7 +145,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         self.assertEqual(self.limiter._current_delay, 0.4)  # 0.2 * 2.0
     
     def test_backoff_max_delay(self):
-        """Test: Delay no excede el máximo"""
+        """tests: Delay no excede el máximo"""
         self.limiter.wait()
         
         # Reportar múltiples errores
@@ -156,7 +156,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         self.assertLessEqual(self.limiter._current_delay, 1.0)
     
     def test_reset_on_success(self):
-        """Test: Reset de backoff en éxito"""
+        """tests: Reset de backoff en éxito"""
         self.limiter.wait()
         
         # Reportar errores
@@ -173,7 +173,7 @@ class TestIssueCreationRateLimiter(unittest.TestCase):
         self.assertEqual(self.limiter._current_delay, 0.1)
     
     def test_consecutive_errors_count(self):
-        """Test: Contador de errores consecutivos"""
+        """tests: Contador de errores consecutivos"""
         # Reportar errores
         self.limiter.report_error()
         self.assertEqual(self.limiter._consecutive_errors, 1)
@@ -195,7 +195,7 @@ class TestIntegration(unittest.TestCase):
     """Tests de integración"""
     
     def test_cache_and_limiter_together(self):
-        """Test: Cache y rate limiter funcionan juntos"""
+        """tests: Cache y rate limiter funcionan juntos"""
         cache = FieldMetadataCache(ttl_seconds=5)
         limiter = IssueCreationRateLimiter(base_delay=0.05)
         

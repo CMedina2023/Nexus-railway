@@ -10,7 +10,7 @@ class TestMatrixUtils(unittest.TestCase):
     
     def test_extract_matrix_data_from_list(self):
         """Verifica extracción de matriz desde lista"""
-        data = [{"id": "TC001", "titulo": "Test 1"}]
+        data = [{"id": "TC001", "titulo": "tests 1"}]
         result = extract_matrix_data(data)
         self.assertEqual(result, data)
     

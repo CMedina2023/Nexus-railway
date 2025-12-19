@@ -70,7 +70,7 @@ class JiraClient:
         """
         try:
             # Obtener campos disponibles del proyecto
-            # Para carga masiva, combinar campos de Test Cases y Stories si no se especifica issue_type
+            # Para carga masiva, combinar campos de tests Cases y Stories si no se especifica issue_type
             combine_types = (issue_type is None)
             fields_info = self._project_service.get_project_fields_for_creation(project_key, issue_type, combine_test_cases_and_stories=combine_types)
             
@@ -253,9 +253,9 @@ class JiraClient:
                 'general_report': {}
             }
             
-            # Obtener casos de prueba (Test Cases)
-            test_cases = self._issue_service.get_issues_by_type(project_key, 'Test Case')
-            metrics['test_cases'] = self._metrics_calculator.calculate_issue_metrics(test_cases, 'Test Case')
+            # Obtener casos de prueba (tests Cases)
+            test_cases = self._issue_service.get_issues_by_type(project_key, 'tests Case')
+            metrics['test_cases'] = self._metrics_calculator.calculate_issue_metrics(test_cases, 'tests Case')
             
             # Obtener bugs
             bugs = self._issue_service.get_issues_by_type(project_key, 'Bug')

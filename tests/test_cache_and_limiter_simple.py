@@ -1,5 +1,5 @@
 """
-Test simple para verificar la lógica de Cache y Rate Limiter
+tests simple para verificar la lógica de Cache y Rate Limiter
 Sin dependencias externas
 """
 import time
@@ -87,7 +87,7 @@ class IssueCreationRateLimiter:
 # ============================================================================
 
 def test_cache_basic():
-    """Test básico de cache"""
+    """tests básico de cache"""
     print("\n[TEST] Cache básico...")
     cache = FieldMetadataCache(ttl_seconds=2)
     
@@ -102,7 +102,7 @@ def test_cache_basic():
 
 
 def test_cache_expiration():
-    """Test de expiración de cache"""
+    """tests de expiración de cache"""
     print("\n[TEST] Expiración de cache...")
     cache = FieldMetadataCache(ttl_seconds=1)
     
@@ -122,7 +122,7 @@ def test_cache_expiration():
 
 
 def test_cache_invalidation():
-    """Test de invalidación manual"""
+    """tests de invalidación manual"""
     print("\n[TEST] Invalidación de cache...")
     cache = FieldMetadataCache(ttl_seconds=10)
     
@@ -141,7 +141,7 @@ def test_cache_invalidation():
 
 
 def test_rate_limiter_basic():
-    """Test básico de rate limiter"""
+    """tests básico de rate limiter"""
     print("\n[TEST] Rate limiter básico...")
     limiter = IssueCreationRateLimiter(base_delay=0.1, backoff_multiplier=2.0, max_delay=1.0)
     
@@ -160,7 +160,7 @@ def test_rate_limiter_basic():
 
 
 def test_rate_limiter_backoff():
-    """Test de backoff exponencial"""
+    """tests de backoff exponencial"""
     print("\n[TEST] Backoff exponencial...")
     limiter = IssueCreationRateLimiter(base_delay=0.1, backoff_multiplier=2.0, max_delay=1.0)
     
@@ -185,7 +185,7 @@ def test_rate_limiter_backoff():
 
 
 def test_rate_limiter_reset():
-    """Test de reset después de éxito"""
+    """tests de reset después de éxito"""
     print("\n[TEST] Reset de rate limiter...")
     limiter = IssueCreationRateLimiter(base_delay=0.1, backoff_multiplier=2.0, max_delay=1.0)
     
@@ -205,7 +205,7 @@ def test_rate_limiter_reset():
 
 
 def test_integration():
-    """Test de integración: Cache + Rate Limiter"""
+    """tests de integración: Cache + Rate Limiter"""
     print("\n[TEST] Integración Cache + Rate Limiter...")
     cache = FieldMetadataCache(ttl_seconds=5)
     limiter = IssueCreationRateLimiter(base_delay=0.05, backoff_multiplier=1.5, max_delay=1.0)
@@ -216,7 +216,7 @@ def test_integration():
         limiter.wait()
         
         # Intentar obtener metadata del cache
-        metadata = cache.get('RB:Test Case')
+        metadata = cache.get('RB:tests Case')
         
         if metadata is None:
             # Simular obtención de metadata de Jira
@@ -224,7 +224,7 @@ def test_integration():
                 'customfield_10533': {'name': 'Campo 1', 'operations': ['set']},
                 'customfield_10568': {'name': 'Campo 2', 'operations': ['set']}
             }
-            cache.set('RB:Test Case', metadata)
+            cache.set('RB:tests Case', metadata)
             print(f"  Issue {i+1}: Metadata obtenida de Jira y guardada en cache")
         else:
             print(f"  Issue {i+1}: Metadata obtenida del cache (cache hit)")
@@ -233,7 +233,7 @@ def test_integration():
         limiter.report_success()
     
     # Verificar que el cache tiene datos
-    assert cache.get('RB:Test Case') is not None, "Cache debe tener metadata"
+    assert cache.get('RB:tests Case') is not None, "Cache debe tener metadata"
     
     # Verificar que el rate limiter está en estado normal
     assert limiter._consecutive_errors == 0, "No debe haber errores consecutivos"

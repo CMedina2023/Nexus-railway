@@ -1710,7 +1710,7 @@ def jira_validate_csv_fields():
 @app.route('/api/jira/validate-test-case-fields', methods=['POST'])
 @login_required
 def jira_validate_test_case_fields():
-    """Valida que el proyecto tenga los campos necesarios para crear Test Cases"""
+    """Valida que el proyecto tenga los campos necesarios para crear tests Cases"""
     try:
         data = request.get_json()
         project_key = data.get('project_key', '').strip()
@@ -1745,8 +1745,8 @@ def jira_validate_test_case_fields():
         
         project_service = ProjectService(connection)
         
-        # Obtener campos del proyecto para Test Case
-        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='Test Case')
+        # Obtener campos del proyecto para tests Case
+        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='tests Case')
         
         if not fields_info.get('success', True):
             return jsonify({
@@ -1763,13 +1763,13 @@ def jira_validate_test_case_fields():
             'priority': ['priority', 'Priority', 'Prioridad'],
             'issuetype': ['issuetype', 'Issue Type', 'Tipo de Issue'],
             'assignee': ['assignee', 'Assignee', 'Asignado'],
-            'pasos': ['pasos', 'Pasos', 'Test Steps', 'Steps', 'Pasos de Prueba'],
+            'pasos': ['pasos', 'Pasos', 'tests Steps', 'Steps', 'Pasos de Prueba'],
             'resultado_esperado': ['resultado esperado', 'Resultado Esperado', 'Expected Result', 'Expected Results', 'Resultado'],
-            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'Test Type', 'Tipo Prueba'],
-            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'Test Level', 'Nivel Prueba'],
+            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'tests Type', 'Tipo Prueba'],
+            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'tests Level', 'Nivel Prueba'],
             'ambiente': ['ambiente', 'Ambiente', 'Environment', 'Entorno'],
             'tipo_ejecucion': ['tipo de ejecución', 'Tipo de Ejecución', 'Execution Type', 'Tipo Ejecución'],
-            'ciclo': ['ciclo', 'Ciclo', 'Cycle', 'Test Cycle'],
+            'ciclo': ['ciclo', 'Ciclo', 'Cycle', 'tests Cycle'],
             'precondiciones': ['precondiciones', 'Precondiciones', 'Preconditions', 'Precondición']
         }
         
@@ -1838,7 +1838,7 @@ def jira_validate_test_case_fields():
             }), 200
         
     except Exception as e:
-        logger.error(f"Error al validar campos de Test Case: {e}", exc_info=True)
+        logger.error(f"Error al validar campos de tests Case: {e}", exc_info=True)
         return jsonify({
             "success": False,
             "error": str(e),
@@ -1850,7 +1850,7 @@ def jira_validate_test_case_fields():
 @app.route('/api/jira/get-test-case-field-values', methods=['POST'])
 @login_required
 def get_test_case_field_values():
-    """Obtiene los valores permitidos para campos select de Test Cases"""
+    """Obtiene los valores permitidos para campos select de tests Cases"""
     try:
         data = request.get_json()
         project_key = data.get('project_key', '').strip()
@@ -1885,8 +1885,8 @@ def get_test_case_field_values():
         
         project_service = ProjectService(connection)
         
-        # Obtener campos del proyecto para Test Case
-        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='Test Case')
+        # Obtener campos del proyecto para tests Case
+        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='tests Case')
         
         if not fields_info.get('success', True):
             return jsonify({
@@ -1908,8 +1908,8 @@ def get_test_case_field_values():
         
         # Campos select que necesitamos
         select_fields = {
-            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'Test Type', 'Tipo Prueba'],
-            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'Test Level', 'Nivel Prueba'],
+            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'tests Type', 'Tipo Prueba'],
+            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'tests Level', 'Nivel Prueba'],
             'tipo_ejecucion': ['tipo de ejecución', 'Tipo de Ejecución', 'Execution Type', 'Tipo Ejecución'],
             'ambiente': ['ambiente', 'Ambiente', 'Environment', 'Entorno']
         }
@@ -2286,7 +2286,7 @@ def upload_test_cases_to_jira():
                 }), 400
         
         # Obtener nombres reales de campos de Jira para mapeo correcto
-        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='Test Case')
+        fields_info = project_service.get_project_fields_for_creation(project_key, issue_type='tests Case')
         if not fields_info.get('success', True):
             logger.warning(f"No se pudieron obtener campos del proyecto para mapeo: {fields_info.get('error', 'Error desconocido')}")
             fields_info = {'required_fields': [], 'optional_fields': []}
@@ -2305,13 +2305,13 @@ def upload_test_cases_to_jira():
         
         # Mapeo de campos internos a posibles nombres en Jira
         field_mapping_config = {
-            'pasos': ['pasos', 'Pasos', 'Test Steps', 'Steps', 'Pasos de Prueba'],
+            'pasos': ['pasos', 'Pasos', 'tests Steps', 'Steps', 'Pasos de Prueba'],
             'resultado_esperado': ['resultado esperado', 'Resultado Esperado', 'Expected Result', 'Expected Results', 'Resultado'],
-            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'Test Type', 'Tipo Prueba'],
-            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'Test Level', 'Nivel Prueba'],
+            'tipo_prueba': ['tipo de prueba', 'Tipo de Prueba', 'tests Type', 'Tipo Prueba'],
+            'nivel_prueba': ['nivel de prueba', 'Nivel de Prueba', 'tests Level', 'Nivel Prueba'],
             'ambiente': ['ambiente', 'Ambiente', 'Environment', 'Entorno'],
             'tipo_ejecucion': ['tipo de ejecución', 'Tipo de Ejecución', 'Execution Type', 'Tipo Ejecución'],
-            'ciclo': ['ciclo', 'Ciclo', 'Cycle', 'Test Cycle'],
+            'ciclo': ['ciclo', 'Ciclo', 'Cycle', 'tests Cycle'],
             'precondiciones': ['precondiciones', 'Precondiciones', 'Preconditions', 'Precondición']
         }
         
@@ -2366,7 +2366,7 @@ def upload_test_cases_to_jira():
             csv_row = {
                 'Summary': test_case.get('summary', 'Sin título'),
                 'Description': descripcion_basica,  # Solo descripción básica, sin campos personalizados
-                'Issuetype': test_case.get('issuetype', 'Test Case'),
+                'Issuetype': test_case.get('issuetype', 'tests Case'),
                 'Priority': test_case.get('priority', 'Medium')
             }
             
@@ -2448,7 +2448,7 @@ def upload_test_cases_to_jira():
             field_mappings['Asignado'] = 'assignee'
         
         # Crear issues usando el método existente
-        # filter_issue_types=False para aceptar todos los tipos (incluyendo Test Case)
+        # filter_issue_types=False para aceptar todos los tipos (incluyendo tests Case)
         results = issue_service.create_issues_from_csv(
             csv_data=csv_data,
             project_key=project_key,
@@ -2676,7 +2676,7 @@ def jira_upload_csv():
             email=jira_config.email,
             api_token=jira_config.token
         )
-        # filter_issue_types=False para aceptar Test Cases, Bugs y Stories
+        # filter_issue_types=False para aceptar tests Cases, Bugs y Stories
         results = client.create_issues_from_csv(csv_data, project_key, field_mappings, default_values, filter_issue_types=False)
         
         # Calcular distribución de tipos de issue para métricas
@@ -2938,9 +2938,37 @@ def jira_download_report():
         # Si no hay datos del frontend, obtener métricas básicas
         if table_data and (table_data.get('test_cases_by_person') or table_data.get('defects_by_person')):
             # Usar datos del frontend que ya tienen filtros aplicados
+            # Calcular totales de test cases
+            total_test_cases = 0
+            successful_test_cases = 0
+            in_progress_test_cases = 0
+            failed_test_cases = 0
+            
+            for item in table_data.get('test_cases_by_person', []):
+                total_test_cases += item.get('total', 0) or 0
+                successful_test_cases += item.get('exitoso', 0) or 0
+                in_progress_test_cases += item.get('en_progreso', 0) or 0
+                failed_test_cases += item.get('fallado', 0) or 0
+            
+            # Calcular defectos abiertos y cerrados
+            defects_data = table_data.get('defects_by_person', [])
+            total_defects = len(defects_data)
+            open_defects = sum(1 for d in defects_data if d.get('status', '').lower() not in ['done', 'closed', 'resolved', 'cerrado', 'resuelto'])
+            closed_defects = total_defects - open_defects
+            
+            # Calcular porcentajes
+            successful_percentage = round((successful_test_cases / total_test_cases * 100), 2) if total_test_cases > 0 else 0
+            real_coverage = round(((successful_test_cases + in_progress_test_cases) / total_test_cases * 100), 2) if total_test_cases > 0 else 0
+            defect_rate = round((total_defects / total_test_cases * 100), 2) if total_test_cases > 0 else 0
+            
             report = {
-                'total_test_cases': sum(item.get('total', 0) for item in table_data.get('test_cases_by_person', [])),
-                'total_defects': len(table_data.get('defects_by_person', []))
+                'total_test_cases': total_test_cases,
+                'successful_test_cases_percentage': successful_percentage,
+                'real_coverage': real_coverage,
+                'total_defects': total_defects,
+                'defect_rate': defect_rate,
+                'open_defects': open_defects,
+                'closed_defects': closed_defects
             }
         else:
             # Fallback: obtener métricas básicas del proyecto
@@ -2955,7 +2983,12 @@ def jira_download_report():
                 # Crear reporte básico si falla
                 report = {
                     'total_test_cases': 0,
-                    'total_defects': 0
+                    'successful_test_cases_percentage': 0,
+                    'real_coverage': 0,
+                    'total_defects': 0,
+                    'defect_rate': 0,
+                    'open_defects': 0,
+                    'closed_defects': 0
                 }
         
         # Limitar datos a solo los primeros 20 registros para cada tabla
@@ -3179,7 +3212,7 @@ def jira_download_template():
         
         # Valores por defecto si no se proporciona project_key
         story_type = 'Story'
-        test_case_type = 'Test Case'
+        test_case_type = 'tests Case'
         bug_type = 'Bug'
         
         # Si se proporciona project_key, obtener los tipos reales del proyecto
@@ -3198,7 +3231,7 @@ def jira_download_template():
                             story_type = name
                             break
                     
-                    # Buscar Test Case
+                    # Buscar tests Case
                     for name in type_names:
                         if 'test' in name.lower() and 'case' in name.lower():
                             test_case_type = name

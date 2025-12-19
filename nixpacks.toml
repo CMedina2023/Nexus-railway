@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python311", "cairo", "pango", "gdk-pixbuf", "libffi"]
+nixPkgs = ["python311", "cairo", "pango", "gdk-pixbuf", "libffi", "fontconfig", "dejavu_fonts", "noto-fonts-emoji"]
 
 [phases.install]
 cmds = [

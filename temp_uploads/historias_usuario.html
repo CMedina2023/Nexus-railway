@@ -2,215 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mockup - Formato de Historia de Usuario</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --card: #ffffff;
-            --border: #e5e7eb;
-            --text: #0f172a;
-            --muted: #6b7280;
-            --accent: #2563eb;
-            --accent-soft: #dbeafe;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 32px;
-            background: var(--bg);
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            color: var(--text);
-        }
-
-        .container {
-            max-width: 1080px;
-            margin: 0 auto 48px auto;
-        }
-
-        .content {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .page {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
-            padding: 36px 42px;
-            min-height: 980px;
-            position: relative;
-        }
-
-        .page-header,
-        .page-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            color: var(--muted);
-            letter-spacing: 0.02em;
-        }
-
-        .page-header {
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 12px;
-        }
-
-        .page-footer {
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-            margin-top: 36px;
-        }
-
-        .page-number {
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .cover-page {
-            min-height: 70vh;
-            border-radius: 16px;
-            background: radial-gradient(circle at 20% 20%, #3b82f6 0%, rgba(37, 99, 235, 0.08) 35%),
-                        radial-gradient(circle at 80% 0%, #a855f7 0%, rgba(168, 85, 247, 0.08) 30%),
-                        #0b1224;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #e5edff;
-            text-align: center;
-            padding: 48px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .cover-title {
-            font-size: 34px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 800;
-        }
-
-        .index-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 18px;
-            color: var(--text);
-        }
-
-        .index-item {
-            display: grid;
-            grid-template-columns: 40px 1fr 80px;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            margin-bottom: 8px;
-            align-items: center;
-            background: #f8fafc;
-        }
-
-        .index-number {
-            font-weight: 700;
-            color: var(--accent);
-        }
-
-        .index-text {
-            color: var(--text);
-            font-weight: 600;
-        }
-
-        .index-page {
-            text-align: right;
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        .story-container {
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            background: #f9fafb;
-            padding: 20px 22px;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-        }
-
-        .story-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 14px;
-            letter-spacing: 0.01em;
-        }
-
-        .story-item {
-            display: grid;
-            grid-template-columns: 20px 140px 1fr;
-            gap: 10px;
-            align-items: flex-start;
-            padding: 10px 0;
-            border-top: 1px dashed var(--border);
-        }
-
-        .story-item:first-of-type {
-            border-top: none;
-        }
-
-        .bullet {
-            color: var(--accent);
-            font-weight: 800;
-            text-align: center;
-            font-size: 16px;
-        }
-
-        .story-item-label {
-            font-weight: 700;
-            color: var(--text);
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.04em;
-        }
-
-        .story-item-content {
-            color: #111827;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .story-sublist {
-            grid-column: 2 / span 2;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-left: 30px;
-        }
-
-        .story-sublist-item {
-            display: flex;
-            gap: 8px;
-            align-items: flex-start;
-            color: #111827;
-            line-height: 1.55;
-        }
-
-        @media print {
-            body {
-                background: #ffffff;
-                padding: 0;
-            }
-            .page {
-                box-shadow: none;
-                border: none;
-                border-radius: 0;
-                min-height: auto;
-                page-break-after: always;
-            }
-        }
-    </style>
+    <title>Historias de Usuario</title>
 </head>
 <body>
     <div class="container">
@@ -234,56 +26,104 @@
                     
                     <div class="index-item">
                         <span class="index-number">1.</span>
-                        <span class="index-text">Visualizar Inventario en Tiempo Real por Ubicación</span>
+                        <span class="index-text">Gestión de Ubicaciones de Inventario (Creación y Edición)</span>
                         <span class="index-page">3</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">2.</span>
-                        <span class="index-text">Realizar una Reserva Inteligente de Producto</span>
+                        <span class="index-text">Configuración de Parámetros de Sincronización entre Ubicaciones</span>
                         <span class="index-page">4</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">3.</span>
-                        <span class="index-text">Consultar Detalles de Reservas Existentes</span>
+                        <span class="index-text">Monitoreo de Estado de Sincronización de Inventario</span>
                         <span class="index-page">5</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">4.</span>
-                        <span class="index-text">Modificar o Cancelar una Reserva de Producto</span>
+                        <span class="index-text">Configuración de Reglas para Reservas Inteligentes</span>
                         <span class="index-page">6</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">5.</span>
-                        <span class="index-text">Visualizar Detalles de Transferencias Automáticas</span>
+                        <span class="index-text">Gestión Manual de Reservas de Inventario</span>
                         <span class="index-page">7</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">6.</span>
-                        <span class="index-text">Recibir Alertas de Transferencias Relevantes</span>
+                        <span class="index-text">Configuración de Políticas para Transferencias Automáticas</span>
                         <span class="index-page">8</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">7.</span>
-                        <span class="index-text">Consultar Información de Lotes y Fechas de Vencimiento</span>
+                        <span class="index-text">Aprobación/Rechazo de Transferencias Automáticas Sugeridas</span>
                         <span class="index-page">9</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">8.</span>
-                        <span class="index-text">Recibir Alertas de Productos Próximos a Vencer</span>
+                        <span class="index-text">Visualización y Auditoría del Historial de Transferencias</span>
                         <span class="index-page">10</span>
                     </div>
 
                     <div class="index-item">
                         <span class="index-number">9.</span>
-                        <span class="index-text">Identificar Lotes de Productos para Retiro o Inspección</span>
+                        <span class="index-text">Configuración de Alertas para Lotes y Fechas de Vencimiento</span>
                         <span class="index-page">11</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">10.</span>
+                        <span class="index-text">Gestión de Información de Lotes y Fechas de Vencimiento</span>
+                        <span class="index-page">12</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">11.</span>
+                        <span class="index-text">Revisión y Gestión de Inventario Próximo a Vencer o Vencido</span>
+                        <span class="index-page">13</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">12.</span>
+                        <span class="index-text">Configuración de Políticas de Disposición para Inventario Vencido</span>
+                        <span class="index-page">14</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">13.</span>
+                        <span class="index-text">Configuración de Tipos de Ubicaciones de Inventario</span>
+                        <span class="index-page">15</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">14.</span>
+                        <span class="index-text">Configuración de Umbrales de Disponibilidad para Reservas Inteligentes</span>
+                        <span class="index-page">16</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">15.</span>
+                        <span class="index-text">Gestión de Costos de Envío por Ubicación para Reservas Inteligentes</span>
+                        <span class="index-page">17</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">16.</span>
+                        <span class="index-text">Monitoreo y Evaluación del Desempeño del Modelo de Predicción de Demanda (IA)</span>
+                        <span class="index-page">18</span>
+                    </div>
+
+                    <div class="index-item">
+                        <span class="index-number">17.</span>
+                        <span class="index-text">Ajuste de Parámetros del Modelo de Predicción de Demanda (IA)</span>
+                        <span class="index-page">19</span>
                     </div>
                 </div>
                 <div class="page-footer">
@@ -301,24 +141,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #1: Visualizar Inventario en Tiempo Real por Ubicación</div>
+<div class="story-title">HISTORIA #1: Gestión de Ubicaciones de Inventario (Creación y Edición)</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder visualizar el inventario disponible de un producto en tiempo real en todas las ubicaciones (almacenes, tiendas físicas, centros de distribución)</span>
+                            <span class="story-item-content"> Poder crear, editar y eliminar las ubicaciones de inventario (almacenes, tiendas físicas, centros de distribución)</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Conocer la disponibilidad exacta del stock y optimizar la preparación de pedidos o la atención al cliente, mejorando la eficiencia operativa y la satisfacción del cliente.</span>
+                            <span class="story-item-content"> Configurar la estructura física donde se gestiona el inventario y permitir la sincronización en tiempo real, optimizando la cadena de suministro.</span>
                         </div>
 
                         <div class="story-item">
@@ -340,17 +180,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> tengo acceso al sistema de inventario y necesito verificar la disponibilidad de un producto CUANDO busco un producto específico y solicito ver su stock en todas las ubicaciones ENTONCES el sistema me muestra una lista consolidada con el nombre del producto, la cantidad disponible en cada almacén/tie...
+                                    <strong>Escenario Principal:</strong> necesito añadir un nuevo centro de distribución a la red CUANDO accedo a la sección de "Gestión de Ubicaciones" y creo una nueva ubicación con todos los detalles requeridos (nombre, tipo, dirección, capacidad) ENTONCES la nueva ubicación se registra exitosamente y está disponible para la asignación ...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> estoy visualizando el inventario consolidado de un producto CUANDO una cantidad de dicho producto se vende o se recibe en una de las ubicaciones ENTONCES la cantidad reportada para esa ubicación se actualiza automáticamente en la vista consolidada en menos de 5 segundos.
+                                    <strong>Escenario Alternativo:</strong> una tienda física ha cambiado su dirección CUANDO accedo a la sección de "Gestión de Ubicaciones", selecciono la tienda existente y actualizo su dirección ENTONCES la información de la ubicación se actualiza correctamente y los sistemas dependientes (como cálculo de rutas o costos de envío) utilizan...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> intento buscar un producto que no existe en el sistema CUANDO ingreso el código o nombre del producto y hago clic en buscar ENTONCES el sistema me muestra un mensaje claro indicando "Producto no encontrado" y sugiere verificar la entrada.
+                                    <strong>Validaciones:</strong> intento crear una nueva ubicación sin proporcionar un nombre único CUANDO intento guardar la nueva ubicación ENTONCES el sistema muestra un mensaje de error indicando que el nombre es obligatorio y debe ser único.
                                 </div>
 
                             </div>
@@ -363,12 +203,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La sincronización entre ubicaciones debe ser en tiempo real, con una latencia máxima de 5 segundos para reflejar cambios de stock.
+                                    Cada ubicación de inventario debe tener un nombre único para su identificación.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La vista del inventario debe diferenciar entre stock disponible, stock en tránsito y stock reservado.
+                                    Es obligatorio especificar el tipo de ubicación (e.g., Almacén, Tienda Física, Centro de Distribución).
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las ubicaciones inactivas no se consideran para transferencias o reservas inteligentes.
                                 </div>
 
                             </div>
@@ -390,24 +235,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #2: Realizar una Reserva Inteligente de Producto</div>
+<div class="story-title">HISTORIA #2: Configuración de Parámetros de Sincronización entre Ubicaciones</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder realizar una reserva de un producto para un cliente, permitiendo que el sistema sugiera inteligentemente la ubicación de cumplimiento óptima</span>
+                            <span class="story-item-content"> Poder definir los parámetros y la frecuencia de sincronización de inventario entre diferentes ubicaciones</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Asegurar la disponibilidad del producto para el cliente, minimizar los costos de envío y optimizar los tiempos de entrega, lo cual contribuye a la predicción de demanda y a la rentabilidad del negocio.</span>
+                            <span class="story-item-content"> Asegurar la consistencia y la visibilidad en tiempo real del stock en toda la red, fundamental para la precisión de las decisiones de IA y la satisfacción del cliente.</span>
                         </div>
 
                         <div class="story-item">
@@ -429,17 +274,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> un cliente desea reservar un producto y conozco su ubicación CUANDO ingreso el producto, la cantidad y la ubicación de entrega del cliente en el módulo de reservas ENTONCES el sistema me sugiere la ubicación de origen más adecuada para el despacho (ej. almacén A), considerando la disponibilidad, la ...
+                                    <strong>Escenario Principal:</strong> necesito configurar la sincronización de inventario entre un almacén principal y una tienda específica CUANDO accedo a la sección de "Configuración de Sincronización" y defino que la sincronización sea cada 5 minutos bidireccionalmente para esa pareja de ubicaciones ENTONCES la regla de sincronizaci...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> el sistema ha sugerido una ubicación de origen para la reserva CUANDO decido manualmente seleccionar otra ubicación de origen disponible (ej. almacén B) por un motivo específico ENTONCES el sistema me permite modificar la ubicación de origen sugerida y recalcula el costo de envío y el tiempo estimad...
+                                    <strong>Escenario Alternativo:</strong> la red experimenta un alto volumen de transacciones y necesito reducir la carga del sistema CUANDO modifico la frecuencia de sincronización de un grupo de tiendas de cada 1 minuto a cada 10 minutos ENTONCES el sistema ajusta la programación de sincronización según la nueva configuración, priorizando...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> intento reservar una cantidad de un producto que excede el stock disponible total en todas las ubicaciones CUANDO confirmo la reserva ENTONCES el sistema me muestra un mensaje de error indicando "Stock insuficiente para la cantidad solicitada" y me impide completar la reserva.
+                                    <strong>Validaciones:</strong> intento configurar una sincronización con una frecuencia negativa o nula CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que la frecuencia debe ser un valor positivo válido.
                                 </div>
 
                             </div>
@@ -452,12 +297,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La lógica de sugerencia de ubicación debe priorizar el menor costo de envío y el menor tiempo de entrega, ponderando la cercanía a la ubicación del cliente y la disponibilidad del stock.
+                                    La sincronización por defecto debe ser cada 1 minuto para ubicaciones de alta rotación, salvo que se especifique lo contrario.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Las reservas inteligentes deben descontar inmediatamente el inventario disponible en la ubicación seleccionada para evitar sobreventas.
+                                    Las configuraciones de sincronización deben ser auditables, registrando quién y cuándo se realizaron cambios.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Un fallo en la sincronización debe generar una alerta crítica para el Administrador.
                                 </div>
 
                             </div>
@@ -479,36 +329,36 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #3: Consultar Detalles de Reservas Existentes</div>
+<div class="story-title">HISTORIA #3: Monitoreo de Estado de Sincronización de Inventario</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder consultar los detalles de una reserva existente</span>
+                            <span class="story-item-content"> Tener un panel visual que muestre el estado de la sincronización de inventario entre todas las ubicaciones</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Dar seguimiento a los pedidos de los clientes, gestionar posibles cambios o cancelaciones, y asegurar una experiencia de servicio coherente y eficiente.</span>
+                            <span class="story-item-content"> Identificar rápidamente cualquier discrepancia o fallo en la actualización del stock y asegurar la integridad de los datos en tiempo real, lo cual es crítico para la precisión de la IA y la eficiencia operativa.</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Prioridad:</span>
-                            <span class="story-item-content"> Media</span>
+                            <span class="story-item-content"> Alta</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Complejidad:</span>
-                            <span class="story-item-content"> Simple</span>
+                            <span class="story-item-content"> Moderada</span>
                         </div>
 
                         <div class="story-item">
@@ -518,17 +368,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> tengo el identificador de una reserva o los datos de un cliente CUANDO busco la reserva por su ID o por el nombre/ID del cliente en el módulo de reservas ENTONCES el sistema me muestra todos los detalles de la reserva, incluyendo el producto, cantidad, ubicación de origen, ubicación de entrega del c...
+                                    <strong>Escenario Principal:</strong> accedo al panel de control de inventario CUANDO visualizo la sección de "Estado de Sincronización" ENTONCES puedo ver una lista de todas las parejas de ubicaciones configuradas para sincronización, su último estado (éxito/fallo), la hora de la última sincronización y el número de discrepancias detec...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> la ubicación de origen sugerida inicialmente para una reserva ha cambiado (ej. por una transferencia de stock urgente) CUANDO consulto los detalles de esa reserva ENTONCES el sistema muestra la nueva ubicación de origen asignada y, si es relevante, un registro del cambio.
+                                    <strong>Escenario Alternativo:</strong> una sincronización ha fallado entre un almacén y una tienda CUANDO reviso el panel de estado de sincronización ENTONCES la pareja de ubicaciones se marca con un indicador visual de error y se muestra un mensaje detallado del motivo del fallo, permitiéndome investigar la causa.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> intento buscar una reserva con un ID incorrecto o inexistente CUANDO realizo la búsqueda ENTONCES el sistema me notifica que "No se encontraron reservas con el ID proporcionado".
+                                    <strong>Validaciones:</strong> no se ha configurado ninguna sincronización entre ubicaciones CUANDO accedo al panel de estado de sincronización ENTONCES el sistema muestra un mensaje indicando que no hay configuraciones de sincronización activas.
                                 </div>
 
                             </div>
@@ -541,12 +391,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Todas las reservas deben tener un estado actual visible y actualizable (Pendiente, En Proceso, Completada, Cancelada).
+                                    Las discrepancias de stock que superen un umbral predefinido (e.g., 5% o 10 unidades) deben resaltar la entrada en el panel.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    El acceso a la información de la reserva debe respetar los permisos de usuario según su rol y ubicación asignada.
+                                    El panel debe permitir filtrar por estado (exitoso, fallido, pendiente) o por ubicación.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Se debe registrar un historial detallado de todas las sincronizaciones, incluyendo los cambios realizados.
                                 </div>
 
                             </div>
@@ -568,24 +423,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #4: Modificar o Cancelar una Reserva de Producto</div>
+<div class="story-title">HISTORIA #4: Configuración de Reglas para Reservas Inteligentes</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder modificar o cancelar una reserva de producto existente</span>
+                            <span class="story-item-content"> Poder definir y ajustar las</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Adaptarme a los cambios en los requerimientos del cliente o en la disponibilidad del inventario, manteniendo la precisión de los registros y evitando discrepancias de stock que afecten la predicción de demanda.</span>
+                            <span class="story-item-content"> Optimizar la asignación de stock en función de la ubicación del cliente, costos de envío y disponibilidad, mejorando la rentabilidad y la experiencia de compra.</span>
                         </div>
 
                         <div class="story-item">
@@ -597,7 +452,7 @@
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Complejidad:</span>
-                            <span class="story-item-content"> Moderada</span>
+                            <span class="story-item-content"> Compleja</span>
                         </div>
 
                         <div class="story-item">
@@ -607,17 +462,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> tengo una reserva activa y el cliente solicita un cambio de cantidad CUANDO accedo a los detalles de la reserva y modifico la cantidad del producto ENTONCES el sistema actualiza la reserva, ajusta el stock reservado en la ubicación de origen y registra el cambio con el usuario y la fecha.
+                                    <strong>Escenario Principal:</strong> necesito priorizar la ubicación del cliente para reducir los tiempos de entrega CUANDO accedo a la sección de "Configuración de Reservas Inteligentes" y ajusto la ponderación del factor "proximidad geográfica del cliente" a un valor más alto ENTONCES el sistema de reservas inteligentes comienza a da...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> una reserva ya no es necesaria y necesito liberarla CUANDO selecciono la opción de cancelar la reserva y confirmo la acción ENTONCES el sistema libera la cantidad de stock reservado de vuelta al inventario disponible de la ubicación original y cambia el estado de la reserva a "Cancelada".
+                                    <strong>Escenario Alternativo:</strong> los costos de envío han aumentado para ciertos tipos de productos CUANDO accedo a la configuración de reservas y establezco un umbral máximo de costo de envío aceptable para categorías de productos específicas ENTONCES el sistema de IA evitará asignar inventario de ubicaciones que superen ese umbral...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> intento modificar una reserva que ya ha sido completada o enviada CUANDO intento realizar cambios en la cantidad o producto ENTONCES el sistema me notifica que "La reserva no puede ser modificada en su estado actual" y me impide guardar los cambios.
+                                    <strong>Validaciones:</strong> intento guardar una configuración de reglas con valores inconsistentes (e.g., un umbral de costo negativo) CUANDO intento aplicar los cambios ENTONCES el sistema muestra una advertencia o un mensaje de error, impidiendo que se guarden configuraciones inválidas.
                                 </div>
 
                             </div>
@@ -630,12 +485,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Solo las reservas en estado "Pendiente" o "En Proceso" pueden ser modificadas o canceladas.
+                                    Las reglas de reservas inteligentes deben ser aplicables a nivel global, por categoría de producto o por tipo de cliente.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La cancelación de una reserva debe devolver el stock a la ubicación de origen original.
+                                    Los cambios en las reglas de reserva deben ser registrados y poder revertirse si es necesario.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    La configuración debe permitir definir un orden de
                                 </div>
 
                             </div>
@@ -657,24 +517,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #5: Visualizar Detalles de Transferencias Automáticas</div>
+<div class="story-title">HISTORIA #5: Gestión Manual de Reservas de Inventario</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder visualizar los detalles de las transferencias de inventario automáticas (programadas o completadas) entre ubicaciones</span>
+                            <span class="story-item-content"> Poder crear, modificar o cancelar manualmente las reservas de inventario</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Conocer el movimiento del stock, planificar la recepción de mercancía y asegurar la disponibilidad del producto donde más se necesita, optimizando la cadena de suministro basada en la predicción de demanda.</span>
+                            <span class="story-item-content"> Atender pedidos especiales, resolver incidencias o anular reservas generadas por el sistema cuando sea necesario, garantizando flexibilidad y control sobre el stock reservado.</span>
                         </div>
 
                         <div class="story-item">
@@ -696,17 +556,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> necesito saber el estado de un envío de stock entre ubicaciones CUANDO accedo al módulo de transferencias y busco por la ubicación de origen o destino ENTONCES el sistema me muestra una lista de transferencias con su ID, producto(s), cantidad, ubicación de origen, ubicación de destino, estado (ej. "...
+                                    <strong>Escenario Principal:</strong> un cliente VIP ha solicitado una reserva especial para un artículo específico en una tienda concreta CUANDO accedo a la sección de "Gestión de Reservas", creo una nueva reserva manual para ese artículo, cliente y ubicación ENTONCES el inventario de ese artículo se reserva en la ubicación especificad...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> estoy visualizando una transferencia "En Tránsito" CUANDO el inventario llega a la ubicación de destino y es procesado ENTONCES el estado de la transferencia se actualiza automáticamente a "Completada" y el stock se suma al inventario disponible en la ubicación de destino.
+                                    <strong>Escenario Alternativo:</strong> un pedido ha sido cancelado y su reserva asociada ya no es necesaria CUANDO accedo a la sección de "Gestión de Reservas", busco la reserva correspondiente y la cancelo ENTONCES el inventario reservado se libera y vuelve a estar disponible para la venta, optimizando la utilización del stock.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> busco una transferencia con un rango de fechas que no contiene movimientos CUANDO aplico el filtro de fechas ENTONCES el sistema me muestra un mensaje indicando "No se encontraron transferencias en el rango de fechas seleccionado".
+                                    <strong>Validaciones:</strong> intento crear una reserva manual para un artículo que no tiene stock disponible en la ubicación seleccionada CUANDO intento guardar la reserva ENTONCES el sistema muestra una alerta indicando que no hay suficiente stock disponible y no permite la reserva, previniendo errores de asignación.
                                 </div>
 
                             </div>
@@ -719,12 +579,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Las transferencias automáticas son iniciadas por el sistema basándose en algoritmos de demanda predictiva.
+                                    Las reservas manuales deben requerir un motivo de creación o cancelación.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    El stock asociado a una transferencia "En Tránsito" debe ser contabilizado como stock en tránsito y no como disponible en ninguna de las ubicaciones.
+                                    Cualquier modificación o cancelación de una reserva debe registrarse en un log de auditoría.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las reservas manuales tienen
                                 </div>
 
                             </div>
@@ -746,36 +611,36 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #6: Recibir Alertas de Transferencias Relevantes</div>
+<div class="story-title">HISTORIA #6: Configuración de Políticas para Transferencias Automáticas</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Recibir notificaciones sobre transferencias automáticas significativas que afectan mi ubicación de trabajo (ej. llegada de un envío grande, desabastecimiento inminente)</span>
+                            <span class="story-item-content"> Poder definir las políticas y los umbrales que rigen las transferencias automáticas de inventario entre ubicaciones</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Estar preparado para recibir o despachar mercancía y anticipar cambios en la disponibilidad del inventario, lo que me permite tomar decisiones informadas y mantener la eficiencia operativa.</span>
+                            <span class="story-item-content"> Optimizar la distribución del stock en función de la demanda predictiva y las</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Prioridad:</span>
-                            <span class="story-item-content"> Media</span>
+                            <span class="story-item-content"> Alta</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Complejidad:</span>
-                            <span class="story-item-content"> Moderada</span>
+                            <span class="story-item-content"> Compleja</span>
                         </div>
 
                         <div class="story-item">
@@ -785,17 +650,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> una transferencia automática con un volumen significativo de productos está programada para llegar a mi ubicación en las próximas 24 horas CUANDO la transferencia se inicia o se acerca a su destino ENTONCES recibo una notificación en el sistema (y opcionalmente por correo electrónico) alertándome so...
+                                    <strong>Escenario Principal:</strong> la demanda de un producto ha aumentado en una región específica CUANDO accedo a la sección de "Configuración de Transferencias Automáticas" y defino una política para que, si el stock de una tienda baja del 20% de su capacidad máxima, el sistema genere una transferencia desde el almacén más cercano ...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> una transferencia programada es retrasada significativamente o cancelada CUANDO el estado de la transferencia cambia ENTONCES recibo una alerta informando sobre el cambio en el estado de la transferencia que afecta mi ubicación.
+                                    <strong>Escenario Alternativo:</strong> deseo evitar transferencias de productos de bajo margen a ubicaciones distantes debido a altos costos logísticos CUANDO configuro una regla que desactiva las transferencias automáticas para ciertos SKU o categorías de productos si la distancia supera un umbral definido ENTONCES el sistema de IA resp...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> las preferencias de notificación de un usuario están configuradas para solo recibir alertas críticas CUANDO se genera una transferencia de bajo volumen hacia su ubicación ENTONCES el usuario no recibe una notificación por esa transferencia específica.
+                                    <strong>Validaciones:</strong> intento configurar una política con un umbral de stock mínimo negativo CUANDO intento guardar la política ENTONCES el sistema muestra un error indicando que el umbral debe ser un valor positivo válido.
                                 </div>
 
                             </div>
@@ -808,12 +673,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Las notificaciones deben ser configurables por el usuario o administrador para determinar el umbral de "significatividad" (ej. por volumen, valor, tipo de producto).
+                                    Las políticas de transferencia automática deben poder activarse/desactivarse por producto, categoría, ubicación o globalmente.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Las alertas deben ser oportunas, permitiendo al usuario tomar acciones proactivas.
+                                    Cada política debe tener un costo estimado de transferencia asociado para evaluar su impacto financiero.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las políticas pueden incluir un periodo de gracia antes de ejecutar una transferencia para permitir ajustes manuales.
                                 </div>
 
                             </div>
@@ -835,24 +705,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #7: Consultar Información de Lotes y Fechas de Vencimiento</div>
+<div class="story-title">HISTORIA #7: Aprobación/Rechazo de Transferencias Automáticas Sugeridas</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder consultar el número de lote y la fecha de vencimiento de los productos en mi ubicación</span>
+                            <span class="story-item-content"> Poder revisar y aprobar o rechazar las sugerencias de transferencias de inventario generadas automáticamente por el sistema de IA</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Realizar una gestión de inventario precisa, aplicar principios como FIFO/FEFO, y facilitar la trazabilidad en caso de retiradas de productos (recalls), lo que es crucial para la calidad y seguridad del producto.</span>
+                            <span class="story-item-content"> Mantener un control final sobre los movimientos de stock importantes y evitar transferencias ineficientes o costosas, asegurando una gestión prudente del inventario.</span>
                         </div>
 
                         <div class="story-item">
@@ -874,17 +744,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> necesito verificar la fecha de vencimiento de un producto específico en mi almacén CUANDO busco el producto y accedo a su detalle de inventario por lote ENTONCES el sistema me muestra una lista de todos los lotes de ese producto en mi ubicación, con su respectivo número de lote, fecha de fabricación...
+                                    <strong>Escenario Principal:</strong> el sistema de IA ha sugerido una transferencia de 50 unidades de un producto desde el almacén A al almacén B debido a la demanda predictiva CUANDO accedo a la bandeja de "Sugerencias de Transferencia", reviso los detalles y apruebo la transferencia ENTONCES la transferencia se marca como "Aprobada" ...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> recibo un nuevo envío de un producto con diferentes lotes CUANDO el envío es ingresado al sistema ENTONCES el sistema crea registros separados para cada número de lote con sus respectivas fechas de vencimiento y cantidades, vinculándolos al producto principal.
+                                    <strong>Escenario Alternativo:</strong> una transferencia sugerida por el sistema implicaría un costo de envío excesivo o iría en contra de una promoción de stock local CUANDO accedo a la bandeja de "Sugerencias de Transferencia", reviso los detalles y rechazo la transferencia ENTONCES la transferencia se marca como "Rechazada" con un mot...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> un producto no tiene gestión de lotes (ej. tornillos a granel) CUANDO intento acceder a su información de lotes ENTONCES el sistema me informa que "Este producto no requiere gestión por lotes o fechas de vencimiento".
+                                    <strong>Validaciones:</strong> intento aprobar una transferencia sugerida para la cual el stock de origen ya no está disponible CUANDO intento aprobar la transferencia ENTONCES el sistema muestra una alerta indicando que el stock es insuficiente y no permite la aprobación.
                                 </div>
 
                             </div>
@@ -897,12 +767,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Cada entrada de inventario de un producto con gestión de lotes debe registrar obligatoriamente su número de lote y fecha de vencimiento.
+                                    Todas las sugerencias de transferencia deben mostrar el costo logístico estimado y el impacto en la disponibilidad de stock.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La salida de inventario (ventas, transferencias) debe priorizar los lotes con fechas de vencimiento más cercanas (FEFO - First Expired, First Out) por defecto.
+                                    Las sugerencias deben tener un plazo para su aprobación; si expira, se considerarán automáticamente rechazadas.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El motivo del rechazo debe ser obligatorio para futuras mejoras del modelo de IA.
                                 </div>
 
                             </div>
@@ -924,30 +799,30 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #8: Recibir Alertas de Productos Próximos a Vencer</div>
+<div class="story-title">HISTORIA #8: Visualización y Auditoría del Historial de Transferencias</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Recibir alertas automáticas sobre productos que están próximos a alcanzar su fecha de vencimiento o que ya han vencido</span>
+                            <span class="story-item-content"> Poder consultar el historial completo de todas las transferencias de inventario (manuales y automáticas)</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Tomar acciones preventivas como promociones, transferencias rápidas o descarte, minimizando las pérdidas por obsolescencia y maximizando el valor del inventario antes de que expire, mejorando la rentabilidad.</span>
+                            <span class="story-item-content"> Realizar auditorías, analizar patrones de movimiento de stock y evaluar la eficiencia de las políticas de transferencia, contribuyendo a la mejora continua de la logística.</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Prioridad:</span>
-                            <span class="story-item-content"> Alta</span>
+                            <span class="story-item-content"> Media</span>
                         </div>
 
                         <div class="story-item">
@@ -963,17 +838,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> existen productos en mi ubicación con una fecha de vencimiento dentro de los próximos 30 días CUANDO el sistema ejecuta su proceso de verificación de fechas de vencimiento (ej. diariamente) ENTONCES recibo una alerta con una lista de los productos, sus lotes, cantidades y fechas de vencimiento, clas...
+                                    <strong>Escenario Principal:</strong> necesito revisar las transferencias realizadas de un producto específico durante el último mes CUANDO accedo a la sección de "Historial de Transferencias", aplico los filtros por producto y rango de fechas ENTONCES se muestra una lista detallada de todas las transferencias que cumplen los criterios,...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> un producto ya ha superado su fecha de vencimiento CUANDO el sistema detecta este estado ENTONCES el stock de ese lote es automáticamente marcado como "No Disponible para Venta" y se genera una alerta prioritaria para su gestión (descarte o devolución).
+                                    <strong>Escenario Alternativo:</strong> deseo saber qué transferencias fueron rechazadas por un motivo específico CUANDO filtro el historial por estado "Rechazado" y por un motivo de rechazo particular ENTONCES el sistema muestra solo las transferencias que fueron denegadas con ese motivo, facilitando el análisis de decisiones.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> la configuración del umbral de alerta de vencimiento es de 60 días CUANDO un producto tiene una fecha de vencimiento a 65 días ENTONCES no se genera ninguna alerta para ese producto aún.
+                                    <strong>Validaciones:</strong> busco transferencias con un rango de fechas inválido (fecha de inicio posterior a fecha fin) CUANDO aplico el filtro ENTONCES el sistema muestra un mensaje de error indicando la inconsistencia en el rango de fechas.
                                 </div>
 
                             </div>
@@ -986,12 +861,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Las alertas de vencimiento deben ser configurables, permitiendo definir diferentes umbrales de tiempo (ej. 30, 60, 90 días antes del vencimiento).
+                                    El historial debe incluir quién inició/aprobó/rechazó la transferencia y cuándo.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    Los productos vencidos deben ser bloqueados automáticamente para su venta o uso.
+                                    Se debe poder exportar el historial de transferencias a formatos comunes (CSV, Excel) para análisis externo.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El sistema debe mantener el historial de transferencias por un período mínimo de 5 años para fines de auditoría.
                                 </div>
 
                             </div>
@@ -1013,24 +893,24 @@
                 </div>
                 <div style="padding-top: 20px;">
                     <div class="story-container">
-<div class="story-title">HISTORIA #9: Identificar Lotes de Productos para Retiro o Inspección</div>
+<div class="story-title">HISTORIA #9: Configuración de Alertas para Lotes y Fechas de Vencimiento</div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">COMO:</span>
-                            <span class="story-item-content"> Usuario</span>
+                            <span class="story-item-content"> Administrador</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">QUIERO:</span>
-                            <span class="story-item-content"> Poder identificar rápidamente todos los productos asociados a un número de lote específico</span>
+                            <span class="story-item-content"> Poder configurar los umbrales y tipos de alertas automáticas para el control de lotes y fechas de vencimiento</span>
                         </div>
 
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">PARA:</span>
-                            <span class="story-item-content"> Facilitar y agilizar los procesos de retirada de productos del mercado (recalls) o inspecciones de calidad, asegurando el cumplimiento normativo y la seguridad del cliente, y minimizando el impacto de un incidente.</span>
+                            <span class="story-item-content"> Recibir notificaciones proactivas sobre productos próximos a caducar o caducados, minimizando las pérdidas por deterioro y asegurando la calidad del producto.</span>
                         </div>
 
                         <div class="story-item">
@@ -1042,7 +922,7 @@
                         <div class="story-item">
                             <span class="bullet">*</span>
                             <span class="story-item-label">Complejidad:</span>
-                            <span class="story-item-content"> Moderada CONTINÚA EN EL SIGUIENTE LOTE - FUNCIONALIDADES PENDIENTES: Integración de inteligencia artificial para predicción de demanda (a nivel de usuario esto podría significar ver las predicciones o su impacto, pero el RF actual no detalla cómo el "Usuario" interactuaría con la IA directamente, más allá de beneficiarse de las transferencias automáticas y reservas inteligentes). Las funcionalidades futuras también podrían incluir la gestión de pedidos, recepción de inventario, y otras capacidades que un sistema de inventario completo tendría.</span>
+                            <span class="story-item-content"> Moderada</span>
                         </div>
 
                         <div class="story-item">
@@ -1052,17 +932,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Principal:</strong> se ha emitido una alerta de calidad para un lote específico de un producto CUANDO ingreso el número de lote en la función de búsqueda de lotes ENTONCES el sistema me muestra todos los registros de inventario de ese lote, incluyendo su ubicación actual, cantidad disponible, y cualquier movimiento reg...
+                                    <strong>Escenario Principal:</strong> deseo ser notificado sobre productos que van a vencer en 30 días CUANDO accedo a la sección de "Configuración de Alertas de Vencimiento" y establezco el umbral de alerta temprana en 30 días antes de la fecha de caducidad ENTONCES el sistema generará y enviará alertas a los usuarios configurados para...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Escenario Alternativo:</strong> se identifica un problema con un lote que ya ha sido parcialmente vendido CUANDO busco el lote afectado ENTONCES el sistema me proporciona un informe detallado de las ubicaciones donde se encuentra actualmente el stock restante de ese lote y un registro de las ventas realizadas con ese lote (si se i...
+                                    <strong>Escenario Alternativo:</strong> quiero diferenciar las alertas por categoría de producto, siendo más estricto con los perecederos CUANDO configuro un umbral de alerta de 60 días para productos alimenticios y 15 días para productos no perecederos ENTONCES el sistema aplica las reglas de alerta específicas para cada categoría, optim...
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    <strong>Validaciones:</strong> ingreso un número de lote que no existe en el sistema CUANDO realizo la búsqueda ENTONCES el sistema me muestra un mensaje indicando "Lote no encontrado o sin inventario activo".
+                                    <strong>Validaciones:</strong> intento configurar un umbral de días negativo para una alerta CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el número de días debe ser un valor positivo.
                                 </div>
 
                             </div>
@@ -1075,12 +955,17 @@
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    El sistema debe mantener un historial inmutable de todos los movimientos de inventario asociados a cada lote.
+                                    Las alertas pueden configurarse por correo electrónico, notificaciones dentro del sistema o SMS para alertas críticas.
                                 </div>
 
                                 <div class="story-sublist-item">
                                     <span class="bullet">*</span>
-                                    La funcionalidad de búsqueda de lotes debe permitir la consulta histórica, incluso si el lote ya no tiene inventario activo.
+                                    Se debe poder asignar diferentes grupos de usuarios o roles para recibir tipos específicos de alertas (e.g., Almacén, Compras).
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las alertas de productos ya vencidos deben tener la máxima
                                 </div>
 
                             </div>
@@ -1093,21 +978,749 @@
                     <div>© 2025</div>
                 </div>
             </div>
-        
+
+            <!-- PÁGINA 12: HISTORIA 10 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #10: Gestión de Información de Lotes y Fechas de Vencimiento</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder registrar, modificar y consultar la información de lotes y sus fechas de vencimiento para cada producto en el inventario</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Mantener un control preciso de la trazabilidad y la frescura del inventario, lo cual es esencial para cumplir con normativas y reducir el riesgo de ventas de productos caducados.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Alta</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Moderada</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> ha llegado un nuevo cargamento de productos con un nuevo lote y fecha de vencimiento CUANDO accedo a la vista de inventario, selecciono el producto y añado los detalles del nuevo lote (número de lote, fecha de fabricación, fecha de vencimiento, cantidad) ENTONCES la información del lote se registra ...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> se ha detectado un error en la fecha de vencimiento de un lote previamente registrado CUANDO accedo a la información del lote erróneo y edito la fecha de vencimiento a la correcta ENTONCES la fecha de vencimiento se actualiza y el sistema ajusta las alertas correspondientes, garantizando la precisió...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento registrar un lote con una fecha de vencimiento anterior a la fecha actual CUANDO intento guardar la información ENTONCES el sistema muestra una advertencia o un mensaje de error indicando una fecha de vencimiento inválida.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Cada entrada de lote debe estar asociada a un producto y una ubicación específicos.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    La información del lote debe ser inmutable una vez que el inventario ha sido consumido, excepto para correcciones justificadas.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El sistema debe soportar el control de lotes para productos configurados con esta característica.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 12</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 13: HISTORIA 11 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #11: Revisión y Gestión de Inventario Próximo a Vencer o Vencido</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Tener una vista consolidada del inventario que está próximo a vencer o ya ha caducado</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Tomar decisiones informadas sobre la disposición de estos productos, minimizar las pérdidas por deterioro y optimizar el espacio de almacenamiento.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Alta</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Moderada</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> necesito identificar todo el stock que vencerá en los próximos 90 días CUANDO accedo al reporte de "Inventario Próximo a Vencer" y filtro por ese rango de tiempo ENTONCES se muestra una lista de productos, lotes, cantidades, ubicaciones y sus respectivas fechas de vencimiento, permitiendo planificar...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> se ha detectado inventario ya vencido en el almacén CUANDO accedo al reporte de "Inventario Vencido" ENTONCES veo una lista clara de todos los lotes de productos que han caducado, con detalles de cantidad y ubicación, para iniciar su disposición inmediata.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento filtrar por un rango de fechas inválido (e.g., fecha de fin anterior a fecha de inicio) CUANDO aplico el filtro ENTONCES el sistema muestra un mensaje de error indicando la inconsistencia.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El reporte debe permitir la exportación de datos para análisis externo.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Debe incluir opciones para marcar lotes como "En cuarentena" o "Para disposición" directamente desde el reporte.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    La vista debe indicar el impacto financiero estimado del inventario próximo a vencer o vencido.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 13</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 14: HISTORIA 12 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #12: Configuración de Políticas de Disposición para Inventario Vencido</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder definir políticas y flujos de trabajo para la disposición del inventario vencido</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Estandarizar el proceso de manejo de productos caducados, asegurar el cumplimiento normativo y minimizar el impacto financiero.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Media</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Compleja</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> necesito establecer un proceso para el descarte de productos químicos vencidos CUANDO accedo a la sección de "Políticas de Disposición" y configuro una política que requiere aprobación doble y genera una orden de destrucción con seguimiento de residuos ENTONCES la política se guarda y se activa, gui...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> algunos productos cercanos a vencer podrían ser vendidos con descuento antes de caducar CUANDO configuro una política para que, si un producto está a 30 días de su vencimiento, se sugiera automáticamente una reducción del 50% de su precio ENTONCES el sistema de IA considerará esta regla en sus suger...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento crear una política de disposición sin especificar los roles de aprobación requeridos CUANDO intento guardar la política ENTONCES el sistema muestra un error indicando que los roles de aprobación son obligatorios.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las políticas de disposición deben ser configurables por categoría de producto o por impacto financiero.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Cada paso en el flujo de disposición debe ser registrado para auditoría.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Se debe poder definir si la disposición implica una baja de stock o una transferencia a una ubicación de cuarentena.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 14</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 15: HISTORIA 13 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #13: Configuración de Tipos de Ubicaciones de Inventario</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder definir y gestionar los diferentes tipos de ubicaciones de inventario (e.g., Almacén Central, Tienda Pequeña, Punto de Recogida)</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Clasificar y agrupar las ubicaciones con características similares, facilitando la aplicación de</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Media</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Moderada</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> necesitamos diferenciar las tiendas físicas por su tamaño y capacidad logística CUANDO accedo a la sección de "Gestión de Tipos de Ubicación", creo un nuevo tipo llamado "Tienda Premium" y le asigno atributos específicos (ej. mayor capacidad de recepción,
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Cada tipo de ubicación puede tener atributos predefinidos que influyen en las reglas de inventario (e.g., capacidad, horario, tipo de productos almacenables).
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Los tipos de ubicación deben ser jerárquicos o tener relaciones configurables (e.g., un "Almacén Regional" es un subtipo de "Almacén").
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Cualquier cambio en un tipo de ubicación debe registrarse y aplicarse automáticamente a todas las ubicaciones asignadas.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 15</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 16: HISTORIA 14 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #14: Configuración de Umbrales de Disponibilidad para Reservas Inteligentes</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder establecer umbrales de stock mínimo o porcentajes de disponibilidad para que el sistema de reservas inteligentes asigne inventario</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Evitar la sobre-promesa de stock y garantizar que siempre haya una cantidad mínima de productos disponible para ventas en tienda o pedidos prioritarios, manteniendo el equilibrio entre la venta online y física.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Alta</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Moderada</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> quiero asegurar que cada tienda siempre tenga al menos 5 unidades de un producto de alta rotación para ventas en persona CUANDO accedo a la "Configuración de Umbrales de Reserva" y defino un umbral de "disponibilidad mínima en tienda" de 5 unidades para ese SKU ENTONCES el sistema de reservas inteli...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> un producto tiene una demanda muy alta y deseo que la IA solo reserve el 70% del stock disponible para pedidos online CUANDO configuro un umbral de reserva del 70% del inventario disponible para ese producto ENTONCES el sistema de reservas inteligentes dejará un 30% del stock disponible en la ubicac...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento configurar un umbral porcentual fuera del rango de 0-100% CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el porcentaje debe estar entre 0 y 100.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Los umbrales pueden ser configurados globalmente, por ubicación, por categoría de producto o por SKU.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Los umbrales de disponibilidad para reservas inteligentes deben coexistir con los umbrales de reorden y generar alertas si se cruzan.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las ventas directas en tienda no deben verse afectadas por los umbrales de reserva, salvo que se especifique una política de "solo reserva".
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 16</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 17: HISTORIA 15 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #15: Gestión de Costos de Envío por Ubicación para Reservas Inteligentes</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder definir y actualizar los costos de envío asociados a cada ubicación de inventario y destino</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Permitir que el sistema de reservas inteligentes optimice las decisiones de asignación de stock, priorizando las opciones más rentables y competitivas para el negocio y el cliente.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Media</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Moderada</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> una nueva tarifa de envío se ha negociado con un transportista para una región específica desde el almacén principal CUANDO accedo a la sección de "Costos de Envío por Ubicación", selecciono el almacén principal y la región de destino, y actualizo la tarifa ENTONCES el sistema de reservas inteligent...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> deseo establecer un costo de envío fijo para entregas desde tiendas locales en un radio específico CUANDO configuro una regla de costo de envío por distancia que aplica una tarifa plana para un radio de 5km desde cualquier tienda física ENTONCES las reservas inteligentes considerarán esta tarifa pla...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento introducir un costo de envío negativo CUANDO intento guardar la configuración ENTONCES el sistema muestra un mensaje de error indicando que el costo de envío debe ser un valor positivo.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Los costos de envío pueden ser definidos por peso, volumen, distancia, zona geográfica o tipo de servicio.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Se debe poder importar masivamente las tarifas de envío desde un archivo (CSV, Excel).
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El sistema debe mantener un historial de cambios en las tarifas de envío para auditoría y análisis de impacto.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 17</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 18: HISTORIA 16 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #16: Monitoreo y Evaluación del Desempeño del Modelo de Predicción de Demanda (IA)</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Acceder a métricas y reportes sobre la precisión y el desempeño del modelo de IA de predicción de demanda</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Evaluar la efectividad de las predicciones en la gestión de inventario y tomar decisiones informadas sobre ajustes del modelo o estrategias de reabastecimiento, asegurando que la IA contribuya positivamente al negocio.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Alta</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Compleja</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> accedo al panel de control de IA CUANDO visualizo las métricas de "Precisión de Predicción de Demanda" para el último trimestre ENTONCES puedo ver gráficos que muestran la desviación promedio, el MAPE (Mean Absolute Percentage Error) y el sesgo de las predicciones de la IA comparadas con la demanda ...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> el sistema ha generado transferencias automáticas basadas en la predicción de demanda CUANDO reviso un reporte que compara las transferencias sugeridas por la IA y la demanda real resultante en esas ubicaciones ENTONCES puedo ver el impacto de las predicciones de la IA en los niveles de stock y en l...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> no hay suficientes datos históricos para calcular métricas de precisión fiables CUANDO intento generar un reporte de desempeño del modelo ENTONCES el sistema muestra un mensaje indicando que se necesitan más datos históricos o que el modelo está en fase de entrenamiento.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Las métricas de desempeño deben ser actualizadas al menos una vez al día.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Se debe poder filtrar las métricas por categoría de producto, ubicación o período de tiempo.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Cualquier cambio significativo en el desempeño del modelo debe generar una alerta para el Administrador.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 18</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 19: HISTORIA 17 -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Requisitos</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+<div class="story-title">HISTORIA #17: Ajuste de Parámetros del Modelo de Predicción de Demanda (IA)</div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">COMO:</span>
+                            <span class="story-item-content"> Administrador</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">QUIERO:</span>
+                            <span class="story-item-content"> Poder ajustar ciertos parámetros y configuraciones del modelo de IA de predicción de demanda</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">PARA:</span>
+                            <span class="story-item-content"> Refinar las predicciones basándome en el análisis de desempeño y el conocimiento de negocio, mejorando la precisión y la utilidad de la IA en la toma de decisiones de inventario.</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content"> Alta</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Complejidad:</span>
+                            <span class="story-item-content"> Compleja</span>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Criterios de Aceptación:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Principal:</strong> he identificado que el modelo de IA está subestimando la demanda para productos de temporada CUANDO accedo a la sección de "Configuración del Modelo de IA" y aumento el factor de ponderación para datos históricos recientes durante la temporada alta ENTONCES el modelo de IA reajusta sus predicciones,...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Escenario Alternativo:</strong> una campaña de marketing masiva está planificada para un producto en particular CUANDO introduzco un "factor de impulso de marketing" adicional para ese producto durante el período de la campaña ENTONCES el modelo de IA integra este factor en sus predicciones, anticipando un aumento en la demanda du...
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Validaciones:</strong> intento aplicar un conjunto de parámetros que han demostrado ser inestables o contraproducentes en pruebas de simulación CUANDO intento guardar los parámetros ENTONCES el sistema muestra una advertencia o impide la aplicación, recomendando la revisión de los parámetros.
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Reglas de Negocio Clave:</span>
+                            <div class="story-sublist">
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Los ajustes de parámetros deben realizarse con precaución y requerir confirmación explícita.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    El sistema debe permitir realizar simulaciones de impacto antes de aplicar los cambios en producción.
+                                </div>
+
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    Todos los cambios de parámetros deben ser registrados en un log de auditoría con la fecha, hora y el usuario que realizó el cambio.
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 19</div>
+                    <div>© 2025</div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-

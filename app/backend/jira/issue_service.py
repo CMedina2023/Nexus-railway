@@ -42,7 +42,7 @@ class FieldMetadataCache:
         Obtiene datos del cache si existen y no han expirado
         
         Args:
-            cache_key: Clave del cache (ej: "RB:Test Case")
+            cache_key: Clave del cache (ej: "RB:tests Case")
             
         Returns:
             Dict con metadata si existe y es válido, None si no existe o expiró
@@ -172,8 +172,8 @@ class IssueCreationRateLimiter:
 
 # Variaciones comunes de nombres para tipos de issues
 TEST_CASE_VARIATIONS = [
-    'Test Case',
-    'Test case',
+    'tests Case',
+    'tests case',
     'test case',
     'TestCase',
     'Testcase',
@@ -210,7 +210,7 @@ def build_issuetype_jql(issue_type: str, project_key: str) -> str:
     Construye un JQL que busca un tipo de issue considerando todas sus variaciones posibles
     
     Args:
-        issue_type: Tipo de issue a buscar (ej: "Test Case", "Bug")
+        issue_type: Tipo de issue a buscar (ej: "tests Case", "Bug")
         project_key: Clave del proyecto
         
     Returns:
@@ -1207,7 +1207,7 @@ class IssueService:
                 return type_name
         
         # Segundo, buscar coincidencia parcial (palabras clave)
-        # Para "Test Case" buscar tipos que contengan "test" y "case"
+        # Para "tests Case" buscar tipos que contengan "test" y "case"
         if 'test' in csv_type_lower and 'case' in csv_type_lower:
             for issue_type in available_types:
                 type_name = issue_type.get('name', '').strip()
@@ -1249,7 +1249,7 @@ class IssueService:
             project_key: Clave del proyecto
             field_mappings: Mapeo de campos CSV a campos Jira
             default_values: Valores por defecto para campos
-            filter_issue_types: Si es True, solo valida contra Test Cases y Bugs. Si es False, valida contra todos los tipos.
+            filter_issue_types: Si es True, solo valida contra tests Cases y Bugs. Si es False, valida contra todos los tipos.
             
         Returns:
             Dict: Resultado con 'success', 'created', 'failed', 'total', etc.

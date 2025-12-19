@@ -79,13 +79,13 @@ class ProjectService:
     
     def _filter_testcases_and_bugs(self, issue_types: List[Dict]) -> List[Dict]:
         """
-        Filtra solo Test Cases y Bugs de una lista de tipos de issue
+        Filtra solo tests Cases y Bugs de una lista de tipos de issue
         
         Args:
             issue_types: Lista de tipos de issue a filtrar
             
         Returns:
-            List[Dict]: Lista filtrada con solo Test Cases y Bugs
+            List[Dict]: Lista filtrada con solo tests Cases y Bugs
         """
         from app.backend.jira.issue_service import TEST_CASE_VARIATIONS, BUG_VARIATIONS
         
@@ -100,7 +100,7 @@ class ProjectService:
             if issue_type_id and issue_type_id in seen_ids:
                 continue
             
-            # Verificar si es Test Case
+            # Verificar si es tests Case
             is_test_case = any(
                 variation.lower() == issue_type_name.lower() or
                 (variation.lower() in issue_type_name.lower() and 
@@ -114,7 +114,7 @@ class ProjectService:
                 for variation in BUG_VARIATIONS
             )
             
-            # Solo incluir si es Test Case o Bug
+            # Solo incluir si es tests Case o Bug
             if is_test_case or is_bug:
                 seen_ids.add(issue_type_id)
                 filtered.append({
@@ -125,7 +125,7 @@ class ProjectService:
                     'subtask': issue_type.get('subtask', False)
                 })
         
-        logger.info(f"[DEBUG] Filtrados {len(filtered)} issuetypes (Test Cases y Bugs) de {len(issue_types)} totales")
+        logger.info(f"[DEBUG] Filtrados {len(filtered)} issuetypes (tests Cases y Bugs) de {len(issue_types)} totales")
         return filtered
     
     def get_issue_types(self, project_key: str, use_createmeta: bool = False, filter_types: bool = True) -> List[Dict]:
@@ -139,7 +139,7 @@ class ProjectService:
         Args:
             project_key: Clave del proyecto
             use_createmeta: Si es True, usa createmeta API (más lento pero obtiene todos los issuetypes)
-            filter_types: Si es True, filtra solo Test Cases y Bugs. Si es False, retorna todos los tipos.
+            filter_types: Si es True, filtra solo tests Cases y Bugs. Si es False, retorna todos los tipos.
             
         Returns:
             List[Dict]: Lista de tipos de issue (filtrados o todos según filter_types)
@@ -168,10 +168,10 @@ class ProjectService:
                     else:
                         logger.warning(f"[DEBUG] No se pudieron obtener issuetypes globales, usando los del proyecto")
                 
-                # Filtrar solo Test Cases y Bugs si filter_types es True
+                # Filtrar solo tests Cases y Bugs si filter_types es True
                 if filter_types:
                     filtered_types = self._filter_testcases_and_bugs(issue_types)
-                    logger.info(f"[DEBUG] Total de issuetypes filtrados (Test Cases y Bugs): {len(filtered_types)}")
+                    logger.info(f"[DEBUG] Total de issuetypes filtrados (tests Cases y Bugs): {len(filtered_types)}")
                     return filtered_types
                 else:
                     logger.info(f"[DEBUG] Retornando todos los {len(issue_types)} issuetypes sin filtrar")
@@ -189,7 +189,7 @@ class ProjectService:
         
         Args:
             project_key: Clave del proyecto
-            issuetype: Tipo de issue opcional para filtrar campos específicos (ej: "Test Case", "Bug")
+            issuetype: Tipo de issue opcional para filtrar campos específicos (ej: "tests Case", "Bug")
             include_all_fields: Si es True, incluye todos los campos incluso sin valores permitidos (para carga masiva)
             
         Returns:
@@ -516,7 +516,7 @@ class ProjectService:
         Args:
             project_key: Clave del proyecto
             issue_type: Tipo de issue (opcional)
-            combine_test_cases_and_stories: Si es True y issue_type es None, combina campos de Test Cases y Stories (para carga masiva)
+            combine_test_cases_and_stories: Si es True y issue_type es None, combina campos de tests Cases y Stories (para carga masiva)
             
         Returns:
             Dict: Campos disponibles para creación
@@ -567,18 +567,18 @@ class ProjectService:
                     
                     fields = selected_type.get('fields', {})
                 elif combine_test_cases_and_stories:
-                    # COMBINAR campos de Test Cases y Stories específicamente (para carga masiva)
+                    # COMBINAR campos de tests Cases y Stories específicamente (para carga masiva)
                     from app.backend.jira.issue_service import TEST_CASE_VARIATIONS, STORY_VARIATIONS
                     
                     all_fields = {}
-                    logger.info(f"[DEBUG] Combinando campos de Test Cases y Stories para carga masiva")
+                    logger.info(f"[DEBUG] Combinando campos de tests Cases y Stories para carga masiva")
                     
                     target_types = []
                     for it in issue_types:
                         issue_type_name = it.get('name', '')
                         issue_type_lower = issue_type_name.lower()
                         
-                        # Verificar si es Test Case
+                        # Verificar si es tests Case
                         is_test_case = any(
                             variation.lower() == issue_type_lower or 
                             (variation.lower() in issue_type_lower and 'test' in issue_type_lower and 'case' in issue_type_lower)
@@ -594,10 +594,10 @@ class ProjectService:
                         
                         if is_test_case or is_story:
                             target_types.append(it)
-                            logger.info(f"[DEBUG] Tipo incluido: '{issue_type_name}' ({'Test Case' if is_test_case else 'Story'})")
+                            logger.info(f"[DEBUG] Tipo incluido: '{issue_type_name}' ({'tests Case' if is_test_case else 'Story'})")
                     
                     if not target_types:
-                        logger.warning(f"[DEBUG] No se encontraron Test Cases ni Stories, usando el primer tipo disponible")
+                        logger.warning(f"[DEBUG] No se encontraron tests Cases ni Stories, usando el primer tipo disponible")
                         target_types = [issue_types[0]]
                     
                     # Combinar campos de los tipos seleccionados
@@ -621,7 +621,7 @@ class ProjectService:
                     
                     fields = all_fields
                     selected_type = None  # No hay un tipo específico cuando se combinan
-                    logger.info(f"[DEBUG] Total de campos únicos combinados de Test Cases y Stories: {len(fields)}")
+                    logger.info(f"[DEBUG] Total de campos únicos combinados de tests Cases y Stories: {len(fields)}")
                 else:
                     # Comportamiento original: usar el primer tipo si no se especifica
                     selected_type = issue_types[0]
@@ -667,7 +667,7 @@ class ProjectService:
                     issue_type_name = selected_type.get('name', '')
                     issue_type_id = selected_type.get('id', '')
                 elif combine_test_cases_and_stories:
-                    issue_type_name = 'Test Cases & Stories'
+                    issue_type_name = 'tests Cases & Stories'
                     issue_type_id = None
                 else:
                     issue_type_name = issue_types[0].get('name', '') if issue_types else ''

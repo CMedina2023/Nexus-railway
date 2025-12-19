@@ -125,7 +125,7 @@ RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de c
   "Categoria": "Categoría según el tipo de prueba",
   "Ambiente": "QA",
   "Ciclo": "Ciclo 1",
-  "issuetype": "Test Case",
+  "issuetype": "tests Case",
   "Prioridad": "Alta/Media/Baja",
   "historia_de_usuario": "Referencia a la historia de usuario"
 }
@@ -470,7 +470,7 @@ ESTRUCTURA DE CAMPOS CSV:
 - Categoria: Categoría específica del tipo de prueba
 - Ambiente: Ambiente de pruebas (QA)
 - Ciclo: Ciclo de testing
-- issuetype: Tipo de issue (Test Case)
+- issuetype: Tipo de issue (tests Case)
 - Prioridad: Alta, Media o Baja
 - historia_de_usuario: Referencia a la historia
 
@@ -707,7 +707,7 @@ def parse_test_case_data(test_case: dict) -> dict:
         'summary': summary[:255] if len(summary) > 255 else summary,
         'description': description,
         'priority': priority,
-        'issuetype': 'Test Case',
+        'issuetype': 'tests Case',
         'tipo_prueba': tipo_prueba,
         'categoria': categoria,
         'precondiciones': precondiciones,
@@ -751,7 +751,7 @@ def parse_test_cases_to_dict(test_cases: List[dict]) -> List[dict]:
                 'index': idx,
                 'summary': summary,
                 'description': data.get('description', ''),
-                'issuetype': data.get('issuetype', 'Test Case'),
+                'issuetype': data.get('issuetype', 'tests Case'),
                 'priority': data.get('priority', 'Medium'),
                 'tipo_prueba': data.get('tipo_prueba', 'Funcional'),
                 'categoria': data.get('categoria', ''),
@@ -764,7 +764,7 @@ def parse_test_cases_to_dict(test_cases: List[dict]) -> List[dict]:
                 'index': idx,
                 'summary': f"Caso de prueba {test_case.get('id_caso_prueba', f'TC{idx:03d}')}",
                 'description': '',
-                'issuetype': 'Test Case',
+                'issuetype': 'tests Case',
                 'priority': 'Medium',
                 'tipo_prueba': 'Funcional',
                 'categoria': '',
@@ -1110,7 +1110,7 @@ def generate_jira_csv_for_test_cases(test_cases: List[dict]):
         # Limpiar y escapar el contenido para CSV
         summary = data['summary'][:255] if data['summary'] else 'Sin título'
         description = data['description'].replace('"', '""')  # Escapar comillas
-        issuetype = 'Test Case'
+        issuetype = 'tests Case'
         priority = data['priority']
         
         writer.writerow([summary, description, issuetype, priority])

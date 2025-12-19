@@ -118,7 +118,7 @@ class MetricsCalculator:
             'bugs_by_severity_open': {}
         }
         
-        # Calcular % Successful Test Cases y Real Coverage
+        # Calcular % Successful tests Cases y Real Coverage
         success_statuses = {'exitoso', 'passed', 'done', 'closed', 'resolved', 'completado', 'finalizado'}
         not_executed_statuses = {
             'to do', 'todo', 'backlog', 'open', 'nuevo', 'new', 'pendiente', 'pending',
@@ -165,7 +165,7 @@ class MetricsCalculator:
             priority = bug.get('fields', {}).get('priority', {}).get('name', 'Sin prioridad')
             report['bugs_by_severity_open'][priority] = report['bugs_by_severity_open'].get(priority, 0) + 1
         
-        # Test Cases por persona
+        # tests Cases por persona
         for test_case in test_cases:
             assignee = test_case.get('fields', {}).get('assignee')
             assignee_name = assignee.get('displayName', 'Sin asignar') if assignee else 'Sin asignar'

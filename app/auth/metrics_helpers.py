@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def filter_issues_by_type(issues: List[Dict]) -> tuple[List[Dict], List[Dict]]:
     """
-    Filtra issues por tipo (Test Cases y Bugs)
+    Filtra issues por tipo (tests Cases y Bugs)
     Nota: Stories no se usan en reportes de métricas
     
     Args:
@@ -33,7 +33,7 @@ def filter_issues_by_type(issues: List[Dict]) -> tuple[List[Dict], List[Dict]]:
     for issue in issues:
         issue_type_name = issue.get('fields', {}).get('issuetype', {}).get('name', '')
         
-        # Test Cases
+        # tests Cases
         if issue_type_name and any(
             variation.lower() == issue_type_name.lower() or 
             (variation.lower() in issue_type_name.lower() and 'test' in issue_type_name.lower() and 'case' in issue_type_name.lower())
@@ -71,10 +71,10 @@ def build_jql_from_filters(project_key: str, view_type: str, filters: List[str],
     
     jql_parts = [base_jql]
     
-    # CAMBIO 1: Agregar filtro de issue types (siempre) - SOLO Test Cases y Bugs (Stories no se usan en reportes)
+    # CAMBIO 1: Agregar filtro de issue types (siempre) - SOLO tests Cases y Bugs (Stories no se usan en reportes)
     from app.backend.jira.issue_service import TEST_CASE_VARIATIONS, BUG_VARIATIONS
     
-    # Construir filtro con todas las variaciones de Test Cases y Bugs
+    # Construir filtro con todas las variaciones de tests Cases y Bugs
     test_case_conditions = ' OR '.join([f'issuetype = "{var}"' for var in TEST_CASE_VARIATIONS])
     bug_conditions = ' OR '.join([f'issuetype = "{var}"' for var in BUG_VARIATIONS])
     issuetype_filter = f'({test_case_conditions} OR {bug_conditions})'
@@ -153,7 +153,7 @@ def calculate_metrics_from_issues(issues: List[Dict]) -> Dict:
     logger.info(f"Calculando métricas: {len(test_cases)} test cases, {len(bugs)} bugs de {len(issues)} issues totales")
     
     # Calcular métricas
-    test_case_metrics = metrics_calculator.calculate_issue_metrics(test_cases, 'Test case')
+    test_case_metrics = metrics_calculator.calculate_issue_metrics(test_cases, 'tests case')
     bug_metrics = metrics_calculator.calculate_issue_metrics(bugs, 'Bug')
     general_report = metrics_calculator.calculate_general_report_metrics(test_cases, bugs)
     
@@ -169,7 +169,7 @@ def calculate_metrics_from_issues(issues: List[Dict]) -> Dict:
 
 def build_separate_jql_queries(project_key: str, view_type: str, filters: List[str], assignee_email: str = None) -> tuple[str, str]:
     """
-    Construye dos JQL queries separados: uno para Test Cases y otro para Bugs
+    Construye dos JQL queries separados: uno para tests Cases y otro para Bugs
     
     Args:
         project_key: Clave del proyecto
@@ -213,7 +213,7 @@ def build_separate_jql_queries(project_key: str, view_type: str, filters: List[s
         else:
             additional_filters.append(f'{field} = "{value}"')
     
-    # Construir JQL para Test Cases
+    # Construir JQL para tests Cases
     test_case_conditions = ' OR '.join([f'issuetype = "{var}"' for var in TEST_CASE_VARIATIONS])
     jql_test_cases_parts = [base_jql, f'({test_case_conditions})']
     jql_test_cases_parts.extend(additional_filters)
@@ -225,7 +225,7 @@ def build_separate_jql_queries(project_key: str, view_type: str, filters: List[s
     jql_bugs_parts.extend(additional_filters)
     jql_bugs = ' AND '.join(jql_bugs_parts)
     
-    logger.info(f"[CONSULTAS SEPARADAS] JQL Test Cases: {jql_test_cases[:150]}...")
+    logger.info(f"[CONSULTAS SEPARADAS] JQL tests Cases: {jql_test_cases[:150]}...")
     logger.info(f"[CONSULTAS SEPARADAS] JQL Bugs: {jql_bugs[:150]}...")
     
     return jql_test_cases, jql_bugs
@@ -241,14 +241,14 @@ def fetch_issues_with_separate_filters(
     progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> List[Dict]:
     """
-    Obtiene issues usando filtros separados para Test Cases y Bugs
+    Obtiene issues usando filtros separados para tests Cases y Bugs
     Nota: Stories no se usan en reportes de métricas
     
     Args:
         connection: Conexión con Jira
         project_key: Clave del proyecto
         view_type: Tipo de vista (general/personal)
-        filters_testcase: Lista de filtros para Test Cases en formato "field:value"
+        filters_testcase: Lista de filtros para tests Cases en formato "field:value"
         filters_bug: Lista de filtros para Bugs en formato "field:value"
         assignee_email: Email del asignado (para vista personal)
         progress_callback: Callback opcional para reportar progreso
@@ -257,7 +257,7 @@ def fetch_issues_with_separate_filters(
         List[Dict]: Lista completa de issues
     """
     logger.info(f"[FILTROS SEPARADOS] Iniciando obtención con filtros separados")
-    logger.info(f"[FILTROS SEPARADOS] Test Cases: {len(filters_testcase)} filtros, Bugs: {len(filters_bug)} filtros")
+    logger.info(f"[FILTROS SEPARADOS] tests Cases: {len(filters_testcase)} filtros, Bugs: {len(filters_bug)} filtros")
     
     parallel_fetcher = ParallelIssueFetcher(connection)
     
@@ -267,11 +267,11 @@ def fetch_issues_with_separate_filters(
     if view_type == 'personal' and assignee_email:
         base_jql += f' AND assignee = "{assignee_email}"'
     
-    # Construir JQL para Test Cases
+    # Construir JQL para tests Cases
     test_case_conditions = ' OR '.join([f'issuetype = "{var}"' for var in TEST_CASE_VARIATIONS])
     jql_test_cases_parts = [base_jql, f'({test_case_conditions})']
     
-    # Agregar filtros específicos de Test Cases
+    # Agregar filtros específicos de tests Cases
     for filter_param in filters_testcase:
         if ':' in filter_param:
             field, value = filter_param.split(':', 1)
@@ -343,21 +343,21 @@ def fetch_issues_with_separate_filters(
     
     jql_bugs = ' AND '.join(jql_bugs_parts)
     
-    logger.info(f"[FILTROS SEPARADOS] JQL Test Cases: {jql_test_cases[:200]}...")
+    logger.info(f"[FILTROS SEPARADOS] JQL tests Cases: {jql_test_cases[:200]}...")
     logger.info(f"[FILTROS SEPARADOS] JQL Bugs: {jql_bugs[:200]}...")
     
-    # Obtener Test Cases y Bugs por separado
+    # Obtener tests Cases y Bugs por separado
     all_issues = []
     
-    # Obtener Test Cases
-    if filters_testcase or True:  # Siempre obtener Test Cases
+    # Obtener tests Cases
+    if filters_testcase or True:  # Siempre obtener tests Cases
         try:
-            logger.info(f"[FILTROS SEPARADOS] Obteniendo Test Cases...")
+            logger.info(f"[FILTROS SEPARADOS] Obteniendo tests Cases...")
             test_cases = parallel_fetcher.fetch_all_issues_parallel(jql_test_cases, progress_callback=None)
             all_issues.extend(test_cases)
-            logger.info(f"[FILTROS SEPARADOS] ✓ Test Cases obtenidos: {len(test_cases)}")
+            logger.info(f"[FILTROS SEPARADOS] ✓ tests Cases obtenidos: {len(test_cases)}")
         except Exception as e:
-            logger.error(f"[FILTROS SEPARADOS] ✗ Error al obtener Test Cases: {e}", exc_info=True)
+            logger.error(f"[FILTROS SEPARADOS] ✗ Error al obtener tests Cases: {e}", exc_info=True)
     
     # Obtener Bugs
     if filters_bug or True:  # Siempre obtener Bugs
@@ -393,7 +393,7 @@ def fetch_issues_with_separate_filters(
         for v in BUG_VARIATIONS
     )])
     
-    logger.info(f"[FILTROS SEPARADOS] ✓ Total issues obtenidas: {len(unique_issues)} (Test Cases: {test_case_count}, Bugs: {bug_count})")
+    logger.info(f"[FILTROS SEPARADOS] ✓ Total issues obtenidas: {len(unique_issues)} (tests Cases: {test_case_count}, Bugs: {bug_count})")
     
     # Reportar progreso final
     if progress_callback:
@@ -409,7 +409,7 @@ def fetch_issues_with_parallel(
 ) -> List[Dict]:
     """
     Obtiene issues usando paginación paralela optimizada
-    Usa consultas separadas para Test Cases y Bugs para evitar el bug de Jira cuando total=0
+    Usa consultas separadas para tests Cases y Bugs para evitar el bug de Jira cuando total=0
     
     Args:
         connection: Conexión con Jira
@@ -419,7 +419,7 @@ def fetch_issues_with_parallel(
     Returns:
         List[Dict]: Lista completa de issues
     """
-    logger.info(f"[CONSULTAS SEPARADAS] Iniciando obtención con consultas separadas para Test Cases y Bugs")
+    logger.info(f"[CONSULTAS SEPARADAS] Iniciando obtención con consultas separadas para tests Cases y Bugs")
     
     parallel_fetcher = ParallelIssueFetcher(connection)
     
@@ -464,10 +464,10 @@ def fetch_issues_with_parallel(
         jql_test_cases += f' AND {additional_filters}'
         jql_bugs += f' AND {additional_filters}'
     
-    logger.info(f"[CONSULTAS SEPARADAS] JQL Test Cases: {jql_test_cases[:200]}...")
+    logger.info(f"[CONSULTAS SEPARADAS] JQL tests Cases: {jql_test_cases[:200]}...")
     logger.info(f"[CONSULTAS SEPARADAS] JQL Bugs: {jql_bugs[:200]}...")
     
-    # Obtener Test Cases y Bugs por separado
+    # Obtener tests Cases y Bugs por separado
     all_issues = []
     
     # Simplificar JQLs para approximate-count usando solo variaciones comunes
@@ -475,13 +475,13 @@ def fetch_issues_with_parallel(
     jql_test_cases_simple = jql_test_cases
     jql_bugs_simple = jql_bugs
     
-    # Simplificar: reemplazar todas las variaciones por solo "Test Case" o "Bug"
+    # Simplificar: reemplazar todas las variaciones por solo "tests Case" o "Bug"
     import re
-    # Para Test Cases: reemplazar bloque complejo por solo "Test Case"
+    # Para tests Cases: reemplazar bloque complejo por solo "tests Case"
     if 'OR' in jql_test_cases and 'issuetype' in jql_test_cases:
         jql_test_cases_simple = re.sub(
             r'\(issuetype\s*=\s*"[^"]*"[^)]*\)',
-            'issuetype = "Test Case"',
+            'issuetype = "tests Case"',
             jql_test_cases,
             flags=re.IGNORECASE
         )
@@ -494,18 +494,18 @@ def fetch_issues_with_parallel(
             flags=re.IGNORECASE
         )
     
-    logger.info(f"[CONSULTAS SEPARADAS] JQL Test Cases simplificado para count: {jql_test_cases_simple[:150]}...")
+    logger.info(f"[CONSULTAS SEPARADAS] JQL tests Cases simplificado para count: {jql_test_cases_simple[:150]}...")
     logger.info(f"[CONSULTAS SEPARADAS] JQL Bugs simplificado para count: {jql_bugs_simple[:150]}...")
     
-    # Obtener Test Cases
+    # Obtener tests Cases
     try:
-        logger.info(f"[CONSULTAS SEPARADAS] Obteniendo Test Cases...")
+        logger.info(f"[CONSULTAS SEPARADAS] Obteniendo tests Cases...")
         # Usar JQL simplificado para approximate-count, pero JQL completo para obtener issues
         test_cases = parallel_fetcher.fetch_all_issues_parallel(jql_test_cases, progress_callback=None)
         all_issues.extend(test_cases)
-        logger.info(f"[CONSULTAS SEPARADAS] ✓ Test Cases obtenidos: {len(test_cases)}")
+        logger.info(f"[CONSULTAS SEPARADAS] ✓ tests Cases obtenidos: {len(test_cases)}")
     except Exception as e:
-        logger.error(f"[CONSULTAS SEPARADAS] ✗ Error al obtener Test Cases: {e}", exc_info=True)
+        logger.error(f"[CONSULTAS SEPARADAS] ✗ Error al obtener tests Cases: {e}", exc_info=True)
     
     # Obtener Bugs
     try:
@@ -540,7 +540,7 @@ def fetch_issues_with_parallel(
         for v in BUG_VARIATIONS
     )])
     
-    logger.info(f"[CONSULTAS SEPARADAS] ✓ Total issues obtenidas: {len(unique_issues)} (Test Cases: {test_case_count}, Bugs: {bug_count})")
+    logger.info(f"[CONSULTAS SEPARADAS] ✓ Total issues obtenidas: {len(unique_issues)} (tests Cases: {test_case_count}, Bugs: {bug_count})")
     
     # Reportar progreso final
     if progress_callback:

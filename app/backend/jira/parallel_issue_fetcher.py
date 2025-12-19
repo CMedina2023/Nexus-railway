@@ -282,14 +282,14 @@ class ParallelIssueFetcher:
         filters_match = re.search(r'\)\s*AND\s*(.+)', jql)
         additional_filters = filters_match.group(1) if filters_match else ''
         
-        # Determinar si el JQL es para Test Cases, Bugs, o ambos
-        has_test_case = any(v in jql for v in ['Test Case', 'test case', 'TestCase', 'Caso de Prueba'])
+        # Determinar si el JQL es para tests Cases, Bugs, o ambos
+        has_test_case = any(v in jql for v in ['tests Case', 'test case', 'TestCase', 'Caso de Prueba'])
         has_bug = any(v in jql for v in ['Bug', 'bug', 'BUG', 'Error', 'error', 'Defect', 'defect'])
         
         # Construir JQL simplificado
         issuetype_parts = []
         if has_test_case:
-            issuetype_parts.append('issuetype = "Test Case"')
+            issuetype_parts.append('issuetype = "tests Case"')
         if has_bug:
             issuetype_parts.append('issuetype = "Bug"')
         

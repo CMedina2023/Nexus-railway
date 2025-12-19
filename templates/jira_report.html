@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -241,6 +242,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="report-container">
         <div class="report-header">
@@ -251,37 +253,37 @@
         <!-- KPIs -->
         <div class="kpi-grid">
             <div class="kpi-card">
-                <div class="kpi-icon">📋</div>
+                <div class="kpi-icon">&#128203;</div>
                 <div class="kpi-label">Total Test Cases</div>
                 <div class="kpi-value">{{ report.total_test_cases or 0 }}</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">✅</div>
+                <div class="kpi-icon">&#9989;</div>
                 <div class="kpi-label">% Successful Test Cases</div>
                 <div class="kpi-value">{{ report.successful_test_cases_percentage or 0 }}%</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">📊</div>
+                <div class="kpi-icon">&#128202;</div>
                 <div class="kpi-label">Real Coverage</div>
                 <div class="kpi-value">{{ report.real_coverage or 0 }}%</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">🐛</div>
+                <div class="kpi-icon">&#128027;</div>
                 <div class="kpi-label">Total Defects</div>
                 <div class="kpi-value">{{ report.total_defects or 0 }}</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">📈</div>
+                <div class="kpi-icon">&#128200;</div>
                 <div class="kpi-label">Defect Rate</div>
                 <div class="kpi-value">{{ report.defect_rate or 0 }}%</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">🔓</div>
+                <div class="kpi-icon">&#128275;</div>
                 <div class="kpi-label">Open Defects</div>
                 <div class="kpi-value">{{ report.open_defects or 0 }}</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-icon">🔒</div>
+                <div class="kpi-icon">&#128274;</div>
                 <div class="kpi-label">Closed Defects</div>
                 <div class="kpi-value">{{ report.closed_defects or 0 }}</div>
             </div>
@@ -293,7 +295,8 @@
                 <div class="chart-title">CASOS DE PRUEBA POR STATUS</div>
                 <div class="chart-container">
                     {% if chart_images.test_cases %}
-                    <img src="{{ chart_images.test_cases }}" alt="Gráfico de Test Cases" style="width: 100%; height: 100%; object-fit: contain;">
+                    <img src="{{ chart_images.test_cases }}" alt="Gráfico de Test Cases"
+                        style="width: 100%; height: 100%; object-fit: contain;">
                     {% else %}
                     <canvas id="test-cases-chart"></canvas>
                     {% endif %}
@@ -303,7 +306,8 @@
                 <div class="chart-title">BUGS POR SEVERIDAD (Abiertos)</div>
                 <div class="chart-container">
                     {% if chart_images.bugs_severity %}
-                    <img src="{{ chart_images.bugs_severity }}" alt="Gráfico de Bugs" style="width: 100%; height: 100%; object-fit: contain;">
+                    <img src="{{ chart_images.bugs_severity }}" alt="Gráfico de Bugs"
+                        style="width: 100%; height: 100%; object-fit: contain;">
                     {% else %}
                     <canvas id="bugs-severity-chart"></canvas>
                     {% endif %}
@@ -329,31 +333,35 @@
                             </thead>
                             <tbody>
                                 {% if test_cases_data %}
-                                    {% for item in test_cases_data %}
-                                    <tr>
-                                        <td>{{ item.person or 'Sin asignar' }}</td>
-                                        <td>{{ item.exitoso or 0 }}</td>
-                                        <td>{{ item.en_progreso or 0 }}</td>
-                                        <td>{{ item.fallado or 0 }}</td>
-                                        <td>{{ item.total or 0 }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                    <tr class="total-row">
-                                        <td><strong>Total</strong></td>
-                                        <td><strong>{{ test_cases_totals.exitoso or 0 }}</strong></td>
-                                        <td><strong>{{ test_cases_totals.en_progreso or 0 }}</strong></td>
-                                        <td><strong>{{ test_cases_totals.fallado or 0 }}</strong></td>
-                                        <td><strong>{{ test_cases_totals.total or 0 }}</strong></td>
-                                    </tr>
+                                {% for item in test_cases_data %}
+                                <tr>
+                                    <td>{{ item.person or 'Sin asignar' }}</td>
+                                    <td>{{ item.exitoso or 0 }}</td>
+                                    <td>{{ item.en_progreso or 0 }}</td>
+                                    <td>{{ item.fallado or 0 }}</td>
+                                    <td>{{ item.total or 0 }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="total-row">
+                                    <td><strong>Total</strong></td>
+                                    <td><strong>{{ test_cases_totals.exitoso or 0 }}</strong></td>
+                                    <td><strong>{{ test_cases_totals.en_progreso or 0 }}</strong></td>
+                                    <td><strong>{{ test_cases_totals.fallado or 0 }}</strong></td>
+                                    <td><strong>{{ test_cases_totals.total or 0 }}</strong></td>
+                                </tr>
                                 {% else %}
-                                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No hay datos disponibles</td></tr>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted);">No hay datos
+                                        disponibles</td>
+                                </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                     <div class="pagination">
                         <div class="pagination-info">
-                            Mostrando {{ test_cases_pagination.start_item }}-{{ test_cases_pagination.end_item }} de {{ test_cases_pagination.total_items }} registros
+                            Mostrando {{ test_cases_pagination.start_item }}-{{ test_cases_pagination.end_item }} de {{
+                            test_cases_pagination.total_items }} registros
                         </div>
                         <div class="pagination-page">
                             Página {{ test_cases_pagination.current_page }} de {{ test_cases_pagination.total_pages }}
@@ -377,24 +385,28 @@
                             </thead>
                             <tbody>
                                 {% if defects_data %}
-                                    {% for item in defects_data %}
-                                    <tr>
-                                        <td>{{ item.key or '-' }}</td>
-                                        <td>{{ item.assignee or 'Sin asignar' }}</td>
-                                        <td>{{ item.status or '-' }}</td>
-                                        <td>{{ item.summary or '-' }}</td>
-                                        <td>{{ item.severity or '-' }}</td>
-                                    </tr>
-                                    {% endfor %}
+                                {% for item in defects_data %}
+                                <tr>
+                                    <td>{{ item.key or '-' }}</td>
+                                    <td>{{ item.assignee or 'Sin asignar' }}</td>
+                                    <td>{{ item.status or '-' }}</td>
+                                    <td>{{ item.summary or '-' }}</td>
+                                    <td>{{ item.severity or '-' }}</td>
+                                </tr>
+                                {% endfor %}
                                 {% else %}
-                                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No hay datos disponibles</td></tr>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted);">No hay datos
+                                        disponibles</td>
+                                </tr>
                                 {% endif %}
                             </tbody>
                         </table>
                     </div>
                     <div class="pagination">
                         <div class="pagination-info">
-                            Mostrando {{ defects_pagination.start_item }}-{{ defects_pagination.end_item }} de {{ defects_pagination.total_items }} registros
+                            Mostrando {{ defects_pagination.start_item }}-{{ defects_pagination.end_item }} de {{
+                            defects_pagination.total_items }} registros
                         </div>
                         <div class="pagination-page">
                             Página {{ defects_pagination.current_page }} de {{ defects_pagination.total_pages }}
@@ -408,71 +420,74 @@
         {% if active_widgets and active_widgets|length > 0 %}
         <div style="margin-top: 0.75rem;">
             {% for widget_id in active_widgets %}
-                {% if widget_data.get(widget_id) %}
-                    {% set widget = widget_data[widget_id] %}
-                    
-                    {% if widget.type == 'kpi' %}
-                        <!-- KPI Widget -->
-                        <div class="kpi-card" style="margin-bottom: 0.5rem;">
-                            <div class="kpi-icon">{{ widget.icon }}</div>
-                            <div class="kpi-label">{{ widget.title }}</div>
-                            <div class="kpi-value">{{ widget.value }}</div>
-                        </div>
-                    {% elif widget.type == 'chart' %}
-                        <!-- Chart Widget -->
-                        <div class="chart-card" style="margin-bottom: 0.75rem;">
-                            <div class="chart-title">{{ widget.title|upper }}</div>
-                            <div class="chart-container">
-                                {% if widget_chart_images.get(widget_id) %}
-                                <img src="{{ widget_chart_images[widget_id] }}" alt="{{ widget.title }}" style="width: 100%; height: 100%; object-fit: contain;">
-                                {% else %}
-                                <div style="height: 180px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
-                                    Gráfico: {{ widget.title }}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% elif widget.type == 'table' %}
-                        <!-- Table Widget -->
-                        <div class="table-card" style="margin-bottom: 0.75rem;">
-                            <div class="table-title"># {{ widget.title }}</div>
-                            <div class="table-wrapper">
-                                <div class="table-container">
-                                    <table class="report-table">
-                                        <thead>
-                                            <tr>
-                                                {% for col in widget.columns %}
-                                                <th>{{ col }}</th>
-                                                {% endfor %}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% if widget.rows %}
-                                                {% for row in widget.rows %}
-                                                <tr>
-                                                    {% for cell in row %}
-                                                    <td>{{ cell }}</td>
-                                                    {% endfor %}
-                                                </tr>
-                                                {% endfor %}
-                                            {% else %}
-                                                <tr>
-                                                    <td colspan="{{ widget.columns|length }}" style="text-align: center; color: var(--text-muted);">
-                                                        No hay datos disponibles
-                                                    </td>
-                                                </tr>
-                                            {% endif %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+            {% if widget_data.get(widget_id) %}
+            {% set widget = widget_data[widget_id] %}
+
+            {% if widget.type == 'kpi' %}
+            <!-- KPI Widget -->
+            <div class="kpi-card" style="margin-bottom: 0.5rem;">
+                <div class="kpi-icon">{{ widget.icon }}</div>
+                <div class="kpi-label">{{ widget.title }}</div>
+                <div class="kpi-value">{{ widget.value }}</div>
+            </div>
+            {% elif widget.type == 'chart' %}
+            <!-- Chart Widget -->
+            <div class="chart-card" style="margin-bottom: 0.75rem;">
+                <div class="chart-title">{{ widget.title|upper }}</div>
+                <div class="chart-container">
+                    {% if widget_chart_images.get(widget_id) %}
+                    <img src="{{ widget_chart_images[widget_id] }}" alt="{{ widget.title }}"
+                        style="width: 100%; height: 100%; object-fit: contain;">
+                    {% else %}
+                    <div
+                        style="height: 180px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">
+                        Gráfico: {{ widget.title }}
+                    </div>
                     {% endif %}
-                {% endif %}
+                </div>
+            </div>
+            {% elif widget.type == 'table' %}
+            <!-- Table Widget -->
+            <div class="table-card" style="margin-bottom: 0.75rem;">
+                <div class="table-title"># {{ widget.title }}</div>
+                <div class="table-wrapper">
+                    <div class="table-container">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    {% for col in widget.columns %}
+                                    <th>{{ col }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if widget.rows %}
+                                {% for row in widget.rows %}
+                                <tr>
+                                    {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="{{ widget.columns|length }}"
+                                        style="text-align: center; color: var(--text-muted);">
+                                        No hay datos disponibles
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
             {% endfor %}
         </div>
         {% endif %}
     </div>
 </body>
-</html>
 
+</html>
