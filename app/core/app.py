@@ -14,7 +14,19 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict
 import time
-from weasyprint import HTML, CSS
+
+# Imports condicionales para generación de PDFs
+try:
+    from playwright.sync_api import sync_playwright
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    
+try:
+    from weasyprint import HTML, CSS
+    WEASYPRINT_AVAILABLE = True
+except ImportError:
+    WEASYPRINT_AVAILABLE = False
 
 # Imports de la estructura modular
 from app.core.config import Config
@@ -269,6 +281,113 @@ def overview():
     ✅ Protegida con @login_required
     """
     return redirect('/infografia')
+
+
+# ============================================================================
+# FUNCIONES AUXILIARES PARA GENERACIÓN DE PDFs
+# ============================================================================
+
+def is_railway_environment():
+    """Detecta si estamos corriendo en Railway"""
+    return os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('RAILWAY_PROJECT_ID') is not None
+
+
+def get_pdf_engine():
+    """
+    Determina qué motor de PDF usar basado en el ambiente y disponibilidad.
+    
+    Returns:
+        str: 'playwright' o 'weasyprint'
+    """
+    # En Railway, siempre usar WeasyPrint
+    if is_railway_environment():
+        if WEASYPRINT_AVAILABLE:
+            logger.info("Usando WeasyPrint (ambiente Railway)")
+            return 'weasyprint'
+        else:
+            logger.error("WeasyPrint no disponible en Railway")
+            raise RuntimeError("WeasyPrint no está instalado en Railway")
+    
+    # En local, preferir Playwright si está disponible
+    if PLAYWRIGHT_AVAILABLE:
+        logger.info("Usando Playwright (ambiente local)")
+        return 'playwright'
+    elif WEASYPRINT_AVAILABLE:
+        logger.warning("Playwright no disponible, usando WeasyPrint como fallback")
+        return 'weasyprint'
+    else:
+        logger.error("Ni Playwright ni WeasyPrint están disponibles")
+        raise RuntimeError("No hay motor de PDF disponible. Instala playwright o weasyprint.")
+
+
+def generate_pdf_with_playwright(html_content: str) -> bytes:
+    """
+    Genera un PDF usando Playwright (para ambiente local).
+    
+    Args:
+        html_content: Contenido HTML a convertir
+        
+    Returns:
+        bytes: Contenido del PDF generado
+    """
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            
+            # Cargar el HTML
+            page.set_content(html_content, wait_until='networkidle')
+            
+            # Generar PDF con configuración landscape
+            pdf_buffer = page.pdf(
+                format='A4',
+                landscape=True,
+                margin={
+                    'top': '10mm',
+                    'right': '10mm',
+                    'bottom': '10mm',
+                    'left': '10mm'
+                },
+                print_background=True
+            )
+            
+            browser.close()
+            return pdf_buffer
+            
+    except Exception as e:
+        logger.error(f"Error al generar PDF con Playwright: {e}", exc_info=True)
+        raise
+
+
+def generate_pdf_with_weasyprint(html_content: str) -> bytes:
+    """
+    Genera un PDF usando WeasyPrint (para ambiente Railway).
+    
+    Args:
+        html_content: Contenido HTML a convertir
+        
+    Returns:
+        bytes: Contenido del PDF generado
+    """
+    try:
+        # Crear objeto HTML desde el string renderizado
+        html = HTML(string=html_content, base_url='.')
+        
+        # Definir estilos CSS para landscape (A4 horizontal)
+        css = CSS(string='''
+            @page {
+                size: A4 landscape;
+                margin: 10mm;
+            }
+        ''')
+        
+        # Generar PDF en memoria
+        pdf_buffer = html.write_pdf(stylesheets=[css])
+        return pdf_buffer
+        
+    except Exception as e:
+        logger.error(f"Error al generar PDF con WeasyPrint: {e}", exc_info=True)
+        raise
 
 
 # ============================================================================
@@ -2915,7 +3034,7 @@ def generate_upload_summary_txt(csv_filename: str, results: Dict, project_key: s
 @app.route('/api/jira/download-report', methods=['POST'])
 @login_required
 def jira_download_report():
-    """Genera y descarga un reporte de Jira en formato PDF usando Playwright"""
+    """Genera y descarga un reporte de Jira en formato PDF (Playwright en local, WeasyPrint en Railway)"""
     try:
         
         data = request.get_json()
@@ -2923,6 +3042,7 @@ def jira_download_report():
         format_type = data.get('format', 'pdf')
         chart_images = data.get('chart_images', {})
         table_data = data.get('table_data', {})
+        general_report = data.get('general_report')  # Reporte general del frontend
         active_widgets = data.get('active_widgets', [])
         widget_chart_images = data.get('widget_chart_images', {})
         widget_data = data.get('widget_data', {})
@@ -2934,10 +3054,14 @@ def jira_download_report():
         if format_type != 'pdf':
             return jsonify({"success": False, "error": "Formato no soportado. Use 'pdf'"}), 400
         
-        # Construir reporte desde los datos del frontend (ya incluyen filtros aplicados)
-        # Si no hay datos del frontend, obtener métricas básicas
-        if table_data and (table_data.get('test_cases_by_person') or table_data.get('defects_by_person')):
-            # Usar datos del frontend que ya tienen filtros aplicados
+        # Usar el reporte general del frontend si está disponible
+        # Esto garantiza que los datos del PDF coincidan exactamente con lo que ve el usuario
+        if general_report:
+            logger.info(f"Usando reporte general del frontend para proyecto {project_key}")
+            report = general_report
+        elif table_data and (table_data.get('test_cases_by_person') or table_data.get('defects_by_person')):
+            # Fallback: calcular desde table_data si no viene general_report
+            logger.warning(f"Recalculando métricas desde table_data para proyecto {project_key}")
             # Calcular totales de test cases
             total_test_cases = 0
             successful_test_cases = 0
@@ -2971,7 +3095,8 @@ def jira_download_report():
                 'closed_defects': closed_defects
             }
         else:
-            # Fallback: obtener métricas básicas del proyecto
+            # Último fallback: obtener métricas básicas del proyecto
+            logger.warning(f"Obteniendo métricas básicas de Jira para proyecto {project_key}")
             try:
                 client = jira_backend.JiraClient()
                 metrics = client.get_project_metrics(project_key)
@@ -3055,24 +3180,16 @@ def jira_download_report():
                                      widget_data=widget_data,
                                      date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        # Generar PDF usando WeasyPrint
-        logger.info(f"Iniciando generación de PDF para proyecto {project_key}")
+        # Determinar qué motor de PDF usar
+        pdf_engine = get_pdf_engine()
+        logger.info(f"Iniciando generación de PDF para proyecto {project_key} usando {pdf_engine}")
         
-        # Crear objeto HTML desde el string renderizado
-        # base_url='.' permite cargar recursos relativos si los hubiera
-        html = HTML(string=html_content, base_url='.')
-        
-        # Definir estilos CSS para landscape (A4 horizontal)
-        css = CSS(string='''
-            @page {
-                size: A4 landscape;
-                margin: 10mm;
-            }
-        ''')
-        
-        # Generar PDF en memoria
-        logger.info("Generando PDF...")
-        pdf_buffer = html.write_pdf(stylesheets=[css])
+        if pdf_engine == 'playwright':
+            # Generar PDF usando Playwright (local)
+            pdf_buffer = generate_pdf_with_playwright(html_content)
+        else:
+            # Generar PDF usando WeasyPrint (Railway)
+            pdf_buffer = generate_pdf_with_weasyprint(html_content)
         
         logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
             
@@ -3112,14 +3229,14 @@ def jira_download_report():
             
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Error al generar reporte de Jira con WeasyPrint: {error_msg}", exc_info=True)
+        logger.error(f"Error al generar reporte de Jira: {error_msg}", exc_info=True)
         return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
 
 
 @app.route('/api/metrics/download-report', methods=['POST'])
 @login_required
 def metrics_download_report():
-    """Genera y descarga un reporte de métricas en formato PDF usando WeasyPrint"""
+    """Genera y descarga un reporte de métricas en formato PDF (Playwright en local, WeasyPrint en Railway)"""
     try:
         
         data = request.get_json()
@@ -3167,23 +3284,16 @@ def metrics_download_report():
                                      chart_images=chart_images,
                                      date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        # Generar PDF usando WeasyPrint
-        logger.info("Iniciando generación de PDF de métricas")
+        # Determinar qué motor de PDF usar
+        pdf_engine = get_pdf_engine()
+        logger.info(f"Iniciando generación de PDF de métricas usando {pdf_engine}")
         
-        # Crear objeto HTML desde el string renderizado
-        html = HTML(string=html_content, base_url='.')
-        
-        # Definir estilos CSS para landscape (A4 horizontal)
-        css = CSS(string='''
-            @page {
-                size: A4 landscape;
-                margin: 10mm;
-            }
-        ''')
-        
-        # Generar PDF en memoria
-        logger.info("Generando PDF...")
-        pdf_buffer = html.write_pdf(stylesheets=[css])
+        if pdf_engine == 'playwright':
+            # Generar PDF usando Playwright (local)
+            pdf_buffer = generate_pdf_with_playwright(html_content)
+        else:
+            # Generar PDF usando WeasyPrint (Railway)
+            pdf_buffer = generate_pdf_with_weasyprint(html_content)
         
         logger.info(f"PDF generado exitosamente, tamaño: {len(pdf_buffer)} bytes")
             
@@ -3197,7 +3307,7 @@ def metrics_download_report():
             
     except Exception as e:
         error_msg = str(e)
-        logger.error(f"Error al generar reporte de métricas con WeasyPrint: {error_msg}", exc_info=True)
+        logger.error(f"Error al generar reporte de métricas: {error_msg}", exc_info=True)
         return jsonify({"success": False, "error": f"Error al generar PDF: {error_msg}"}), 500
 
 

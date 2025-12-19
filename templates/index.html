@@ -9854,6 +9854,7 @@
         let grTestCasesChart = null;
         let grBugsSeverityChart = null;
         let currentProjectKey = null;
+        let currentGeneralReport = null;  // Almacena el reporte general actual
 
         // Paginación
         let testCasesPagination = {
@@ -10388,6 +10389,9 @@
         function displayGeneralReport(generalReport, testMetrics, bugMetrics) {
             const generalReportSection = document.getElementById('general-report-section');
             if (!generalReportSection) return;
+
+            // Guardar el reporte general actual para usarlo en la descarga de PDF
+            currentGeneralReport = generalReport;
 
             // Mostrar la sección
             generalReportSection.style.display = 'block';
@@ -12143,6 +12147,7 @@
                         filters: filters,
                         chart_images: chartImages,
                         table_data: tableData,
+                        general_report: currentGeneralReport,  // Enviar el reporte general del frontend
                         active_widgets: activeWidgets,
                         widget_chart_images: widgetChartImages,
                         widget_data: widgetData
