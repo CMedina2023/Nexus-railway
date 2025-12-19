@@ -1792,7 +1792,46 @@ let defectsPagination = {
     data: []
 };
 
+function switchReportOperation(type) {
+    const hub = document.getElementById('report-hub');
+    const generationView = document.getElementById('report-generation-view');
+
+    if (type === 'generation') {
+        if (hub) hub.style.display = 'none';
+        if (generationView) generationView.style.display = 'block';
+    } else {
+        const cardTitle = type === 'history' ? 'Mis Reportes' : 'Reporte Final de Pruebas';
+        alert(`ℹ️ El módulo "${cardTitle}" estará disponible en próximas actualizaciones.`);
+    }
+}
+
+function resetReportsToHub() {
+    const hub = document.getElementById('report-hub');
+    const generationView = document.getElementById('report-generation-view');
+
+    if (hub) hub.style.display = 'block';
+    if (generationView) generationView.style.display = 'none';
+
+    // Reiniciar completamente la sección de proyectos y filtros
+    if (typeof showProjectsSection === 'function') {
+        showProjectsSection();
+    } else {
+        // Fallback si por alguna razón la función no está disponible aún
+        clearJiraReport();
+        const step2 = document.getElementById('step-2-container');
+        const step3 = document.getElementById('step-3-container');
+        if (step2) step2.style.display = 'none';
+        if (step3) step3.style.display = 'none';
+    }
+}
+
 async function initJiraReports() {
+    // Asegurar que al entrar a la sección siempre se muestre el HUB
+    const hub = document.getElementById('report-hub');
+    const generationView = document.getElementById('report-generation-view');
+    if (hub) hub.style.display = 'block';
+    if (generationView) generationView.style.display = 'none';
+
     // Verificar conexión con Jira (en segundo plano, sin mostrar mensaje de éxito)
     const statusCard = document.getElementById('jira-connection-status');
     const statusIcon = document.getElementById('connection-icon');
@@ -4370,7 +4409,38 @@ async function validateCargaMasivaProjectAccess(projectKey) {
     }
 }
 
+function switchBulkLoadOperation(type) {
+    const hub = document.getElementById('loader-hub');
+    const individualView = document.getElementById('individual-load-view');
+
+    if (type === 'individual') {
+        if (hub) hub.style.display = 'none';
+        if (individualView) individualView.style.display = 'block';
+    } else {
+        // Para folder y validator que aún no tienen funcionalidad
+        const cardTitle = type === 'folder' ? 'Carga por Carpeta' : 'Validador de Matrices';
+        alert(`ℹ️ El módulo "${cardTitle}" estará disponible en próximas actualizaciones.`);
+    }
+}
+
+function resetBulkLoadToHub() {
+    const hub = document.getElementById('loader-hub');
+    const individualView = document.getElementById('individual-load-view');
+
+    if (hub) hub.style.display = 'block';
+    if (individualView) individualView.style.display = 'none';
+
+    // Resetear el flujo si es necesario (limpiar campos, etc)
+    resetCargaMasiva();
+}
+
 async function initCargaMasiva() {
+    // Asegurar que al entrar a la sección siempre se muestre el HUB
+    const hub = document.getElementById('loader-hub');
+    const individualView = document.getElementById('individual-load-view');
+    if (hub) hub.style.display = 'block';
+    if (individualView) individualView.style.display = 'none';
+
     await loadCurrentUserInfo();
     const projectInput = document.getElementById('carga-masiva-project-selector-input');
     const projectsLoading = document.getElementById('carga-masiva-projects-loading');

@@ -46,9 +46,18 @@ class Config:
     # ============================================================================
     # Configuración de Jira
     # ============================================================================
-    JIRA_BASE_URL = os.getenv('JIRA_BASE_URL', '')
-    JIRA_EMAIL = os.getenv('JIRA_EMAIL', '')
-    JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', '')
+    JIRA_ENV = os.getenv('JIRA_ENV', '').upper()
+    
+    # Lógica de switch: si JIRA_ENV está definido, usa variables con prefijo (ej: DEV_JIRA_URL)
+    # De lo contrario, usa las variables estándar.
+    if JIRA_ENV:
+        JIRA_BASE_URL = os.getenv(f'{JIRA_ENV}_JIRA_URL', os.getenv('JIRA_BASE_URL', ''))
+        JIRA_EMAIL = os.getenv(f'{JIRA_ENV}_JIRA_EMAIL', os.getenv('JIRA_EMAIL', ''))
+        JIRA_API_TOKEN = os.getenv(f'{JIRA_ENV}_JIRA_TOKEN', os.getenv('JIRA_API_TOKEN', ''))
+    else:
+        JIRA_BASE_URL = os.getenv('JIRA_BASE_URL', '')
+        JIRA_EMAIL = os.getenv('JIRA_EMAIL', '')
+        JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN', '')
     JIRA_TIMEOUT_SHORT = int(os.getenv('JIRA_TIMEOUT_SHORT', '10'))
     JIRA_TIMEOUT_LONG = int(os.getenv('JIRA_TIMEOUT_LONG', '15'))
     JIRA_MAX_RESULTS = int(os.getenv('JIRA_MAX_RESULTS', '100'))

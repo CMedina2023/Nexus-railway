@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup Nexus AI - Hub de Carga Masiva</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Mock Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+        }
+
+        /* Hub Styles */
+        .hub-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .hub-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .hub-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .hub-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .hub-card {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hub-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-5px);
+            background: rgba(59, 130, 246, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .hub-card:hover .card-icon {
+            background: var(--accent);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .hub-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .hub-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .card-footer {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Operation View (Spoke) */
+        .operation-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .btn-back {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .operation-header {
+            margin-bottom: 2rem;
+        }
+
+        .placeholder-content {
+            background: var(--secondary-bg);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 4rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar Mockup -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-box">N</div>
+            <span>Nexus AI</span>
+        </div>
+        <nav>
+            <div class="nav-item"><i class="fas fa-home"></i> Dashboard</div>
+            <div class="nav-item"><i class="fas fa-file-alt"></i> Crear Historias</div>
+            <div class="nav-item active"><i class="fas fa-upload"></i> Carga Masiva</div>
+            <div class="nav-item"><i class="fas fa-chart-line"></i> Métricas</div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- Vista 1: HUB (Initial) -->
+        <div id="hub-view" class="hub-container">
+            <div class="hub-header">
+                <h1>Nexus AI Loader</h1>
+                <p>Selecciona el tipo de operación que deseas realizar hoy.</p>
+            </div>
+
+            <div class="hub-grid">
+                <!-- Card 1 -->
+                <div class="hub-card" onclick="showOperation('individual', 'Carga Individual')">
+                    <div class="card-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <h3>Carga Individual</h3>
+                    <p>Flujo paso a paso para configurar y cargar tu archivo CSV directamente a Jira.</p>
+                    <div class="card-footer">
+                        Configurar carga <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="hub-card" onclick="showOperation('folder', 'Carga por Carpeta')">
+                    <div class="card-icon"><i class="fas fa-folder-open"></i></div>
+                    <h3>Carga por Carpeta</h3>
+                    <p>Carga masiva de múltiples archivos organizados por carpetas para grandes migraciones.</p>
+                    <div class="card-footer">
+                        Abrir carpeta <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="hub-card" onclick="showOperation('validator', 'Validador de Matrices')">
+                    <div class="card-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <h3>Validador de Matrices</h3>
+                    <p>Verifica que tus archivos CSV cumplan con todos los requisitos antes de importarlos.</p>
+                    <div class="card-footer">
+                        Iniciar validación <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista 2: OPERATION (Spoke) -->
+        <div id="operation-view" class="operation-container" style="display: none;">
+            <button class="btn-back" onclick="showHub()">
+                <i class="fas fa-chevron-left"></i> Volver al Hub
+            </button>
+
+            <div class="operation-header">
+                <h2 id="operation-title">Título de Operación</h2>
+                <p id="operation-subtitle" class="hub-subtitle">Configuración detallada del proceso seleccionado.</p>
+            </div>
+
+            <div class="placeholder-content">
+                <div id="operation-dynamic-content">
+                    <!-- Aquí se renderizaría el flujo actual de 7 pasos o los nuevos módulos -->
+                    <i class="fas fa-cog fa-spin" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                    <p>Cargando módulo de operación...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function showOperation(type, title) {
+            document.getElementById('hub-view').style.display = 'none';
+            document.getElementById('operation-view').style.display = 'block';
+            document.getElementById('operation-title').innerText = title;
+
+            const content = document.getElementById('operation-dynamic-content');
+
+            if (type === 'individual') {
+                content.innerHTML = `
+                    <div style="text-align: left; opacity: 0.7;">
+                        <p>Simulación del flujo actual de 7 pasos:</p>
+                        <ul style="margin-left: 1.5rem; margin-top: 1rem;">
+                            <li>Step 1: Proyecto Jira (Seleccionado)</li>
+                            <li>Step 2: Carga de CSV...</li>
+                            <li>Step 3-7: Validaciones y Mapeo...</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <i class="fas fa-tools" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>Interfaz específica para <strong>${title}</strong> en desarrollo.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function showHub() {
+            document.getElementById('operation-view').style.display = 'none';
+            document.getElementById('hub-view').style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

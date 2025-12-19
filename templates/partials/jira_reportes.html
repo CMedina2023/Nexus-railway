@@ -1,361 +1,400 @@
 <section id="jira-reportes" class="content-section">
-            <div class="guia-container">
-                <!-- Header (se oculta cuando hay reporte) -->
-                <div class="guia-header" id="report-header">
-                    <div>
-                        <h1>Reportes de Jira</h1>
-                        <p class="subtitle">Genera reportes personalizados con métricas de avance desde Jira</p>
+    <div class="guia-container">
+        <!-- HUB de Selección de Reportes -->
+        <div id="report-hub" class="hub-container">
+            <div class="carga-masiva-header" style="margin-bottom: 2rem;">
+                <h1>Nexus AI - Reportes</h1>
+                <p class="carga-masiva-subtitle">Selecciona el tipo de informe que deseas visualizar o generar.</p>
+            </div>
+
+            <div class="hub-grid">
+                <!-- Tarjeta 1: Generar Reporte (La funcionalidad actual) -->
+                <div class="hub-card" onclick="switchReportOperation('generation')">
+                    <div class="card-icon"><i class="fas fa-file-alt"></i></div>
+                    <h3>Generar Reporte</h3>
+                    <p>Genera reportes personalizados con métricas de avance y cobertura desde Jira en tiempo real.</p>
+                    <div class="card-footer">
+                        Iniciar generador <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
 
-                <!-- Botón de descarga flotante (solo visible cuando hay reporte) -->
-                <button class="download-button" id="download-button" onclick="toggleDownloadDropdown(event)">
-                    <span>⬇</span>
-                    <span>Descargar Reporte</span>
-                </button>
-                <div class="download-dropdown" id="download-dropdown">
-                    <div class="download-option" onclick="downloadPDF()">
-                        <div class="download-option-icon">📄</div>
-                        <div class="download-option-content">
-                            <div class="download-option-title">Descargar PDF</div>
-                            <div class="download-option-desc">Exporta el reporte completo en formato PDF</div>
-                        </div>
-                        <div class="download-option-arrow">→</div>
+                <!-- Tarjeta 2: Mis Reportes -->
+                <div class="hub-card" onclick="switchReportOperation('history')">
+                    <div class="card-icon"><i class="fas fa-folder-open"></i></div>
+                    <h3>Mis Reportes</h3>
+                    <p>Accede al historial de reportes generados anteriormente y descárgalos de nuevo.</p>
+                    <div class="card-footer" style="opacity: 0.5;">
+                        Próximamente <i class="fas fa-lock"></i>
                     </div>
                 </div>
 
-                <!-- Botón Personalizar -->
-                <button class="customize-button" id="customize-button" onclick="openWidgetModal()"
-                    style="display: none;">
-                    <span>⚙️</span>
-                    <span>Personalizar</span>
-                </button>
-
-                <!-- Modal de Personalización -->
-                <div class="widget-modal-overlay" id="widget-modal" onclick="closeWidgetModal(event)">
-                    <div class="widget-modal-container" onclick="event.stopPropagation()">
-                        <div class="widget-modal-header">
-                            <div class="widget-modal-title">
-                                <span>⚙️</span>
-                                <span>Personalizar Reporte</span>
-                            </div>
-                            <button class="widget-modal-close" onclick="closeWidgetModal()">✕</button>
-                        </div>
-                        <div class="widget-modal-body">
-                            <div class="widget-gallery" id="widget-gallery">
-                                <!-- Los widgets se cargarán dinámicamente -->
-                            </div>
-                        </div>
+                <!-- Tarjeta 3: Reporte Final de Pruebas -->
+                <div class="hub-card" onclick="switchReportOperation('final')">
+                    <div class="card-icon"><i class="fas fa-award"></i></div>
+                    <h3>Generar Reporte final de pruebas</h3>
+                    <p>Genera un informe ejecutivo de cierre con el resumen de calidad y certificación del ciclo.</p>
+                    <div class="card-footer" style="opacity: 0.5;">
+                        Próximamente <i class="fas fa-lock"></i>
                     </div>
                 </div>
-                <div class="guia-content">
-                    <!-- Estado de conexión -->
-                    <div id="jira-connection-status" class="jira-status-card" style="display: none;">
-                        <div class="status-content">
-                            <span id="connection-icon" class="status-icon">⏳</span>
-                            <span id="connection-message" class="status-message">Verificando conexión...</span>
-                        </div>
+            </div>
+        </div>
+
+        <!-- CONTENIDO: Generación de Reportes (Anterior flujo principal) -->
+        <div id="report-generation-view" style="display: none; animation: slideUp 0.3s ease-out;">
+            <button class="btn-back-hub" onclick="resetReportsToHub()">
+                <i class="fas fa-chevron-left"></i> Volver al Hub
+            </button>
+
+            <!-- Header (se oculta cuando hay reporte) -->
+            <div class="guia-header" id="report-header">
+                <div>
+                    <h1>Generador de Reportes Jira</h1>
+                    <p class="subtitle">Configura los parámetros para obtener tus métricas de avance</p>
+                </div>
+            </div>
+
+            <!-- Botón de descarga flotante (solo visible cuando hay reporte) -->
+            <button class="download-button" id="download-button" onclick="toggleDownloadDropdown(event)">
+                <span>⬇</span>
+                <span>Descargar Reporte</span>
+            </button>
+            <div class="download-dropdown" id="download-dropdown">
+                <div class="download-option" onclick="downloadPDF()">
+                    <div class="download-option-icon">📄</div>
+                    <div class="download-option-content">
+                        <div class="download-option-title">Descargar PDF</div>
+                        <div class="download-option-desc">Exporta el reporte completo en formato PDF</div>
                     </div>
+                    <div class="download-option-arrow">→</div>
+                </div>
+            </div>
 
-                    <!-- Selector de proyectos -->
-                    <div id="jira-projects-section" style="display: none;">
-                        <!-- Paso 1: Selección de Proyecto -->
-                        <div class="step-container" id="step-1-container">
-                            <div class="step-header">
-                                <div class="step-number">1</div>
-                                <div class="step-title">Selecciona un Proyecto</div>
-                            </div>
-                            <p class="step-description">Busca y selecciona el proyecto de Jira del cual deseas generar
-                                el reporte.</p>
+            <!-- Botón Personalizar -->
+            <button class="customize-button" id="customize-button" onclick="openWidgetModal()" style="display: none;">
+                <span>⚙️</span>
+                <span>Personalizar</span>
+            </button>
 
-                            <div class="jira-project-selector-card">
-                                <div class="jira-selector-dropdown-container">
-                                    <div class="combobox-wrapper">
-                                        <input type="text" id="project-selector-input"
-                                            class="jira-selector-dropdown combobox-input"
-                                            placeholder="🔍 Buscar o seleccionar proyecto..." autocomplete="off"
-                                            oninput="filterProjectOptions(this.value)" onfocus="showProjectDropdown()"
-                                            onblur="hideProjectDropdown()" onkeydown="handleProjectKeydown(event)">
-                                        <div id="project-dropdown" class="combobox-dropdown" style="display: none;">
-                                        </div>
-                                        <input type="hidden" id="project-selector" value="">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="projects-loading" class="loading-message" style="display: none;">
-                                <span>⏳ Cargando proyectos...</span>
-                            </div>
-                            <div id="projects-error" class="error-message" style="display: none;">
-                                <span>❌ Error al cargar proyectos</span>
-                            </div>
+            <!-- Modal de Personalización -->
+            <div class="widget-modal-overlay" id="widget-modal" onclick="closeWidgetModal(event)">
+                <div class="widget-modal-container" onclick="event.stopPropagation()">
+                    <div class="widget-modal-header">
+                        <div class="widget-modal-title">
+                            <span>⚙️</span>
+                            <span>Personalizar Reporte</span>
                         </div>
-
-                        <!-- Paso 2: Configuración de Filtros -->
-                        <div class="step-container" id="step-2-container" style="display: none;">
-                            <div class="step-header">
-                                <div class="step-number">2</div>
-                                <div class="step-title">Configura los Filtros</div>
-                            </div>
-                            <p class="step-description">Aplica filtros específicos para Test Cases y Bugs. Cada tipo de
-                                issue puede tener sus propios filtros independientes.</p>
-
-                            <!-- Pestañas -->
-                            <div class="filter-tabs">
-                                <button class="filter-tab test-case active" onclick="switchFilterTab('test-case')">
-                                    <span class="tab-icon">✅</span>
-                                    <span>Filtros para Test Cases</span>
-                                    <span class="tab-badge" id="test-case-filter-count">0</span>
-                                </button>
-                                <button class="filter-tab bug" onclick="switchFilterTab('bug')">
-                                    <span class="tab-icon">🐛</span>
-                                    <span>Filtros para Bugs</span>
-                                    <span class="tab-badge" id="bug-filter-count">0</span>
-                                </button>
-                            </div>
-
-                            <!-- Contenido: tests Cases -->
-                            <div id="tab-test-case" class="tab-content active">
-                                <div class="tab-content-header test-case">
-                                    <span class="tab-content-header-icon">✅</span>
-                                    <span class="tab-content-header-text">Configura filtros que se aplicarán únicamente
-                                        a los Test Cases del reporte</span>
-                                </div>
-
-                                <div class="filters-section">
-                                    <div class="filters-grid" id="filters-grid-test-case">
-                                        <!-- Los filtros se agregarán dinámicamente -->
-                                    </div>
-
-                                    <button class="add-filter-btn" onclick="addReportFilter('test-case')">
-                                        <span>➕</span>
-                                        <span>Agregar Otro Filtro</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Contenido: Bugs -->
-                            <div id="tab-bug" class="tab-content">
-                                <div class="tab-content-header bug">
-                                    <span class="tab-content-header-icon">🐛</span>
-                                    <span class="tab-content-header-text">Configura filtros que se aplicarán únicamente
-                                        a los Bugs del reporte</span>
-                                </div>
-
-                                <div class="filters-section">
-                                    <div class="filters-grid" id="filters-grid-bug">
-                                        <!-- Los filtros se agregarán dinámicamente -->
-                                    </div>
-
-                                    <button class="add-filter-btn" onclick="addReportFilter('bug')">
-                                        <span>➕</span>
-                                        <span>Agregar Otro Filtro</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Filtros Activos (Combinados) -->
-                            <div class="active-filters" id="active-report-filters">
-                                <div
-                                    style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
-                                    Filtros Activos:
-                                </div>
-                                <!-- Los badges se agregarán dinámicamente -->
-                            </div>
-                        </div>
-
-                        <!-- Paso 3: Generar Reporte -->
-                        <div class="step-container" id="step-3-container" style="display: none;">
-                            <div class="step-header">
-                                <div class="step-number">3</div>
-                                <div class="step-title">Generar Reporte</div>
-                            </div>
-                            <p class="step-description">Una vez configurados los filtros, presiona el botón para generar
-                                el reporte con la información filtrada.</p>
-
-                            <button class="generate-report-btn" id="generate-report-btn"
-                                onclick="generateReportWithFilters()">
-                                <span>📊</span>
-                                <span>Generar Reporte</span>
-                            </button>
-                        </div>
+                        <button class="widget-modal-close" onclick="closeWidgetModal()">✕</button>
                     </div>
-
-                    <!-- Reporte de métricas -->
-                    <div id="jira-report-section" style="display: none;">
-                        <div class="jira-welcome-card">
-                            <div class="jira-welcome-icon">✓</div>
-                            <h2 class="jira-welcome-title">Bienvenido al Generador de Reportes de Jira</h2>
-                            <p class="jira-welcome-text">Por favor, selecciona un proyecto del menú desplegable arriba
-                                para generar un nuevo reporte de pruebas.</p>
-                            <p class="jira-welcome-text">Todos los datos del proyecto y del reporte son generados desde
-                                Jira en tiempo real.</p>
-                        </div>
-
-                        <div id="metrics-loading" class="loading-message" style="display: none;">
-                            <span>⏳ Generando reporte...</span>
-                        </div>
-
-                        <div id="metrics-content" style="display: none;">
-                            <!-- Botón para generar nuevo reporte -->
-                            <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-end;">
-                                <button class="new-report-btn" onclick="showProjectsSection()">
-                                    <span>🔄</span>
-                                    <span>Generar Nuevo Reporte</span>
-                                </button>
-                            </div>
-
-                            <!-- Reporte General -->
-                            <div id="general-report-section" class="general-report-section">
-                                <div class="section-title" style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div class="section-title-icon">📈</div>
-                                    <span>Reporte General</span>
-                                </div>
-
-                                <!-- Top Section - Summary KPIs (7 tarjetas) -->
-                                <div class="kpi-grid">
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">📋</div>
-                                        <div class="kpi-label">Total Test Cases</div>
-                                        <div class="kpi-value" id="gr-total-test-cases">0</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">✅</div>
-                                        <div class="kpi-label">% Successful Test Cases</div>
-                                        <div class="kpi-value" id="gr-successful-percentage">0%</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">📊</div>
-                                        <div class="kpi-label">Real Coverage</div>
-                                        <div class="kpi-value" id="gr-real-coverage">0%</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">🐛</div>
-                                        <div class="kpi-label">Total Defects</div>
-                                        <div class="kpi-value" id="gr-total-defects">0</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">📈</div>
-                                        <div class="kpi-label">Defect Rate</div>
-                                        <div class="kpi-value" id="gr-defect-rate">0%</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">🔓</div>
-                                        <div class="kpi-label">Open Defects</div>
-                                        <div class="kpi-value" id="gr-open-defects">0</div>
-                                    </div>
-
-                                    <div class="kpi-card">
-                                        <div class="kpi-icon">🔒</div>
-                                        <div class="kpi-label">Closed Defects</div>
-                                        <div class="kpi-value" id="gr-closed-defects">0</div>
-                                    </div>
-                                </div>
-
-                                <!-- Middle Section - Solo gráficos -->
-                                <div class="middle-section">
-                                    <!-- Left: tests Cases Chart -->
-                                    <div class="chart-card">
-                                        <div class="chart-title">CASOS DE PRUEBA POR STATUS</div>
-                                        <div class="chart-container">
-                                            <canvas id="gr-test-cases-chart"></canvas>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right: Bugs Chart -->
-                                    <div class="chart-card">
-                                        <div class="chart-title">BUGS POR SEVERIDAD (Abiertos)</div>
-                                        <div class="chart-container">
-                                            <canvas id="gr-bugs-severity-chart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Bottom Section - Tables con Scroll y Paginación -->
-                                <div class="tables-section">
-                                    <!-- Left Table: tests Cases per Person -->
-                                    <div class="table-card">
-                                        <div class="table-title"># Casos de prueba por persona</div>
-                                        <div class="table-wrapper">
-                                            <div class="table-container">
-                                                <table class="report-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Asignado</th>
-                                                            <th>Exitoso</th>
-                                                            <th>En Progreso</th>
-                                                            <th>Fallado</th>
-                                                            <th>Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="gr-test-cases-table-body">
-                                                        <!-- Se llena dinámicamente -->
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            <div class="pagination" id="test-cases-pagination">
-                                                <div class="pagination-info">Mostrando 0-0 de 0 registros</div>
-                                                <div class="pagination-controls">
-                                                    <button class="pagination-btn" id="test-cases-prev" disabled>«
-                                                        Anterior</button>
-                                                    <span class="pagination-page" id="test-cases-page">Página 1</span>
-                                                    <button class="pagination-btn" id="test-cases-next"
-                                                        disabled>Siguiente »</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Right Table: Defects per Person -->
-                                    <div class="table-card">
-                                        <div class="table-title"># Defectos por Persona</div>
-                                        <div class="table-wrapper">
-                                            <div class="table-container">
-                                                <table class="report-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Key</th>
-                                                            <th>Asignado</th>
-                                                            <th>Status</th>
-                                                            <th>Summary</th>
-                                                            <th>Severity</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="gr-defects-table-body">
-                                                        <!-- Se llena dinámicamente -->
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            <div class="pagination" id="defects-pagination">
-                                                <div class="pagination-info">Mostrando 0-0 de 0 registros</div>
-                                                <div class="pagination-controls">
-                                                    <button class="pagination-btn" id="defects-prev" disabled>«
-                                                        Anterior</button>
-                                                    <span class="pagination-page" id="defects-page">Página 1</span>
-                                                    <button class="pagination-btn" id="defects-next" disabled>Siguiente
-                                                        »</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Contenedor de Widgets Personalizados (se muestra debajo del reporte general) -->
-                            <div id="widgets-container">
-                                <!-- Los widgets se renderizarán aquí dinámicamente -->
-                            </div>
-                        </div>
-
-                        <div id="metrics-error" class="error-message" style="display: none;">
-                            <span>❌ Error al generar el reporte</span>
+                    <div class="widget-modal-body">
+                        <div class="widget-gallery" id="widget-gallery">
+                            <!-- Los widgets se cargarán dinámicamente -->
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+
+            <div class="guia-content">
+                <!-- Estado de conexión -->
+                <div id="jira-connection-status" class="jira-status-card" style="display: none;">
+                    <div class="status-content">
+                        <span id="connection-icon" class="status-icon">⏳</span>
+                        <span id="connection-message" class="status-message">Verificando conexión...</span>
+                    </div>
+                </div>
+
+                <!-- Selector de proyectos -->
+                <div id="jira-projects-section" style="display: none;">
+                    <!-- Paso 1: Selección de Proyecto -->
+                    <div class="step-container" id="step-1-container">
+                        <div class="step-header">
+                            <div class="step-number">1</div>
+                            <div class="step-title">Selecciona un Proyecto</div>
+                        </div>
+                        <p class="step-description">Busca y selecciona el proyecto de Jira del cual deseas generar
+                            el reporte.</p>
+
+                        <div class="jira-project-selector-card">
+                            <div class="jira-selector-dropdown-container">
+                                <div class="combobox-wrapper">
+                                    <input type="text" id="project-selector-input"
+                                        class="jira-selector-dropdown combobox-input"
+                                        placeholder="🔍 Buscar o seleccionar proyecto..." autocomplete="off"
+                                        oninput="filterProjectOptions(this.value)" onfocus="showProjectDropdown()"
+                                        onblur="hideProjectDropdown()" onkeydown="handleProjectKeydown(event)">
+                                    <div id="project-dropdown" class="combobox-dropdown" style="display: none;">
+                                    </div>
+                                    <input type="hidden" id="project-selector" value="">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="projects-loading" class="loading-message" style="display: none;">
+                            <span>⏳ Cargando proyectos...</span>
+                        </div>
+                        <div id="projects-error" class="error-message" style="display: none;">
+                            <span>❌ Error al cargar proyectos</span>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Configuración de Filtros -->
+                    <div class="step-container" id="step-2-container" style="display: none;">
+                        <div class="step-header">
+                            <div class="step-number">2</div>
+                            <div class="step-title">Configura los Filtros</div>
+                        </div>
+                        <p class="step-description">Aplica filtros específicos para Test Cases y Bugs. Cada tipo de
+                            issue puede tener sus propios filtros independientes.</p>
+
+                        <!-- Pestañas -->
+                        <div class="filter-tabs">
+                            <button class="filter-tab test-case active" onclick="switchFilterTab('test-case')">
+                                <span class="tab-icon">✅</span>
+                                <span>Filtros para Test Cases</span>
+                                <span class="tab-badge" id="test-case-filter-count">0</span>
+                            </button>
+                            <button class="filter-tab bug" onclick="switchFilterTab('bug')">
+                                <span class="tab-icon">🐛</span>
+                                <span>Filtros para Bugs</span>
+                                <span class="tab-badge" id="bug-filter-count">0</span>
+                            </button>
+                        </div>
+
+                        <!-- Contenido: tests Cases -->
+                        <div id="tab-test-case" class="tab-content active">
+                            <div class="tab-content-header test-case">
+                                <span class="tab-content-header-icon">✅</span>
+                                <span class="tab-content-header-text">Configura filtros que se aplicarán únicamente
+                                    a los Test Cases del reporte</span>
+                            </div>
+
+                            <div class="filters-section">
+                                <div class="filters-grid" id="filters-grid-test-case">
+                                    <!-- Los filtros se agregarán dinámicamente -->
+                                </div>
+
+                                <button class="add-filter-btn" onclick="addReportFilter('test-case')">
+                                    <span>➕</span>
+                                    <span>Agregar Otro Filtro</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Contenido: Bugs -->
+                        <div id="tab-bug" class="tab-content">
+                            <div class="tab-content-header bug">
+                                <span class="tab-content-header-icon">🐛</span>
+                                <span class="tab-content-header-text">Configura filtros que se aplicarán únicamente
+                                    a los Bugs del reporte</span>
+                            </div>
+
+                            <div class="filters-section">
+                                <div class="filters-grid" id="filters-grid-bug">
+                                    <!-- Los filtros se agregarán dinámicamente -->
+                                </div>
+
+                                <button class="add-filter-btn" onclick="addReportFilter('bug')">
+                                    <span>➕</span>
+                                    <span>Agregar Otro Filtro</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filtros Activos (Combinados) -->
+                        <div class="active-filters" id="active-report-filters">
+                            <div
+                                style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                                Filtros Activos:
+                            </div>
+                            <!-- Los badges se agregarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Paso 3: Generar Reporte -->
+                    <div class="step-container" id="step-3-container" style="display: none;">
+                        <div class="step-header">
+                            <div class="step-number">3</div>
+                            <div class="step-title">Generar Reporte</div>
+                        </div>
+                        <p class="step-description">Una vez configurados los filtros, presiona el botón para generar
+                            el reporte con la información filtrada.</p>
+
+                        <button class="generate-report-btn" id="generate-report-btn"
+                            onclick="generateReportWithFilters()">
+                            <span>📊</span>
+                            <span>Generar Reporte</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reporte de métricas -->
+                <div id="jira-report-section" style="display: none;">
+                    <div class="jira-welcome-card">
+                        <div class="jira-welcome-icon">✓</div>
+                        <h2 class="jira-welcome-title">Bienvenido al Generador de Reportes de Jira</h2>
+                        <p class="jira-welcome-text">Por favor, selecciona un proyecto del menú desplegable arriba
+                            para generar un nuevo reporte de pruebas.</p>
+                        <p class="jira-welcome-text">Todos los datos del proyecto y del reporte son generados desde
+                            Jira en tiempo real.</p>
+                    </div>
+
+                    <div id="metrics-loading" class="loading-message" style="display: none;">
+                        <span>⏳ Generando reporte...</span>
+                    </div>
+
+                    <div id="metrics-content" style="display: none;">
+                        <!-- Reporte General -->
+                        <div id="general-report-section" class="general-report-section">
+                            <div class="section-title" style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="section-title-icon">📈</div>
+                                <span>Reporte General</span>
+                            </div>
+
+                            <!-- Top Section - Summary KPIs (7 tarjetas) -->
+                            <div class="kpi-grid">
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">📋</div>
+                                    <div class="kpi-label">Total Test Cases</div>
+                                    <div class="kpi-value" id="gr-total-test-cases">0</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">✅</div>
+                                    <div class="kpi-label">% Successful Test Cases</div>
+                                    <div class="kpi-value" id="gr-successful-percentage">0%</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">📊</div>
+                                    <div class="kpi-label">Real Coverage</div>
+                                    <div class="kpi-value" id="gr-real-coverage">0%</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">🐛</div>
+                                    <div class="kpi-label">Total Defects</div>
+                                    <div class="kpi-value" id="gr-total-defects">0</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">📈</div>
+                                    <div class="kpi-label">Defect Rate</div>
+                                    <div class="kpi-value" id="gr-defect-rate">0%</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">🔓</div>
+                                    <div class="kpi-label">Open Defects</div>
+                                    <div class="kpi-value" id="gr-open-defects">0</div>
+                                </div>
+
+                                <div class="kpi-card">
+                                    <div class="kpi-icon">🔒</div>
+                                    <div class="kpi-label">Closed Defects</div>
+                                    <div class="kpi-value" id="gr-closed-defects">0</div>
+                                </div>
+                            </div>
+
+                            <!-- Middle Section - Solo gráficos -->
+                            <div class="middle-section">
+                                <!-- Left: tests Cases Chart -->
+                                <div class="chart-card">
+                                    <div class="chart-title">CASOS DE PRUEBA POR STATUS</div>
+                                    <div class="chart-container">
+                                        <canvas id="gr-test-cases-chart"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Bugs Chart -->
+                                <div class="chart-card">
+                                    <div class="chart-title">BUGS POR SEVERIDAD (Abiertos)</div>
+                                    <div class="chart-container">
+                                        <canvas id="gr-bugs-severity-chart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Section - Tables con Scroll y Paginación -->
+                            <div class="tables-section">
+                                <!-- Left Table: tests Cases per Person -->
+                                <div class="table-card">
+                                    <div class="table-title"># Casos de prueba por persona</div>
+                                    <div class="table-wrapper">
+                                        <div class="table-container">
+                                            <table class="report-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Asignado</th>
+                                                        <th>Exitoso</th>
+                                                        <th>En Progreso</th>
+                                                        <th>Fallado</th>
+                                                        <th>Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="gr-test-cases-table-body">
+                                                    <!-- Se llena dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="pagination" id="test-cases-pagination">
+                                            <div class="pagination-info">Mostrando 0-0 de 0 registros</div>
+                                            <div class="pagination-controls">
+                                                <button class="pagination-btn" id="test-cases-prev" disabled>«
+                                                    Anterior</button>
+                                                <span class="pagination-page" id="test-cases-page">Página 1</span>
+                                                <button class="pagination-btn" id="test-cases-next" disabled>Siguiente
+                                                    »</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Table: Defects per Person -->
+                                <div class="table-card">
+                                    <div class="table-title"># Defectos por Persona</div>
+                                    <div class="table-wrapper">
+                                        <div class="table-container">
+                                            <table class="report-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Key</th>
+                                                        <th>Asignado</th>
+                                                        <th>Status</th>
+                                                        <th>Summary</th>
+                                                        <th>Severity</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="gr-defects-table-body">
+                                                    <!-- Se llena dinámicamente -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="pagination" id="defects-pagination">
+                                            <div class="pagination-info">Mostrando 0-0 de 0 registros</div>
+                                            <div class="pagination-controls">
+                                                <button class="pagination-btn" id="defects-prev" disabled>«
+                                                    Anterior</button>
+                                                <span class="pagination-page" id="defects-page">Página 1</span>
+                                                <button class="pagination-btn" id="defects-next" disabled>Siguiente
+                                                    »</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor de Widgets Personalizados (se muestra debajo del reporte general) -->
+                        <div id="widgets-container">
+                            <!-- Los widgets se renderizarán aquí dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div id="metrics-error" class="error-message" style="display: none;">
+                        <span>❌ Error al generar el reporte</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
