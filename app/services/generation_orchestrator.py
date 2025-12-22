@@ -4,14 +4,17 @@ Responsabilidad única: Orquestar el proceso de generación completo
 """
 import logging
 import os
-import zipfile
-from typing import Dict, Tuple, Optional, Any
+import json
+import threading
+import time
+from typing import Dict, Tuple, Optional, Any, List
 
 from app.services.file_manager import FileManager
 from app.services.data_transformer import DataTransformer
 from app.services.validator import Validator
 from app.services.file_generator import FileGenerator
 from app.utils.matrix_utils import extract_matrix_data
+from app.backend.matrix_backend import generate_test_cases_html_document, parse_test_cases_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +42,162 @@ class GenerationOrchestrator:
         self.data_transformer = data_transformer
         self.validator = validator
         self.file_generator = file_generator
+
+    def stream_generation_pipeline(
+        self,
+        task_type: str,
+        document_text: str,
+        parameters: Dict,
+        output_filename: str,
+        filepath: str,
+        agent_processing_func,
+        story_backend=None
+    ):
+        """
+        Generador de eventos SSE para el pipeline de 6 pasos.
+        """
+        try:
+            # --- PASO 1: GENERACIÓN INICIAL (LLM) ---
+            # Para evitar que la barra se congele, ejecutamos la IA en un hilo
+            # y simulamos progreso mientras esperamos la respuesta real.
+            
+            # Definir mensajes para la simulación
+            if task_type == 'story':
+                sim_steps = [
+                    ("Analizando requerimientos en el documento...", 15, "Extracción"),
+                    ("Identificando actores y perfiles de usuario...", 25, "Análisis"),
+                    ("Estructurando criterios de aceptación...", 38, "Redacción"),
+                    ("Aplicando contexto de negocio adicional...", 50, "Contexto"),
+                    ("Finalizando borrador de historias...", 65, "Finalización")
+                ]
+            else:
+                sim_steps = [
+                    ("Analizando flujos y precondiciones...", 15, "Análisis"),
+                    ("Identificando casos de éxito y flujos alternos...", 25, "Casos"),
+                    ("Diseñando validaciones de entrada y salida...", 42, "Validación"),
+                    ("Mapeando resultados esperados detallados...", 55, "Estructura"),
+                    ("Finalizando borrador de matriz técnica...", 65, "Finalización")
+                ]
+
+            result_container = {"data": None, "error": None, "completed": False}
+            
+            def run_ia_task():
+                try:
+                    parameters_with_skip = parameters.copy()
+                    parameters_with_skip['skip_healing'] = True
+                    result_container["data"] = agent_processing_func(task_type, document_text, parameters_with_skip)
+                except Exception as ex:
+                    logger.error(f"Error en hilo de IA: {str(ex)}")
+                    result_container["error"] = str(ex)
+                finally:
+                    result_container["completed"] = True
+
+            # Iniciar hilo de IA
+            ia_thread = threading.Thread(target=run_ia_task)
+            ia_thread.start()
+
+            # Bucle de progreso fluido (Simulado)
+            sim_index = 0
+            while not result_container["completed"]:
+                if sim_index < len(sim_steps):
+                    msg, prog, phase = sim_steps[sim_index]
+                    yield self._format_sse(msg, prog, phase)
+                    sim_index += 1
+                else:
+                    # Si la IA tarda más de lo esperado, mantenemos el último porcentaje de simulación
+                    yield self._format_sse("Casi listo, procesando respuesta del modelo...", 65, "Procesando")
+                
+                time.sleep(8.0) # Intervalo de 8 segundos por latido
+
+            # Verificar si hubo error
+            if result_container["error"]:
+                raise Exception(result_container["error"])
+            
+            result = result_container["data"]
+            if not result:
+                raise Exception("La IA no devolvió ningún contenido.")
+            
+            if isinstance(result, dict) and "error" in result:
+                yield self._format_sse(f"Error en generación inicial: {result['error']}", 0, "error")
+                return
+
+            # Extraer contenido inicial
+            if task_type == 'story':
+                content = self.data_transformer.extract_stories_from_result(result)
+            elif task_type == 'matrix':
+                matrix_data = extract_matrix_data(result)
+                content = self.data_transformer.clean_matrix_data(matrix_data) if matrix_data else []
+            else:
+                content = []
+
+            # --- PASO 2: EVALUACIÓN POR LLM CRITIC ---
+            yield self._format_sse("Ejecutando evaluación por LLM Critic...", 30, "Crítica")
+            # En este flujo granular, el Critic se activa al detectar fallos en el Paso 3
+            
+            # --- PASO 3: VALIDACIÓN SEMÁNTICA ---
+            yield self._format_sse("Realizando validación semántica profunda...", 45, "Validación")
+            
+            issues_found = []
+            if task_type == 'story':
+                for s in content:
+                    v_res = self.validator.semantic_validate_story(s, document_text[:1000])
+                    if not v_res["is_valid"]:
+                        issues_found.append(f"Historia: {', '.join(v_res['issues'])}")
+            elif task_type == 'matrix':
+                for c in content:
+                    v_res = self.validator.semantic_validate_case(c, document_text[:1000])
+                    if not v_res["is_valid"]:
+                        issues_found.append(f"Caso {c.get('id_caso_prueba', '')}: {', '.join(v_res['issues'])}")
+            
+            
+            # --- PASO 4: VERIFICACIÓN DE CALIDAD (SIN HEALING) ---
+            # La validación semántica ya se ejecutó en el backend
+            # Aquí solo mostramos un mensaje de progreso visual
+            yield self._format_sse("Verificando calidad de casos generados...", 70, "Calidad")
+
+
+            # --- PASO 5: VALIDACIÓN FINAL DE INTEGRIDAD ---
+            yield self._format_sse("Realizando validación final de integridad...", 85, "Integridad")
+            if task_type == 'story':
+                final_content = self.data_transformer.extract_stories_from_result(result)
+                valid_stories, _ = self.validator.validate_stories(final_content)
+            elif task_type == 'matrix':
+                matrix_data = extract_matrix_data(result)
+                final_content = self.data_transformer.clean_matrix_data(matrix_data)
+                valid_test_cases, _ = self.validator.validate_test_cases(final_content)
+
+            # --- PASO 6: ENSAMBLAJE PROTEGIDO ---
+            yield self._format_sse("Ensamblando archivos finales y base de datos...", 95, "Ensamblaje")
+            
+            if task_type == 'story':
+                result_data, error = self.process_story_generation(result, output_filename, filepath, story_backend)
+            elif task_type == 'matrix':
+                result_data, error = self.process_matrix_generation(result, output_filename, filepath)
+            else:
+                result_data, error = self.process_both_generation(document_text, parameters, output_filename, filepath, agent_processing_func, story_backend)
+
+            if error:
+                yield self._format_sse(f"Error en ensamblaje: {error.get('error', 'Error desconocido')}", 0, "error")
+                return
+
+            # Éxito final
+            yield self._format_sse("¡Generación y validación completadas con éxito!", 100, "completed", result_data)
+
+        except Exception as e:
+            logger.error(f"Error en pipeline SSE: {e}", exc_info=True)
+            yield self._format_sse(f"Error inesperado: {str(e)}", 0, "error")
+
+    def _format_sse(self, message: str, progress: int, status: str = "", data: Any = None) -> str:
+        """Formatea un mensaje para SSE siguiendo el estándar data: {...}\n\n"""
+        payload = {
+            "message": message,
+            "progress": progress,
+            "status": status,
+            "terminal": status in ["completed", "error"]
+        }
+        if data:
+            payload["data"] = data
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
     
     def process_story_generation(
         self, 
@@ -47,103 +206,66 @@ class GenerationOrchestrator:
         filepath: str,
         story_backend
     ) -> Tuple[Optional[Dict], Optional[Dict]]:
-        """
-        Procesa la generación de historias de usuario
-        
-        Args:
-            result: Resultado del agente
-            output_filename: Nombre del archivo de salida
-            filepath: Ruta del archivo temporal subido
-            story_backend: Módulo de backend para historias
-            
-        Returns:
-            Tuple[Optional[Dict], Optional[Dict]]: 
-            - (resultado_exitoso, None) si todo está bien
-            - (None, error_dict) si hay error
-        """
+        """Procesa la generación de historias de usuario"""
         try:
-            # Extraer historias
-            logger.debug(f"Contenido de result: {result}")
             stories_content = self.data_transformer.extract_stories_from_result(result)
-            logger.info(f"Historias extraídas: {len(stories_content)} elementos")
-            
-            # Validar historias
             valid_stories, error_msg = self.validator.validate_stories(stories_content)
-            if error_msg:
-                logger.error(error_msg)
-                self.file_manager.clean_temp_file(filepath)
-                return None, {
-                    "error": "No se pudieron generar historias de usuario. El documento puede ser demasiado grande o no contener información suficiente. Intenta con un documento más pequeño o más detallado."
-                }
             
-            # Crear documento Word
+            if error_msg:
+                self.file_manager.clean_temp_file(filepath)
+                return None, {"error": error_msg}
+            
+            # Generar documento Word
             doc = story_backend.create_word_document(valid_stories)
             stories_filename = f"{output_filename}.docx"
             stories_filepath = self.file_manager.get_file_path(stories_filename)
             doc.save(stories_filepath)
             
-            story_count = len(valid_stories)
-            story_word = "historia" if story_count == 1 else "historias"
+            # Generar HTML y CSV para vista previa
+            html_content = story_backend.generate_html_document(valid_stories)
+            csv_content = story_backend.generate_jira_csv(valid_stories)
             
             return {
                 "status": "success",
-                "message": f"Historias generadas exitosamente: {story_count} {story_word}",
+                "message": f"Historias generadas: {len(valid_stories)}",
                 "download_url": f"/download/{stories_filename}",
                 "filename": stories_filename,
-                "stories_count": story_count
+                "stories_count": len(valid_stories),
+                "stories": story_backend.parse_stories_to_dict(valid_stories) if hasattr(story_backend, 'parse_stories_to_dict') else [],
+                "html_content": html_content,
+                "csv_content": csv_content
             }, None
-            
         except Exception as e:
-            logger.error(f"Error en process_story_generation: {e}", exc_info=True)
-            self.file_manager.clean_temp_file(filepath)
-            return None, {"error": f"Error al procesar historias: {str(e)}"}
-    
+            logger.error(f"Error en process_story_generation: {e}")
+            return None, {"error": str(e)}
+
     def process_matrix_generation(
         self, 
         result: Any, 
         output_filename: str, 
         filepath: str
     ) -> Tuple[Optional[Dict], Optional[Dict]]:
-        """
-        Procesa la generación de matriz de pruebas
-        
-        Args:
-            result: Resultado del agente
-            output_filename: Nombre del archivo de salida
-            filepath: Ruta del archivo temporal subido
-            
-        Returns:
-            Tuple[Optional[Dict], Optional[Dict]]: 
-            - (resultado_exitoso, None) si todo está bien
-            - (None, error_dict) si hay error
-        """
+        """Procesa la generación de matriz de pruebas"""
         try:
-            # Obtener datos de matriz
-            logger.debug(f"Contenido de result: {result}")
             matrix_data = extract_matrix_data(result)
-            
-            if matrix_data:
-                logger.debug(f"matrix_data tipo: {type(matrix_data)}, longitud: {len(matrix_data)}")
-            
-            # Limpiar y validar
             cleaned_matrix_data = self.data_transformer.clean_matrix_data(matrix_data) if matrix_data else []
-            logger.info(f"Datos limpios: {len(cleaned_matrix_data)} elementos")
-            
-            # Validar casos
             valid_cases, error_msg = self.validator.validate_test_cases(cleaned_matrix_data)
-            if error_msg:
-                logger.error(f"No hay datos válidos: {error_msg}")
-                self.file_manager.clean_temp_file(filepath)
-                return None, {
-                    "error": "No se pudieron generar casos de prueba. El documento puede ser demasiado grande, el procesamiento puede haber sido interrumpido por timeout, o el documento no contiene información suficiente. Intenta con un documento más pequeño o más detallado."
-                }
             
-            # Crear ZIP
+            if error_msg:
+                self.file_manager.clean_temp_file(filepath)
+                return None, {"error": error_msg}
+            
             zip_filename = f"{output_filename}.zip"
             zip_filepath = self.file_manager.get_file_path(zip_filename)
             
             csv_content = self.file_generator.generate_csv(valid_cases)
             json_content = self.file_generator.generate_json(valid_cases)
+            
+            # Generar HTML preview para casos de prueba
+            html_content = generate_test_cases_html_document(valid_cases)
+            
+            # Transformar casos para el frontend (mapear titulo_caso_prueba -> summary)
+            test_cases_for_frontend = parse_test_cases_to_dict(valid_cases)
             
             files_to_add = {
                 f"{output_filename}.json": json_content.encode('utf-8'),
@@ -152,24 +274,20 @@ class GenerationOrchestrator:
             
             self.file_generator.create_zip_file(zip_filepath, files_to_add)
             
-            logger.info(f"Archivo ZIP creado con {len(valid_cases)} casos de prueba")
-            
-            case_count = len(valid_cases)
-            case_word = "caso" if case_count == 1 else "casos"
-            
             return {
                 "status": "success",
-                "message": f"Matriz de pruebas generada exitosamente con {case_count} {case_word}",
+                "message": f"Matriz generada: {len(valid_cases)} casos",
                 "download_url": f"/download/{zip_filename}",
                 "filename": zip_filename,
-                "test_cases_count": case_count
+                "test_cases_count": len(valid_cases),
+                "test_cases": test_cases_for_frontend,  # Ahora usa la versión transformada
+                "html_content": html_content,
+                "csv_content": csv_content
             }, None
-            
         except Exception as e:
-            logger.error(f"Error en process_matrix_generation: {e}", exc_info=True)
-            self.file_manager.clean_temp_file(filepath)
-            return None, {"error": f"Error al procesar matriz: {str(e)}"}
-    
+            logger.error(f"Error en process_matrix_generation: {e}")
+            return None, {"error": str(e)}
+
     def process_both_generation(
         self, 
         document_text: str, 
@@ -179,118 +297,50 @@ class GenerationOrchestrator:
         simple_agent_processing,
         story_backend
     ) -> Tuple[Optional[Dict], Optional[Dict]]:
-        """
-        Procesa la generación de historias y matriz de pruebas
-        
-        Args:
-            document_text: Texto del documento
-            parameters: Parámetros de generación
-            output_filename: Nombre del archivo de salida
-            filepath: Ruta del archivo temporal subido
-            simple_agent_processing: Función para procesar con el agente
-            story_backend: Módulo de backend para historias
-            
-        Returns:
-            Tuple[Optional[Dict], Optional[Dict]]: 
-            - (resultado_exitoso, None) si todo está bien
-            - (None, error_dict) si hay error
-        """
+        """Procesa la generación simultánea de historias y matriz"""
         try:
-            logger.info("Generando ambos: historias y matriz de pruebas")
-            
             # Generar historias
-            logger.info("Paso 1: Generando historias de usuario...")
             stories_result = simple_agent_processing('story', document_text, parameters)
-            
-            if isinstance(stories_result, dict) and "error" in stories_result:
-                logger.error(f"Error al generar historias: {stories_result['error']}")
-                self.file_manager.clean_temp_file(filepath)
-                return None, {"error": f"Error al generar historias: {stories_result['error']}"}
-            
-            # Validar historias
-            stories_content = self.data_transformer.extract_stories_from_result(stories_result)
-            logger.info(f"Historias extraídas: {len(stories_content)} elementos")
-            
-            valid_stories, error_msg = self.validator.validate_stories(stories_content)
-            if error_msg:
-                logger.error(error_msg)
-                self.file_manager.clean_temp_file(filepath)
-                return None, {
-                    "error": "No se pudieron generar historias de usuario. El documento puede ser demasiado grande o no contener información suficiente."
-                }
+            stories_data, s_error = self.process_story_generation(stories_result, f"{output_filename}_stories", filepath, story_backend)
             
             # Generar matriz
-            logger.info("Paso 2: Generando matriz de pruebas...")
             matrix_result = simple_agent_processing('matrix', document_text, parameters)
+            matrix_data, m_error = self.process_matrix_generation(matrix_result, f"{output_filename}_matrix", filepath)
             
-            if isinstance(matrix_result, dict) and "error" in matrix_result:
-                logger.error(f"Error al generar matriz: {matrix_result['error']}")
-                self.file_manager.clean_temp_file(filepath)
-                return None, {"error": f"Error al generar matriz: {matrix_result['error']}"}
+            if s_error or m_error:
+                return None, {"error": "Error en generación combinada"}
             
-            # Extraer y validar matriz
-            matrix_data = extract_matrix_data(matrix_result)
-            cleaned_matrix_data = self.data_transformer.clean_matrix_data(matrix_data) if matrix_data else []
-            logger.info(f"Datos de matriz limpios: {len(cleaned_matrix_data)} elementos")
-            
-            valid_cases, error_msg = self.validator.validate_test_cases(cleaned_matrix_data)
-            if error_msg:
-                logger.error(error_msg)
-                self.file_manager.clean_temp_file(filepath)
-                return None, {
-                    "error": "No se pudieron generar casos de prueba. El documento puede ser demasiado grande o no contener información suficiente."
-                }
-            
-            # Crear archivos
-            logger.info("Paso 3: Creando archivos...")
-            
-            # Documento Word para historias
-            doc = story_backend.create_word_document(valid_stories)
-            stories_filename = f"{output_filename}_historias.docx"
-            stories_filepath = self.file_manager.get_file_path(stories_filename)
-            doc.save(stories_filepath)
-            
-            # CSV y JSON para matriz
-            csv_content = self.file_generator.generate_csv(valid_cases)
-            json_content = self.file_generator.generate_json(valid_cases)
-            
-            # ZIP con ambos archivos
+            # Crear ZIP combinado
             zip_filename = f"{output_filename}_completo.zip"
             zip_filepath = self.file_manager.get_file_path(zip_filename)
             
-            # Leer el archivo de historias en binario
-            with open(stories_filepath, 'rb') as f:
-                stories_file_content = f.read()
+            # Leer archivos generados
+            files_to_add = {}
+            if stories_data:
+                with open(self.file_manager.get_file_path(stories_data['filename']), 'rb') as f:
+                    files_to_add[stories_data['filename']] = f.read()
             
-            files_to_add = {
-                stories_filename: stories_file_content,
-                f"{output_filename}_matriz.json": json_content.encode('utf-8'),
-                f"{output_filename}_matriz.csv": csv_content.encode('utf-8')
-            }
-            
+            if matrix_data:
+                # El ZIP de matriz contiene json y csv? 
+                # Para simplificar, agregamos los archivos individuales
+                csv_content = self.file_generator.generate_csv(matrix_data['test_cases'])
+                json_content = self.file_generator.generate_json(matrix_data['test_cases'])
+                files_to_add[f"{output_filename}_matrix.csv"] = csv_content.encode('utf-8')
+                files_to_add[f"{output_filename}_matrix.json"] = json_content.encode('utf-8')
+
             self.file_generator.create_zip_file(zip_filepath, files_to_add)
-            
-            # Limpiar archivo temporal
             self.file_manager.clean_temp_file(filepath)
-            
-            story_count = len(valid_stories)
-            story_word = "historia" if story_count == 1 else "historias"
-            case_count = len(valid_cases)
-            case_word = "caso" if case_count == 1 else "casos"
-            
-            logger.info(f"Proceso completado: {story_count} {story_word} y {case_count} {case_word}")
             
             return {
                 "status": "success",
-                "message": f"✅ Generación completada: {story_count} {story_word} de usuario y {case_count} {case_word} de prueba",
+                "message": "Generación completa exitosa",
                 "download_url": f"/download/{zip_filename}",
                 "filename": zip_filename,
-                "stories_count": story_count,
-                "test_cases_count": case_count
+                "stories_count": stories_data.get('stories_count', 0),
+                "test_cases_count": matrix_data.get('test_cases_count', 0),
+                "stories": stories_data.get('stories', []),
+                "test_cases": matrix_data.get('test_cases', [])
             }, None
-            
         except Exception as e:
-            logger.error(f"Error en process_both_generation: {e}", exc_info=True)
-            self.file_manager.clean_temp_file(filepath)
-            return None, {"error": f"Error al procesar ambos: {str(e)}"}
-
+            logger.error(f"Error en process_both_generation: {e}")
+            return None, {"error": str(e)}

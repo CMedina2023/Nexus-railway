@@ -2277,59 +2277,60 @@ body {
     width: 100%;
 }
 
-.jira-selector-dropdown,
 .combobox-input {
     width: 100%;
     padding: 0.875rem 1rem;
+    padding-right: 2.5rem;
     background: var(--secondary-bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 12px;
     color: var(--text-primary);
-    font-size: 1rem;
-    box-sizing: border-box;
-}
-
-.combobox-input {
-    cursor: text;
-    padding-right: 2.5rem;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23cbd5e1' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1rem center;
     background-size: 12px;
-    transition: all 0.2s ease;
-}
-
-.combobox-input:hover {
-    border-color: var(--accent);
 }
 
 .combobox-input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: var(--card-bg);
 }
 
 .combobox-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     left: 0;
     right: 0;
-    margin-top: 0.25rem;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    max-height: 300px;
+    border-radius: 12px;
+    max-height: 250px;
     overflow-y: auto;
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2500;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(15px);
+    animation: comboboxIn 0.2s ease-out;
+}
+
+@keyframes comboboxIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .combobox-option {
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1.25rem;
     cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     color: var(--text-primary);
-    border-bottom: 1px solid var(--border);
-    transition: background-color 0.2s ease;
 }
 
 .combobox-option:last-child {
@@ -2338,17 +2339,31 @@ body {
 
 .combobox-option:hover,
 .combobox-option.highlighted {
-    background: var(--secondary-bg);
+    background: rgba(79, 172, 254, 0.1);
+    color: var(--accent);
+    padding-left: 1.5rem;
+}
+
+.combobox-option .option-key {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    color: var(--text-muted);
+}
+
+.combobox-option:hover .option-key,
+.combobox-option.highlighted .option-key {
+    background: var(--accent);
+    color: white;
 }
 
 .combobox-option.no-results {
     color: var(--text-muted);
     cursor: default;
     font-style: italic;
-}
-
-.combobox-option.no-results:hover {
-    background: transparent;
+    justify-content: center;
+    padding: 1.5rem;
 }
 
 .loading-message,
@@ -3524,28 +3539,24 @@ body {
 
 /* Botón Personalizar */
 .customize-button {
-    background: linear-gradient(135deg, var(--accent), #8b5cf6);
-    border: none;
-    color: white;
-    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.75rem 1.25rem;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     transition: all 0.2s ease;
     font-weight: 600;
-    position: fixed;
-    top: 2rem;
-    right: 16rem;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .customize-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
 }
 
 /* Modal de Personalización */
@@ -4177,25 +4188,46 @@ body {
     color: #ef4444;
 }
 
+/* Contenedor de Acciones de Reporte */
+.report-actions-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 0.5rem 0;
+    position: sticky;
+    top: -1px;
+    background: var(--bg);
+    z-index: 1000;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.report-action-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.download-wrapper {
+    position: relative;
+}
+
 /* Botón de Descarga */
 .download-button {
     background: linear-gradient(135deg, var(--accent), #8b5cf6);
     border: none;
     color: white;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     display: none;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
     transition: all 0.2s ease;
     font-weight: 600;
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .download-button.visible {
@@ -4204,18 +4236,18 @@ body {
 
 .download-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
 }
 
 .download-dropdown {
-    position: fixed;
-    top: calc(2rem + 3.5rem);
-    right: 2rem;
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-width: 260px;
     z-index: 1001;
     display: none;
     overflow: hidden;
@@ -5174,6 +5206,40 @@ body {
 
     .tools-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Ajustes para Reportes en Móvil */
+    .report-actions-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        position: static;
+        background: transparent;
+    }
+
+    .report-action-buttons {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .report-action-buttons button,
+    .download-wrapper,
+    .download-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .download-dropdown {
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
+
+    .btn-back-hub {
+        width: 100%;
+        margin-bottom: 0.5rem;
     }
 }
 

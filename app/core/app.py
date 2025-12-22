@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file, redirect, Response
+from flask import Flask, render_template, request, jsonify, send_file, redirect, Response, stream_with_context
 from flask_session import Session
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.utils import secure_filename
@@ -56,6 +56,12 @@ from app.models.user_story import UserStory
 from app.models.test_case import TestCase
 from app.models.jira_report import JiraReport
 from app.models.bulk_upload import BulkUpload
+
+from app.services.file_manager import FileManager
+from app.services.data_transformer import DataTransformer
+from app.services.validator import Validator
+from app.services.file_generator import FileGenerator
+from app.services.generation_orchestrator import GenerationOrchestrator
 
 load_dotenv()
 
@@ -129,6 +135,18 @@ def inject_csrf_token():
     """Inyecta la función csrf_token en todos los templates"""
     from flask_wtf.csrf import generate_csrf
     return dict(csrf_token=lambda: generate_csrf())
+
+# Inicializar servicios y orquestador
+file_manager = FileManager(UPLOAD_FOLDER)
+data_transformer = DataTransformer()
+validator_service = Validator()
+file_generator = FileGenerator()
+orchestrator = GenerationOrchestrator(
+    file_manager, 
+    data_transformer, 
+    validator_service, 
+    file_generator
+)
 
 # Inicializar base de datos
 try:
@@ -1162,7 +1180,6 @@ def generate_matrix():
 @app.route('/api/stories/generate', methods=['POST'])
 @login_required
 @validate_file_upload
-@handle_errors("Error al generar historias de usuario", status_code=500)
 def generate_stories():
     """Endpoint para generar historias de usuario con campos específicos"""
     filepath = None
@@ -1191,84 +1208,42 @@ def generate_stories():
         document_text = extract_text_from_file(filepath)
         logger.info(f"Texto extraído: {len(document_text)} caracteres")
 
-        # Generar historias usando story_backend
-        logger.info("Generando historias de usuario...")
+        # Generar historias usando el orquestador con SSE
         parameters = {
             'role': role,
             'business_context': business_context,
-            'story_type': story_type
+            'story_type': story_type,
+            'area': request.form.get('area', 'General')
         }
         
-        result = simple_agent_processing('story', document_text, parameters)
-        
-        # Procesar resultado y generar archivos
-        result_data, error = process_story_generation(result, output_filename, filepath)
-        
-        if error:
-            return jsonify(error), 500
-        
-        # Obtener historias parseadas para vista previa
-        valid_stories = extract_stories_from_result(result)
-        validated_stories, _ = validate_stories(valid_stories)
-        
-        # Convertir historias a formato estructurado para vista previa
-        stories_dict = story_backend.parse_stories_to_dict(validated_stories)
-        
-        # Generar HTML y CSV para descarga opcional
-        html_content = story_backend.generate_html_document(validated_stories)
-        csv_content = story_backend.generate_jira_csv(validated_stories)
-        
-        # Obtener conteo de historias
-        stories_count = len(validated_stories)
-        logger.info(f"Historias generadas: {stories_count}")
-        
-        # Guardar en base de datos local para historial de actividades
-        try:
-            user_id = get_current_user_id()
-            # Obtener el área del formulario (Finanzas, RRHH, TI, etc.)
-            area = request.form.get('area', 'UNKNOWN')
-            # project_key es el proyecto de Jira (puede ser vacío si no se sube a Jira)
-            project_key = request.form.get('project_key', '')
-            
-            # Crear UN SOLO registro con todas las historias
-            story_repo = UserStoryRepository()
-            story_title = f"Generación de {stories_count} historias de usuario - {area}"
-            
-            user_story = UserStory(
-                user_id=user_id,
-                project_key=project_key,  # Proyecto de Jira (puede estar vacío)
-                area=area,  # Área que solicitó la generación (Finanzas, RRHH, etc.)
-                story_title=story_title,
-                story_content=json.dumps(validated_stories, ensure_ascii=False),  # Todas las historias juntas
-                jira_issue_key=None  # Se actualizará cuando se suba a Jira
-            )
-            story_repo.create(user_story)
-            
-            logger.info(f"Historias guardadas en BD local: 1 registro con {stories_count} historias para user_id={user_id}, área={area}")
-        except Exception as e:
-            logger.error(f"Error al guardar historias en BD local: {e}", exc_info=True)
-            # No fallar la operación si falla el guardado en BD local
-        
-        # Retornar JSON con datos para vista previa
-        return jsonify({
-            "status": "success",
-            "message": f"Historias generadas exitosamente: {stories_count} historias",
-            "stories": stories_dict,
-            "stories_count": stories_count,
-            "html_content": html_content,
-            "csv_content": csv_content
-        }), 200
+        return Response(
+            stream_with_context(orchestrator.stream_generation_pipeline(
+                'story', 
+                document_text, 
+                parameters, 
+                output_filename, 
+                filepath, 
+                simple_agent_processing,
+                story_backend
+            )),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no'
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error en generate_stories: {e}", exc_info=True)
-        clean_temp_files(filepath)
+        if filepath:
+            clean_temp_files(filepath)
         return jsonify({"error": f"Error en el procesamiento: {str(e)}"}), 500
 
 
 @app.route('/api/tests/generate', methods=['POST'])
 @login_required
 @validate_file_upload
-@handle_errors("Error al generar casos de prueba", status_code=500)
 def generate_tests():
     """Endpoint para generar casos de prueba con campos específicos y retornar vista previa"""
     filepath = None
@@ -1299,73 +1274,35 @@ def generate_tests():
         text = extract_text_from_file(filepath)
         logger.info(f"Texto extraído: {len(text)} caracteres")
 
-        # Generar matriz usando matrix_backend
-        logger.info("Generando matriz de pruebas...")
-        result = matrix_backend.generar_matriz_test(context, flow, '', text, test_types)
-        logger.info(f"Resultado: {result['status']}")
-
-        clean_temp_files(filepath)
-
-        if result['status'] == 'success':
-            matrix_data = result['matrix']
-            test_cases_count = len(matrix_data)
-            logger.info(f"Matriz generada con {test_cases_count} casos de prueba")
-
-            # Convertir casos de prueba a formato estructurado para vista previa
-            test_cases_dict = matrix_backend.parse_test_cases_to_dict(matrix_data)
-            logger.info(f"Casos parseados para vista previa: {len(test_cases_dict)} casos")
-            if test_cases_dict:
-                logger.info(f"Primer caso parseado: {test_cases_dict[0]}")
-            else:
-                logger.warning("⚠️ parse_test_cases_to_dict retornó array vacío!")
-            
-            # Generar HTML y CSV para descarga opcional
-            html_content = matrix_backend.generate_test_cases_html_document(matrix_data)
-            csv_content = matrix_backend.generate_jira_csv_for_test_cases(matrix_data)
-            
-            # Guardar en base de datos local para historial de actividades
-            try:
-                user_id = get_current_user_id()
-                # Obtener el área del formulario (Finanzas, RRHH, TI, etc.)
-                area = request.form.get('area', 'UNKNOWN')
-                # project_key es el proyecto de Jira (puede ser vacío si no se sube a Jira)
-                project_key = request.form.get('project_key', '')
-                
-                # Crear UN SOLO registro con todos los casos de prueba
-                test_case_repo = TestCaseRepository()
-                test_case_title = f"Generación de {test_cases_count} casos de prueba - {area}"
-                
-                test_case_obj = TestCase(
-                    user_id=user_id,
-                    project_key=project_key,  # Proyecto de Jira (puede estar vacío)
-                    area=area,  # Área que solicitó la generación (Finanzas, RRHH, etc.)
-                    test_case_title=test_case_title,
-                    test_case_content=json.dumps(matrix_data, ensure_ascii=False),  # Todos los casos juntos
-                    jira_issue_key=None  # Se actualizará cuando se suba a Jira
-                )
-                test_case_repo.create(test_case_obj)
-                
-                logger.info(f"Casos de prueba guardados en BD local: 1 registro con {test_cases_count} casos para user_id={user_id}, área={area}")
-            except Exception as e:
-                logger.error(f"Error al guardar casos de prueba en BD local: {e}", exc_info=True)
-                # No fallar la operación si falla el guardado en BD local
-            
-            # Retornar JSON con datos para vista previa
-            return jsonify({
-                "status": "success",
-                "message": f"Casos de prueba generados exitosamente: {test_cases_count} casos",
-                "test_cases": test_cases_dict,
-                "test_cases_count": test_cases_count,
-                "html_content": html_content,
-                "csv_content": csv_content
-            }), 200
-        else:
-            logger.error(f"Error en la generación: {result['message']}")
-            return jsonify({"error": result['message']}), 500
+        # Generar pruebas usando el orquestador con SSE
+        parameters = {
+            'contexto': context,
+            'flujo': flow,
+            'test_types': test_types,
+            'area': request.form.get('area', 'General')
+        }
+        
+        return Response(
+            stream_with_context(orchestrator.stream_generation_pipeline(
+                'matrix', 
+                text, 
+                parameters, 
+                'matriz_pruebas', 
+                filepath, 
+                simple_agent_processing
+            )),
+            mimetype='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Accel-Buffering': 'no'
+            }
+        )
 
     except Exception as e:
         logger.error(f"Error en generate_tests: {e}", exc_info=True)
-        clean_temp_files(filepath)
+        if filepath:
+            clean_temp_files(filepath)
         return jsonify({"error": f"Error en el procesamiento: {str(e)}"}), 500
 
 

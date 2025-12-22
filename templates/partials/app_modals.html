@@ -25,11 +25,13 @@
                 <label
                     style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Proyecto
                     de Jira *</label>
-                <select id="jira-project-select"
-                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
-                    required>
-                    <option value="">Seleccionar proyecto...</option>
-                </select>
+                <div class="combobox-wrapper">
+                    <input type="text" id="jira-project-search-input" class="combobox-input"
+                        placeholder="🔍 Buscar proyecto..." autocomplete="off">
+                    <div id="jira-project-dropdown" class="combobox-dropdown" style="display: none;">
+                    </div>
+                    <input type="hidden" id="jira-project-select" value="">
+                </div>
                 <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Selecciona el
                     proyecto donde se crearán las historias</div>
             </div>
@@ -256,11 +258,13 @@
                     <label
                         style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Proyecto
                         de Jira *</label>
-                    <select id="jira-tests-project-select"
-                        style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem;"
-                        required>
-                        <option value="">Seleccionar proyecto...</option>
-                    </select>
+                    <div class="combobox-wrapper">
+                        <input type="text" id="jira-tests-project-search-input" class="combobox-input"
+                            placeholder="🔍 Buscar proyecto..." autocomplete="off">
+                        <div id="jira-tests-project-dropdown" class="combobox-dropdown" style="display: none;">
+                        </div>
+                        <input type="hidden" id="jira-tests-project-select" value="">
+                    </div>
                     <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Selecciona el
                         proyecto donde se crearán los casos de prueba</div>
                 </div>

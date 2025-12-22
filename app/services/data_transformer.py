@@ -84,32 +84,79 @@ class DataTransformer:
         return None
     
     def _normalize_test_case(self, item: Dict, index: int) -> Dict:
-        """Normaliza un caso de prueba individual"""
+        """
+        Normaliza un caso de prueba individual.
+        Mapea variaciones de llaves a la nomenclatura estándar del sistema
+        y preserva la estructura de los datos para su validación posterior.
+        """
+        # Mapeo de variaciones de llaves a estándar (utilizado por el validador y exportador)
+        standard_map = {
+            'id_caso_prueba': 'id_caso_prueba',
+            'id': 'id_caso_prueba',
+            'titulo_caso_prueba': 'titulo_caso_prueba',
+            'titulo': 'titulo_caso_prueba',
+            'summary': 'titulo_caso_prueba',
+            'descripcion': 'Descripcion',
+            'description': 'Descripcion',
+            'precondiciones': 'Precondiciones',
+            'preconditions': 'Precondiciones',
+            'tipo_de_prueba': 'Tipo_de_prueba',
+            'tipo_prueba': 'Tipo_de_prueba',
+            'test_type': 'Tipo_de_prueba',
+            'nivel_de_prueba': 'Nivel_de_prueba',
+            'test_level': 'Nivel_de_prueba',
+            'tipo_de_ejecucion': 'Tipo_de_ejecucion',
+            'execution_type': 'Tipo_de_ejecucion',
+            'pasos': 'Pasos',
+            'steps': 'Pasos',
+            'resultado_esperado': 'Resultado_esperado',
+            'expected_result': 'Resultado_esperado',
+            'resultado': 'Resultado_esperado',
+            'categoria': 'Categoria',
+            'category': 'Categoria',
+            'ambiente': 'Ambiente',
+            'environment': 'Ambiente',
+            'ciclo': 'Ciclo',
+            'cycle': 'Ciclo',
+            'issuetype': 'issuetype',
+            'prioridad': 'Prioridad',
+            'priority': 'Prioridad',
+            'historia_de_usuario': 'historia_de_usuario',
+            'user_story': 'historia_de_usuario'
+        }
+        
         cleaned_item = {}
+        processed_keys = set()
         
+        # 1. Aplicar mapeo estándar
         for key, value in item.items():
-            # Normalizar claves
-            normalized_key = key.lower().replace(' ', '_').replace('-', '_')
+            key_lower = key.lower().replace(' ', '_').replace('-', '_')
+            target_key = standard_map.get(key_lower)
             
-            # Limpiar valores (especialmente arrays que deben ser strings)
-            if isinstance(value, list):
-                if normalized_key in ['pasos', 'steps', 'resultado_esperado', 'expected_results']:
-                    # Convertir lista a string formateado
-                    if normalized_key in ['pasos', 'steps']:
-                        value = '\n'.join([f"{i + 1}. {step}" for i, step in enumerate(value)])
-                    else:
-                        value = '\n'.join([f"- {step}" for step in value])
-                else:
-                    value = ', '.join(str(v) for v in value)
-            elif value is None:
-                value = ""
-            
-            cleaned_item[normalized_key] = value
+            if target_key:
+                # Si ya procesamos esta llave (ej: vino 'steps' y 'pasos'), priorizar la última
+                cleaned_item[target_key] = value
+                processed_keys.add(target_key)
+            else:
+                # Mantener llaves no reconocidas pero normalizadas
+                cleaned_item[key_lower] = value
         
-        # Asegurar campos mínimos
+        # 2. Asegurar campos mínimos y tipos correctos (sin colapsar listas aún)
         if 'id_caso_prueba' not in cleaned_item:
             cleaned_item['id_caso_prueba'] = f"TC{index + 1:03d}"
-        
+            
+        # El validador espera que Pasos y Resultado_esperado sean listas para validación semántica
+        for field in ['Pasos', 'Resultado_esperado']:
+            if field in cleaned_item and isinstance(cleaned_item[field], str):
+                val_str = cleaned_item[field]
+                # Intentar separar si viene como string con saltos de línea, números o viñetas
+                items = [s.strip() for s in re.split(r'\d+\.|\n-|\n•|\r\n-|\r\n•', val_str) if s.strip()]
+                if not items:
+                    items = [s.strip() for s in val_str.split('\n') if s.strip()]
+                cleaned_item[field] = items if items else [val_str]
+            elif field not in cleaned_item:
+                cleaned_item[field] = []
+            
         return cleaned_item
     
     def extract_stories_from_result(self, result: Any) -> List[str]:

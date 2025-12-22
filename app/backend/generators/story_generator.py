@@ -33,11 +33,14 @@ class StoryGenerator(Generator):
             role = parameters.get('role', 'Usuario')
             business_context = parameters.get('business_context')
             
+            skip_healing = parameters.get('skip_healing', False)
+            
             result = generate_stories_with_context(
                 document_text, 
                 role, 
                 "funcionalidad", 
-                business_context
+                business_context,
+                skip_healing=skip_healing
             )
             
             return {"tool_used": "story_generator", "result": result}

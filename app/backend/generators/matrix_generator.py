@@ -38,12 +38,15 @@ class MatrixGenerator(Generator):
             if not isinstance(test_types, list):
                 test_types = [test_types] if test_types else ['funcional']
             
+            skip_healing = parameters.get('skip_healing', True)  # ✅ Desactivado por defecto
+            
             result = generar_matriz_test(
                 context, 
                 flow, 
                 user_story, 
                 document_text, 
-                test_types
+                test_types,
+                skip_healing=skip_healing
             )
             
             return {"tool_used": "matrix_generator", "result": result}

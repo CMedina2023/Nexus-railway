@@ -42,9 +42,39 @@
 
         <!-- CONTENIDO: Generación de Reportes (Anterior flujo principal) -->
         <div id="report-generation-view" style="display: none; animation: slideUp 0.3s ease-out;">
-            <button class="btn-back-hub" onclick="resetReportsToHub()">
-                <i class="fas fa-chevron-left"></i> Volver al Hub
-            </button>
+            <!-- Barra de acciones responsiva -->
+            <div class="report-actions-container">
+                <button class="btn-back-hub" onclick="resetReportsToHub()">
+                    <i class="fas fa-chevron-left"></i> Volver al Hub
+                </button>
+
+                <div class="report-action-buttons">
+                    <!-- Botón Personalizar -->
+                    <button class="customize-button" id="customize-button" onclick="openWidgetModal()"
+                        style="display: none;">
+                        <i class="fas fa-cog"></i>
+                        <span>Personalizar</span>
+                    </button>
+
+                    <!-- Botón Descargar con Dropdown -->
+                    <div class="download-wrapper">
+                        <button class="download-button" id="download-button" onclick="toggleDownloadDropdown(event)">
+                            <i class="fas fa-download"></i>
+                            <span>Descargar</span>
+                        </button>
+                        <div class="download-dropdown" id="download-dropdown">
+                            <div class="download-option" onclick="downloadPDF()">
+                                <div class="download-option-icon"><i class="fas fa-file-pdf"></i></div>
+                                <div class="download-option-content">
+                                    <div class="download-option-title">Descargar PDF</div>
+                                    <div class="download-option-desc">Exporta el reporte completo en PDF</div>
+                                </div>
+                                <div class="download-option-arrow"><i class="fas fa-chevron-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Header (se oculta cuando hay reporte) -->
             <div class="guia-header" id="report-header">
@@ -53,28 +83,6 @@
                     <p class="subtitle">Configura los parámetros para obtener tus métricas de avance</p>
                 </div>
             </div>
-
-            <!-- Botón de descarga flotante (solo visible cuando hay reporte) -->
-            <button class="download-button" id="download-button" onclick="toggleDownloadDropdown(event)">
-                <span>⬇</span>
-                <span>Descargar Reporte</span>
-            </button>
-            <div class="download-dropdown" id="download-dropdown">
-                <div class="download-option" onclick="downloadPDF()">
-                    <div class="download-option-icon">📄</div>
-                    <div class="download-option-content">
-                        <div class="download-option-title">Descargar PDF</div>
-                        <div class="download-option-desc">Exporta el reporte completo en formato PDF</div>
-                    </div>
-                    <div class="download-option-arrow">→</div>
-                </div>
-            </div>
-
-            <!-- Botón Personalizar -->
-            <button class="customize-button" id="customize-button" onclick="openWidgetModal()" style="display: none;">
-                <span>⚙️</span>
-                <span>Personalizar</span>
-            </button>
 
             <!-- Modal de Personalización -->
             <div class="widget-modal-overlay" id="widget-modal" onclick="closeWidgetModal(event)">

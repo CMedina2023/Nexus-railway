@@ -4,6 +4,7 @@ import re
 import logging
 import csv
 import io
+import time
 from datetime import datetime
 from typing import List, Dict
 import docx
@@ -13,8 +14,35 @@ from app.utils.file_utils import extract_text_from_file
 from app.core.config import Config
 from app.utils.retry_utils import call_with_retry
 from app.utils.document_chunker import DocumentChunker, ChunkingStrategy
+from app.services.validator import Validator
 
 logger = logging.getLogger(__name__)
+
+validator = Validator()
+
+# ----------------------------
+# Prompts de Calidad para Historias
+# ----------------------------
+STORY_HEALING_PROMPT_BATCH = """
+Eres un experto Analista de Negocios Senior. Tu tarea es CORREGIR y MEJORAR un grupo de Historias de Usuario que no cumplen con los estándares de calidad.
+
+ERRORES DETECTADOS POR EL VALIDADOR:
+{batch_issues}
+
+HISTORIAS A CORREGIR:
+{batch_stories}
+
+CONTEXTO DEL DOCUMENTO:
+{doc_context}
+
+REGLAS DE ORO PARA LA CORRECCIÓN:
+1. FORMATO ESTÁNDAR: Debe seguir estrictamente el formato "COMO [rol] QUIERO [funcionalidad] PARA [beneficio]".
+2. DETALLE: Incluye criterios de aceptación claros y Reglas de Negocio.
+3. ESTILO: Mantén el estilo visual de los bloques con líneas dobles (╔═══, ═) y emojis (🔹, •).
+4. INTEGRIDAD: Devuelve TODAS las historias corregidas, separadas claramente.
+
+Responde ÚNICAMENTE con las historias de usuario corregidas:
+"""
 
 
 # -----------------------------
@@ -272,7 +300,7 @@ IMPORTANTE: Integra el contexto adicional de negocio en los criterios y métrica
     return prompt
 
 
-def process_large_document(document_text, role, story_type, business_context=None):
+def process_large_document(document_text, role, story_type, business_context=None, skip_healing=False):
     """Procesa documentos grandes dividiéndolos en chunks."""
     try:
         api_key = Config.GOOGLE_API_KEY
@@ -310,9 +338,16 @@ def process_large_document(document_text, role, story_type, business_context=Non
         total_batches = (len(functionalities) + batch_size - 1) // batch_size
 
         for batch_num in range(total_batches):
+            # Pacing: Obligar a un respiro entre lotes
+            if batch_num > 0:
+                logger.info("Esperando 5 segundos para respetar cuota RPM...")
+                time.sleep(5)
+                
             start_idx = batch_num * batch_size
-            logger.info(
-                f"Generando lote {batch_num + 1}/{total_batches} (funcionalidades {start_idx + 1}-{min(start_idx + batch_size, len(functionalities))})")
+            end_idx = min((batch_num + 1) * batch_size, len(functionalities))
+            batch = functionalities[start_idx:end_idx]
+            
+            logger.info(f"Generando lote {batch_num + 1}/{total_batches} ({len(batch)} funcionalidades)...")
 
             story_prompt = create_story_generation_prompt(
                 functionalities, document_text, role, business_context, start_idx, batch_size
@@ -337,12 +372,62 @@ def process_large_document(document_text, role, story_type, business_context=Non
                     timeout_increment=Config.GEMINI_TIMEOUT_INCREMENT,
                     exceptions=(Exception,)
                 )
+            # --- INICIO AUTO-CURACIÓN ---
+                if not skip_healing:
+                    from app.services.text_processor import TextProcessor
+                    tp = TextProcessor()
+                    individual_stories = tp.split_story_text_into_individual_stories(story_text)
+                    
+                    failed_indices = []
+                    issues_list = []
+                    
+                    for idx_s, individual_story in enumerate(individual_stories):
+                        # Use the specific functionality as context for validation if available
+                        validation_context = functionalities[start_idx + idx_s] if start_idx + idx_s < len(functionalities) else document_text[:1000]
+                        val_res = validator.semantic_validate_story(individual_story, validation_context)
+                        if not val_res["is_valid"]:
+                            failed_indices.append(idx_s)
+                            issues_list.append(f"Historia {idx_s + 1}: {', '.join(val_res['issues'])}")
+                    
+                    if failed_indices:
+                        logger.warning(f"  ❌ {len(failed_indices)} historias fallaron validación. Iniciando curación en bloque...")
+                        try:
+                            stories_to_heal = [individual_stories[idx] for idx in failed_indices]
+                            prompt_heal = STORY_HEALING_PROMPT_BATCH.format(
+                                issues="\n".join(issues_list),
+                                original_stories="\n\n".join(stories_to_heal),
+                                doc_context=document_text[:2000] # Use a larger context for healing
+                            )
+                            response_heal = model.generate_content(prompt_heal)
+                            if response_heal and response_heal.text:
+                                # Re-separar las historias corregidas
+                                healed_stories = tp.split_story_text_into_individual_stories(response_heal.text)
+                                for j, original_idx in enumerate(failed_indices):
+                                    if j < len(healed_stories):
+                                        individual_stories[original_idx] = healed_stories[j]
+                                logger.info(f"  ✅ Curación en bloque completada para historias.")
+                        except Exception as p_e:
+                            logger.error(f"  Error al sanar historias en bloque: {p_e}")
+                    
+                    story_text = "\n\n".join(individual_stories)
+                
                 all_stories.append(story_text)
-                logger.info(f"Lote {batch_num + 1} completado ({len(story_text)} caracteres)")
+            # --- FIN AUTO-CURACIÓN ---
+                
             except Exception as e:
                 logger.error(f"No se pudo generar el lote {batch_num + 1} después de {Config.MAX_RETRIES} intentos: {e}")
 
-        # Combinar todas las historias
+        # Flatten all_stories into a single list of individual stories
+        from app.services.text_processor import TextProcessor
+        tp = TextProcessor()
+        all_individual_stories = []
+        for batch_story_text in all_stories:
+            all_individual_stories.extend(tp.split_story_text_into_individual_stories(batch_story_text))
+
+        # Combinar todas las historias para el contenido final
+        story_content_flattened = chr(10).join(all_individual_stories)
+
+        # Combine all stories
         context_summary = ""
         if business_context and business_context.strip():
             # Verificar que no sea la API key
@@ -394,7 +479,7 @@ RESUMEN FINAL
         return {"status": "error", "message": f"Error en procesamiento avanzado: {e}"}
 
 
-def generate_story_from_chunk(chunk, role, story_type, business_context=None):
+def generate_story_from_chunk(chunk, role, story_type, business_context=None, skip_healing=False):
     """
     Genera una historia de usuario a partir de un fragmento de texto usando la API de Gemini.
     Versión mejorada con prompts avanzados y contexto de negocio.
@@ -413,7 +498,7 @@ def generate_story_from_chunk(chunk, role, story_type, business_context=None):
         # Si el documento requiere procesamiento por chunks
         if prompt == "CHUNK_PROCESSING_NEEDED":
             # Pasar los parámetros en el orden correcto
-            return process_large_document(chunk, role, story_type, business_context)
+            return process_large_document(chunk, role, story_type, business_context, skip_healing)
 
         # Reintentos con backoff exponencial usando función reutilizable
         def generate_content():
@@ -445,6 +530,38 @@ def generate_story_from_chunk(chunk, role, story_type, business_context=None):
                 timeout_increment=Config.GEMINI_TIMEOUT_INCREMENT,
                 exceptions=(Exception,)
             )
+            # --- AUTO-CURACIÓN PARA CHUNK INDIVIDUAL ---
+            if not skip_healing:
+                from app.services.text_processor import TextProcessor
+                tp = TextProcessor()
+                individual_stories = tp.split_story_text_into_individual_stories(story_text)
+                
+                healed_any = False
+                for idx_s, individual_story in enumerate(individual_stories):
+                    val_res = validator.semantic_validate_story(individual_story, chunk[:1000])
+                    if not val_res["is_valid"]:
+                        logger.warning(f"  ❌ Historia detectada con baja calidad. Intentando sanación...")
+                        try:
+                            prompt_heal = STORY_HEALING_PROMPT.format(
+                                issues="\n- ".join(val_res["issues"]),
+                                original_story=individual_story,
+                                doc_context=chunk[:1000]
+                            )
+                            response_heal = model.generate_content(prompt_heal)
+                            if response_heal and response_heal.text:
+                                # Si mejora el score o es válida, aceptamos
+                                second_val = validator.semantic_validate_story(response_heal.text, chunk[:1000])
+                                if second_val["is_valid"] or second_val["score"] > val_res["score"]:
+                                    individual_stories[idx_s] = response_heal.text
+                                    healed_any = True
+                                    logger.info(f"  ✅ Historia sanada exitosamente.")
+                        except Exception as p_e:
+                            logger.error(f"  Error al sanar historia: {p_e}")
+                
+                if healed_any:
+                    story_text = "\n\n".join(individual_stories)
+            # --- FIN AUTO-CURACIÓN ---
+            
             return {"status": "success", "story": story_text}
         except Exception as e:
             logger.error(f"Error en la generación después de {Config.MAX_RETRIES} intentos: {e}")
@@ -460,7 +577,7 @@ def extract_story_titles(stories):
     for story in stories:
         # Buscar título después de "HISTORIA #X:" pero solo hasta encontrar COMO, QUIERO, PARA, etc.
         # Patrón mejorado: captura solo el título, deteniéndose antes de los campos estructurados
-        match = re.search(r'HISTORIA\s*#\s*\d+\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)', story, re.IGNORECASE)
+        match = re.search(r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)', story, re.IGNORECASE)
         if match:
             title = match.group(1).strip()
             # Limpiar el título
@@ -640,7 +757,7 @@ def create_word_document(stories):
 
 
 # Función de compatibilidad para mantener la API existente
-def generate_story_from_text(text, role, story_type, business_context=None):
+def generate_story_from_text(text, role, story_type, business_context=None, skip_healing=False):
     """
     Función wrapper para mantener compatibilidad con la API existente
     pero usando el nuevo sistema de chunks mejorado con contexto de negocio.
@@ -649,17 +766,36 @@ def generate_story_from_text(text, role, story_type, business_context=None):
     stories = []
 
     for chunk in chunks:
-        result = generate_story_from_chunk(chunk, role, story_type, business_context)
+        result = generate_story_from_chunk(chunk, role, story_type, business_context, skip_healing)
         if result['status'] == 'success':
             stories.append(result['story'])
         else:
-            return result  # Retorna el error
+            return result
+
+    # --- FLATTENING AND CLEANUP ---
+    from app.services.text_processor import TextProcessor
+    tp = TextProcessor()
+    all_individual_stories = []
+    for s in stories:
+        all_individual_stories.extend(tp.split_story_text_into_individual_stories(s))
+    
+    # Reimprimir lista con historias individuales
+    stories = all_individual_stories
+
+    # --- ELIMINACIÓN DE DUPLICADOS EN HISTORIAS ---
+    if len(stories) > 1:
+        logger.info(f"Buscando historias duplicadas entre {len(stories)} elementos...")
+        duplicate_indices = validator.find_duplicates(stories, threshold=0.90)
+        if duplicate_indices:
+            stories = [s for idx, s in enumerate(stories) if idx not in duplicate_indices]
+            logger.info(f"Se eliminaron {len(duplicate_indices)} historias duplicadas.")
+    # --- FIN ELIMINACIÓN DE DUPLICADOS ---
 
     return {"status": "success", "stories": stories}
 
 
 # Función principal que incluye contexto de negocio
-def generate_stories_with_context(document_text, role, story_type, business_context=None):
+def generate_stories_with_context(document_text, role, story_type, business_context=None, skip_healing=False):
     """
     Función principal para generar historias de usuario con contexto de negocio.
 
@@ -672,7 +808,7 @@ def generate_stories_with_context(document_text, role, story_type, business_cont
     Returns:
         dict: Resultado de la generación con status y contenido
     """
-    return generate_story_from_text(document_text, role, story_type, business_context)
+    return generate_story_from_text(document_text, role, story_type, business_context, skip_healing)
 
 
 def parse_story_data(story_text: str) -> dict:
@@ -694,7 +830,7 @@ def parse_story_data(story_text: str) -> dict:
     
     # Extraer título (Summary) - solo el título, no todo el contenido
     # Buscar "HISTORIA #X: " y capturar hasta el primer salto de línea o hasta encontrar "COMO:", "QUIERO:", etc.
-    title_pattern = r'HISTORIA\s*#\s*\d+\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
+    title_pattern = r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
     title_match = re.search(title_pattern, story_text, re.IGNORECASE)
     if title_match:
         data['summary'] = title_match.group(1).strip()
@@ -965,11 +1101,17 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
     full_text = story_text
     full_text_lower = full_text.lower()
     
-    # Extraer título - solo el título, no todo el contenido
-    title_pattern = r'HISTORIA\s*#\s*\d+\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
+    # Extraer título y número - intentar capturar el número original
+    title_pattern = r'HISTORIA\s*#?\s*(\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
     title_match = re.search(title_pattern, story_text, re.IGNORECASE)
+    
     if title_match:
-        title = title_match.group(1).strip()
+        original_num = title_match.group(1)
+        title = title_match.group(2).strip()
+        
+        # Si encontramos un número original, lo usamos, si no usamos story_num
+        display_num = original_num if original_num else story_num
+        
         # Limpiar el título
         title = re.sub(r'═+', '', title).strip()
         title = re.sub(r'^\*\s*\*\*', '', title).strip()
@@ -979,7 +1121,7 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
             if marker in title:
                 title = title.split(marker)[0].strip()
                 break
-        html_parts.append(f'<div class="story-title">HISTORIA #{story_num}: {title}</div>')
+        html_parts.append(f'<div class="story-title">HISTORIA #{display_num}: {title}</div>')
     else:
         # Fallback: usar número de historia
         html_parts.append(f'<div class="story-title">HISTORIA #{story_num}</div>')
@@ -1002,7 +1144,7 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
     if como_match or quiero_match or para_match:
         if como_match:
             content = como_match.group(1).strip()
-            content = re.sub(r'\*\*([^*]+)\*\*', r'\1', content)  # Remover negritas
+            content = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', content)  # Convertir a negritas HTML
             content = re.sub(r'🔹\s*', '', content)  # Remover emojis
             if len(content) > 500:  # Limitar longitud
                 content = content[:500] + '...'
@@ -1160,7 +1302,7 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
             como_match = re.search(r'(?:^|\s)(?:\*\s*\*\*)?COMO:\s*\*\*?([^\n]+?)(?:\*\*|$|QUIERO:|PARA:|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD)', line, re.IGNORECASE)
             if como_match:
                 content = como_match.group(1).strip()
-                content = re.sub(r'\*\*([^*]+)\*\*', r'\1', content)  # Remover negritas markdown
+                content = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', content)  # Convertir a negritas HTML
                 html_parts.append(f'''
                             <div class="story-item">
                                 <span class="bullet">*</span>
@@ -1174,7 +1316,7 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
                     content = re.sub(r'^\*\s*\*\*COMO:\*\*\s*', '', line, flags=re.IGNORECASE).strip()
                 else:
                     content = re.sub(r'^COMO:\s*', '', line, flags=re.IGNORECASE).strip()
-                content = re.sub(r'\*\*([^*]+)\*\*', r'\1', content)  # Remover negritas markdown
+                content = re.sub(r'\*\*([^*]+)\*\*', r'<strong>\1</strong>', content)  # Convertir a negritas HTML
                 html_parts.append(f'''
                             <div class="story-item">
                                 <span class="bullet">*</span>

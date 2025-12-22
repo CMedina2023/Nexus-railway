@@ -112,6 +112,20 @@
                             </div>
                         </div>
 
+                        <!-- Barra de Progreso SSE (oculta inicialmente) -->
+                        <div id="stories-progress-container" style="display: none; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span id="stories-progress-phase" style="font-size: 0.9rem; font-weight: 500; color: var(--accent);">Iniciando...</span>
+                                <span id="stories-progress-percentage" style="font-size: 0.9rem; font-weight: 600; color: var(--accent);">0%</span>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: var(--secondary-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--border);">
+                                <div id="stories-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent) 0%, #ff764a 100%); transition: width 0.3s ease;"></div>
+                            </div>
+                            <p id="stories-progress-message" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
+                                Estamos preparando tus historias de usuario. Esto tomará unos segundos...
+                            </p>
+                        </div>
+
                         <!-- Botones de acción -->
                         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
                             <button type="submit" class="btn btn-primary" id="stories-generate-btn"

@@ -7,15 +7,48 @@ import io
 import zipfile
 import logging
 import traceback
+import time
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 from app.utils.file_utils import extract_text_from_file
 from app.core.config import Config
 from app.utils.retry_utils import call_with_retry
 from app.utils.document_chunker import DocumentChunker, ChunkingStrategy
+from app.services.validator import Validator
 
 logger = logging.getLogger(__name__)
+
+validator = Validator()
+
+# ----------------------------
+# Prompts de Calidad
+# ----------------------------
+HEALING_PROMPT_BATCH = """
+Eres un experto en Quality Assurance Senior. Tu tarea es CORREGIR y MEJORAR un grupo de casos de prueba que no cumplen con los estándares de calidad.
+
+ERRORES DETECTADOS POR EL VALIDADOR PARA ESTE LOTE:
+{batch_issues}
+
+CASOS A CORREGIR:
+{batch_cases}
+
+CONTEXTO DE LA HISTORIA:
+{story_context}
+
+TIPOS DE PRUEBA PERMITIDOS EN ESTA SOLICITUD:
+{allowed_types}
+
+REGLAS DE ORO PARA LA CORRECCIÓN:
+1. VERBOS DE ACCIÓN: Cada paso DEBE iniciar con un verbo de acción (ej: "Hacer clic", "Ingresar", "Seleccionar", "Validar").
+2. RESULTADOS PRECISOS: Los resultados esperados NO pueden ser vagos. Describe exactamente qué debe ocurrir en la interfaz o sistema.
+3. ESTRUCTURA: Mantén exactamente el mismo formato JSON.
+4. INTEGRIDAD: Devuelve TODOS los casos proporcionados, pero en su versión corregida.
+5. TIPO DE PRUEBA: NO CAMBIES el campo 'Tipo_de_prueba' de cada caso. Debe permanecer EXACTAMENTE igual al original. Solo se permiten estos tipos: {allowed_types}
+6. CAMPOS INMUTABLES: Los siguientes campos NO deben cambiar: 'id_caso_prueba', 'Tipo_de_prueba', 'historia_de_usuario', 'Nivel_de_prueba', 'Tipo_de_ejecucion', 'Ambiente', 'Ciclo', 'issuetype'.
+
+Responde ÚNICAMENTE con un array JSON que contenga los casos corregidos:
+"""
 
 
 # ----------------------------
@@ -92,7 +125,7 @@ def extract_stories_from_text(text):
     matches = re.findall(pattern, text, re.MULTILINE)
     return matches if matches else ['Historia de usuario general']
 
-def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional']):
+def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional'], skip_healing=False):
     try:
         api_key = Config.GOOGLE_API_KEY
         if not api_key:
@@ -133,6 +166,13 @@ RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de c
 CATEGORÍAS VÁLIDAS:
 - Funcional: "Flujo Principal", "Flujos Alternativos", "Casos Límite", "Casos de Error"
 - No Funcional: "Rendimiento", "Seguridad", "Usabilidad", "Compatibilidad", "Confiabilidad"
+
+REGLAS CRÍTICAS PARA EL TÍTULO (titulo_caso_prueba):
+⚠️ El título DEBE ser ESPECÍFICO y DESCRIPTIVO. Describe claramente QUÉ se está probando.
+⚠️ NUNCA uses textos genéricos como "Título descriptivo del caso", "Caso de prueba", "Por definir", etc.
+⚠️ El título debe tener entre 10 y 100 caracteres y resumir el objetivo del caso.
+⚠️ Ejemplos BUENOS: "Validar inicio de sesión con credenciales correctas", "Verificar mensaje de error con email inválido"
+⚠️ Ejemplos MALOS: "Caso de prueba 1", "Prueba", "Por definir"
 
 IMPORTANTE: Responde SOLO con el array JSON, sin texto adicional antes o después.
         """
@@ -227,6 +267,12 @@ GENERA SOLO CASOS NO FUNCIONALES (no tengas un limite de casos generados, siempr
                 continue
 
             logger.info(f"Procesando fragmento {i + 1}/{total_chunks} (Historia: {historia_chunk})")
+            
+            # Pacing: Obligar a un respiro entre fragmentos para no saturar RPM
+            if i > 0:
+                logger.info("Esperando 5 segundos para respetar cuota RPM...")
+                time.sleep(5)
+                
             logger.debug(f"Tamaño del chunk: {len(chunk)} caracteres")
             chunk = clean_text(chunk)
             logger.debug(f"Tamaño del chunk limpio: {len(chunk)} caracteres")
@@ -251,6 +297,20 @@ INSTRUCCIONES:
 Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
             logger.debug(f"Prompt enviado (primeros 500 caracteres): {prompt_completo[:500]}...")
 
+            # Normalizar tipos_prueba ANTES de la función interna para que esté disponible en el scope del healing
+            # Convertir "no_funcional" a "no funcional" y viceversa
+            tipos_prueba_normalized = []
+            for tipo in tipos_prueba:
+                tipo_lower = tipo.lower()
+                tipos_prueba_normalized.append(tipo_lower)
+                # Agregar variante con espacio/guión bajo
+                if '_' in tipo_lower:
+                    tipos_prueba_normalized.append(tipo_lower.replace('_', ' '))
+                else:
+                    tipos_prueba_normalized.append(tipo_lower.replace(' ', '_'))
+            
+            logger.debug(f"Tipos de prueba normalizados: {tipos_prueba_normalized}")
+
             # Reintentos con backoff exponencial usando función reutilizable
             def generate_matrix_chunk():
                 timeout_seconds = Config.GEMINI_TIMEOUT_BASE + (i * Config.GEMINI_TIMEOUT_INCREMENT)
@@ -266,18 +326,6 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                     raise ValueError("No se pudo procesar JSON o la respuesta está vacía")
                 
                 # Filtrar por tipo de prueba con normalización
-                # Normalizar tipos_prueba: convertir "no_funcional" a "no funcional" y viceversa
-                tipos_prueba_normalized = []
-                for tipo in tipos_prueba:
-                    tipo_lower = tipo.lower()
-                    tipos_prueba_normalized.append(tipo_lower)
-                    # Agregar variante con espacio/guión bajo
-                    if '_' in tipo_lower:
-                        tipos_prueba_normalized.append(tipo_lower.replace('_', ' '))
-                    else:
-                        tipos_prueba_normalized.append(tipo_lower.replace(' ', '_'))
-                
-                logger.debug(f"Tipos de prueba normalizados: {tipos_prueba_normalized}")
                 logger.debug(f"Casos generados antes del filtrado: {len(cases_chunk)}")
                 if cases_chunk:
                     for case in cases_chunk[:3]:  # Mostrar los primeros 3
@@ -298,13 +346,49 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                     if not case.get('id_caso_prueba'):
                         case['id_caso_prueba'] = f"TC{len(all_cases) + j + 1:03d}"
                     case['historia_de_usuario'] = historia_chunk
-                    for field in ['titulo_caso_prueba', 'Descripcion', 'Precondiciones', 'Tipo_de_prueba', 'Pasos', 'Resultado_esperado']:
-                        if field not in case or not case[field]:
-                            case[field] = f"Campo {field} por definir"
+                    
+                    # Manejar cada campo con lógica específica
+                    # TÍTULO: Generar un título significativo basado en descripción o tipo
+                    titulo = case.get('titulo_caso_prueba', '')
+                    if not titulo or titulo.strip() == '' or 'por definir' in titulo.lower() or 'título descriptivo' in titulo.lower():
+                        # Intentar generar título desde descripción
+                        descripcion = case.get('Descripcion', '')
+                        if descripcion and descripcion.strip() and 'por definir' not in descripcion.lower():
+                            # Usar primeros 60 caracteres de la descripción como título
+                            titulo = descripcion[:60].strip()
+                            if len(descripcion) > 60:
+                                titulo += '...'
+                        else:
+                            # Generar título basado en tipo de prueba y categoría
+                            tipo_prueba = case.get('Tipo_de_prueba', 'Funcional')
+                            categoria = case.get('Categoria', '')
+                            if categoria:
+                                titulo = f"Validar {categoria} - {tipo_prueba}"
+                            else:
+                                titulo = f"Caso de prueba {tipo_prueba} - {case['id_caso_prueba']}"
+                        case['titulo_caso_prueba'] = titulo
+                    
+                    # OTROS CAMPOS: Usar placeholders solo si es necesario
+                    if not case.get('Descripcion') or not case['Descripcion']:
+                        case['Descripcion'] = f"Verificar funcionalidad según requerimientos"
+                    if not case.get('Precondiciones') or not case['Precondiciones']:
+                        case['Precondiciones'] = "Sistema configurado y usuario autenticado"
+                    if not case.get('Tipo_de_prueba') or not case['Tipo_de_prueba']:
+                        case['Tipo_de_prueba'] = "Funcional"
+                    
+                    # PASOS Y RESULTADOS: Asegurar formato de lista
                     if not isinstance(case.get('Pasos'), list):
-                        case['Pasos'] = [str(case.get('Pasos', 'Paso por definir'))]
+                        pasos = case.get('Pasos', '')
+                        if pasos:
+                            case['Pasos'] = [str(pasos)]
+                        else:
+                            case['Pasos'] = ["Ejecutar la funcionalidad especificada"]
                     if not isinstance(case.get('Resultado_esperado'), list):
-                        case['Resultado_esperado'] = [str(case.get('Resultado_esperado', 'Resultado por definir'))]
+                        resultado = case.get('Resultado_esperado', '')
+                        if resultado:
+                            case['Resultado_esperado'] = [str(resultado)]
+                        else:
+                            case['Resultado_esperado'] = ["El sistema responde correctamente según especificación"]
                 
                 return cases_chunk
             
@@ -318,7 +402,91 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                     exceptions=(Exception,)
                 )
                 all_cases.extend(cases_chunk)
-                logger.info(f"Fragmento {i + 1}: {len(cases_chunk)} casos generados y agregados")
+                logger.info(f"Fragmento {i + 1}: {len(cases_chunk)} casos generados")
+                
+                # --- VALIDACIÓN SEMÁNTICA (SIEMPRE ACTIVA) ---
+                logger.info(f"Iniciando validación semántica para {len(cases_chunk)} casos del fragmento {i+1}...")
+                failed_indices = []
+                issues_list = []
+                
+                for idx_case, case in enumerate(cases_chunk):
+                    validation_result = validator.semantic_validate_case(case, chunk)
+                    if not validation_result["is_valid"]:
+                        failed_indices.append(idx_case)
+                        issues_list.append(f"Caso {idx_case + 1}: {', '.join(validation_result['issues'])}")
+                
+                if failed_indices:
+                    logger.warning(f"  ⚠️ {len(failed_indices)} casos tienen problemas semánticos detectados.")
+                    
+                    # --- SELF-HEALING (SOLO SI NO ESTÁ DESACTIVADO) ---
+                    if not skip_healing:
+                        # Pacing: Respiro antes de sanación
+                        logger.info("Esperando 5 segundos antes de proceso de sanación...")
+                        time.sleep(5)
+                        
+                        logger.warning(f"  🔧 Iniciando curación en bloque para {len(failed_indices)} casos...")
+                        try:
+                            cases_to_heal = [cases_chunk[idx] for idx in failed_indices]
+                            
+                            # Preparar tipos permitidos para el prompt
+                            tipos_permitidos_str = ", ".join([
+                                "Funcional" if "funcional" in t.lower() and "no" not in t.lower() 
+                                else "No Funcional" if "no" in t.lower() and "funcional" in t.lower()
+                                else t.capitalize()
+                                for t in tipos_prueba
+                            ])
+                            
+                            logger.info(f"  🔧 Tipos de prueba permitidos para healing: {tipos_permitidos_str}")
+                            
+                            prompt_healing = HEALING_PROMPT_BATCH.format(
+                                batch_issues="\\\\n".join(issues_list),
+                                batch_cases=json.dumps(cases_to_heal, indent=2, ensure_ascii=False),
+                                story_context=chunk,
+                                allowed_types=tipos_permitidos_str
+                            )
+                            
+                            def heal_batch_op():
+                                response = model.generate_content(prompt_healing)
+                                if not response or not response.text:
+                                    return None
+                                return clean_json_response(response.text)
+
+                            healed_cases_list = call_with_retry(heal_batch_op, max_retries=2)
+                            
+                            if healed_cases_list and isinstance(healed_cases_list, list):
+                                # Reemplazar los casos fallidos con los sanados
+                                # El modelo debería devolver la misma cantidad de casos
+                                for j, original_idx in enumerate(failed_indices):
+                                    if j < len(healed_cases_list):
+                                        healed_case = healed_cases_list[j]
+                                        original_case = cases_chunk[original_idx]
+                                        
+                                        # VALIDACIÓN POST-HEALING: Forzar que campos inmutables se mantengan
+                                        immutable_fields = [
+                                            'id_caso_prueba', 'Tipo_de_prueba', 'historia_de_usuario',
+                                            'Nivel_de_prueba', 'Tipo_de_ejecucion', 'Ambiente', 'Ciclo', 'issuetype'
+                                        ]
+                                        
+                                        for field in immutable_fields:
+                                            if field in original_case:
+                                                healed_case[field] = original_case[field]
+                                        
+                                        # Validar que el tipo de prueba esté en los tipos permitidos
+                                        tipo_healed = healed_case.get('Tipo_de_prueba', '').lower()
+                                        if tipo_healed not in tipos_prueba_normalized:
+                                            logger.warning(f"  ⚠️ Caso sanado tiene tipo '{healed_case.get('Tipo_de_prueba')}' no permitido. Restaurando tipo original.")
+                                            healed_case['Tipo_de_prueba'] = original_case.get('Tipo_de_prueba', 'Funcional')
+                                        
+                                        cases_chunk[original_idx] = healed_case
+                                logger.info(f"  ✅ Curación en bloque completada para {len(healed_cases_list)} casos.")
+                        except Exception as e:
+                            logger.error(f"  ❌ Error en curación en bloque (batch healing): {e}")
+                    else:
+                        logger.info(f"  ℹ️ Self-healing desactivado. Los casos se mantendrán con sus problemas detectados.")
+                else:
+                    logger.info(f"  ✅ Todos los casos pasaron la validación semántica.")
+                # --- FIN VALIDACIÓN SEMÁNTICA Y HEALING ---
+                
             except Exception as e:
                 logger.error(f"Fragmento {i + 1} falló después de {Config.MAX_RETRIES} intentos: {e}")
                 # Continuar con el siguiente fragmento
@@ -328,6 +496,18 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                 "status": "error",
                 "message": "No se pudieron generar casos de prueba. Verifica que el documento contenga información clara sobre requerimientos o funcionalidades."
             }
+
+        # --- ELIMINACIÓN DE DUPLICADOS ---
+        logger.info(f"Buscando casos duplicados entre {len(all_cases)} casos...")
+        duplicate_indices = validator.find_duplicates([
+            f"{c.get('titulo_caso_prueba', '')} {c.get('Descripcion', '')} {c.get('Pasos', '')}" 
+            for c in all_cases
+        ])
+        
+        if duplicate_indices:
+            all_cases = [c for idx, c in enumerate(all_cases) if idx not in duplicate_indices]
+            logger.info(f"Se eliminaron {len(duplicate_indices)} casos duplicados/similares.")
+        # --- FIN ELIMINACIÓN DE DUPLICADOS ---
 
         # Reasignar todos los IDs secuencialmente para evitar saltos
         # Esto corrige cualquier problema de IDs causado por filtrado o generación del modelo
@@ -485,6 +665,7 @@ INSTRUCCIONES DE USO:
     return zip_buffer.getvalue()
 
 
+
 def process_matrix_request(file_path, contexto="", flujo="", historia="", tipos_prueba=['funcional', 'no_funcional'],
                            output_filename="matriz_pruebas"):
     """
@@ -616,7 +797,7 @@ def parse_test_case_data(test_case: dict) -> dict:
     summary = test_case.get('titulo_caso_prueba', '')
     
     # Si está vacío o es el valor por defecto, usar ID o descripción
-    if not summary or summary.strip() == '' or 'por definir' in summary.lower():
+    if not summary or summary.strip() == '' or 'por definir' in summary.lower() or 'título descriptivo' in summary.lower():
         # Intentar usar ID del caso
         case_id = test_case.get('id_caso_prueba', '')
         if case_id:
@@ -639,6 +820,7 @@ def parse_test_case_data(test_case: dict) -> dict:
     if not summary or len(summary) < 3:
         logger.warning(f"Summary muy corto o vacío para caso {test_case.get('id_caso_prueba', 'N/A')}: '{summary}'")
         summary = f"Caso de prueba {test_case.get('id_caso_prueba', 'TC')}"
+
     
     # Construir descripción completa
     description_parts = []
@@ -787,14 +969,14 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
     html_parts = []
     
     # Título - mejorar manejo de valores por defecto
-    titulo = test_case.get('titulo_caso_prueba', '')
+    titulo = test_case.get('titulo_caso_prueba', test_case.get('titulo', ''))
     if not titulo or titulo.strip() == '' or 'por definir' in titulo.lower():
-        case_id = test_case.get('id_caso_prueba', f'TC{case_num:03d}')
+        case_id = test_case.get('id_caso_prueba', test_case.get('id', f'TC{case_num:03d}'))
         titulo = f'Caso de Prueba {case_id}'
     html_parts.append(f'<div class="story-title">CASO DE PRUEBA #{case_num}: {titulo}</div>')
     
     # ID del caso
-    id_caso = test_case.get('id_caso_prueba', f'TC{case_num:03d}')
+    id_caso = test_case.get('id_caso_prueba', test_case.get('id', f'TC{case_num:03d}'))
     html_parts.append(f'''
                         <div class="story-item">
                             <span class="bullet">*</span>
@@ -803,7 +985,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Descripción
-    descripcion = test_case.get('Descripcion', '')
+    descripcion = test_case.get('descripcion', test_case.get('Descripcion', ''))
     if descripcion:
         html_parts.append(f'''
                         <div class="story-item">
@@ -813,7 +995,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Precondiciones
-    precondiciones = test_case.get('Precondiciones', '')
+    precondiciones = test_case.get('precondiciones', test_case.get('Precondiciones', ''))
     if precondiciones:
         html_parts.append(f'''
                         <div class="story-item">
@@ -823,7 +1005,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Tipo de prueba
-    tipo_prueba = test_case.get('Tipo_de_prueba', 'Funcional')
+    tipo_prueba = test_case.get('tipo_de_prueba', test_case.get('Tipo_de_prueba', 'Funcional'))
     html_parts.append(f'''
                         <div class="story-item">
                             <span class="bullet">*</span>
@@ -832,7 +1014,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Categoría
-    categoria = test_case.get('Categoria', '')
+    categoria = test_case.get('categoria', test_case.get('Categoria', ''))
     if categoria:
         html_parts.append(f'''
                         <div class="story-item">
@@ -842,7 +1024,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Pasos
-    pasos = test_case.get('Pasos', [])
+    pasos = test_case.get('pasos', test_case.get('Pasos', []))
     if pasos:
         if isinstance(pasos, str):
             pasos = [pasos]
@@ -866,7 +1048,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Resultado esperado
-    resultado_esperado = test_case.get('Resultado_esperado', [])
+    resultado_esperado = test_case.get('resultado_esperado', test_case.get('Resultado_esperado', []))
     if resultado_esperado:
         if isinstance(resultado_esperado, str):
             resultado_esperado = [resultado_esperado]
@@ -890,7 +1072,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Prioridad
-    prioridad = test_case.get('Prioridad', 'Medium')
+    prioridad = test_case.get('prioridad', test_case.get('Prioridad', 'Medium'))
     html_parts.append(f'''
                         <div class="story-item">
                             <span class="bullet">*</span>
@@ -899,7 +1081,7 @@ def format_test_case_for_html(test_case: dict, case_num: int) -> str:
                         </div>''')
     
     # Historia de usuario (si existe)
-    historia = test_case.get('historia_de_usuario', '')
+    historia = test_case.get('historia_de_usuario', test_case.get('historia', ''))
     if historia:
         html_parts.append(f'''
                         <div class="story-item">
@@ -947,9 +1129,9 @@ def generate_test_cases_html_document(test_cases: List[dict], project_name="Sist
     # Generar contenido del índice
     index_items = []
     for i, test_case in enumerate(test_cases, 1):
-        titulo = test_case.get('titulo_caso_prueba', '')
+        titulo = test_case.get('titulo_caso_prueba', test_case.get('titulo', ''))
         if not titulo or titulo.strip() == '' or 'por definir' in titulo.lower():
-            case_id = test_case.get('id_caso_prueba', f'TC{i:03d}')
+            case_id = test_case.get('id_caso_prueba', test_case.get('id', f'TC{i:03d}'))
             titulo = f'Caso de Prueba {case_id}'
         page_num = i + 2  # Página 3+ (después de portada e índice)
         index_items.append(f'''

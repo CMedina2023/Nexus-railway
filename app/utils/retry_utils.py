@@ -93,6 +93,13 @@ def retry_with_backoff(
                     # Calcular delay para backoff exponencial
                     delay = retry_delay * (2 ** retry)
                     
+                    # Si el error es específicamente de cuota (429), forzar un delay más largo
+                    if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg:
+                        delay = max(delay, 30) # Esperar al menos 30 segundos para resetear cuota
+                        logger.error(
+                            f"⚠️ LÍMITE DE CUOTA ALCANZADO (429). Esperando {delay}s para enfriamiento..."
+                        )
+
                     # Mensaje especial para timeouts
                     if "timeout" in error_msg or "timed out" in error_msg:
                         logger.warning(
@@ -197,6 +204,13 @@ def call_with_retry(
             
             # Calcular delay para backoff exponencial
             delay = retry_delay * (2 ** retry)
+            
+            # Si el error es específicamente de cuota (429), forzar un delay más largo
+            if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg:
+                delay = max(delay, 30) # Esperar al menos 30 segundos para resetear cuota
+                logger.error(
+                    f"⚠️ LÍMITE DE CUOTA ALCANZADO (429). Esperando {delay}s para enfriamiento..."
+                )
             
             # Mensaje especial para timeouts
             if "timeout" in error_msg or "timed out" in error_msg:

@@ -23,4 +23,3 @@ if __name__ == '__main__':
         port=Config.FLASK_PORT,
         debug=True
     )
-

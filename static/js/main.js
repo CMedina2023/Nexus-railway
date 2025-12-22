@@ -1861,6 +1861,8 @@ async function initJiraReports() {
 
 // Variable global para almacenar todos los proyectos
 let allProjects = [];
+let allProjectsStories = [];
+let allProjectsTests = [];
 let highlightedIndex = -1;
 
 async function loadProjects() {
@@ -2095,6 +2097,76 @@ function updateHighlight(options) {
             option.classList.remove('highlighted');
         }
     });
+}
+
+/**
+ * Inicializa un combo box de búsqueda genérico
+ */
+function setupSearchableCombo(config) {
+    const {
+        inputId,
+        dropdownId,
+        hiddenId,
+        dataArray,
+        onSelect
+    } = config;
+
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    const hidden = document.getElementById(hiddenId);
+
+    if (!input || !dropdown || !hidden) return;
+
+    // Limpiar eventos anteriores si existen
+    input.onfocus = () => renderOptions();
+    input.oninput = (e) => filterOptions(e.target.value);
+    input.onblur = () => {
+        // Delay para permitir que el click en una opción se ejecute primero
+        setTimeout(() => {
+            dropdown.style.display = 'none';
+        }, 200);
+    };
+
+    function renderOptions(filteredData = null) {
+        const data = filteredData || dataArray;
+        dropdown.innerHTML = '';
+
+        if (!data || data.length === 0) {
+            dropdown.innerHTML = '<div class="combobox-option no-results">No se encontraron resultados</div>';
+        } else {
+            data.forEach(item => {
+                const option = document.createElement('div');
+                option.className = 'combobox-option';
+                option.innerHTML = `
+                    <span class="option-name">${item.name}</span>
+                    <span class="option-key">${item.key}</span>
+                `;
+                option.onclick = () => {
+                    input.value = `${item.name} (${item.key})`;
+                    hidden.value = item.key;
+                    dropdown.style.display = 'none';
+                    // Disparar evento change manual para que la lógica existente reaccione
+                    hidden.dispatchEvent(new Event('change'));
+                    if (onSelect) onSelect(item);
+                };
+                dropdown.appendChild(option);
+            });
+        }
+        dropdown.style.display = 'block';
+    }
+
+    function filterOptions(text) {
+        const query = text.toLowerCase().trim();
+        if (!query) {
+            renderOptions(dataArray);
+            return;
+        }
+        const filtered = dataArray.filter(item =>
+            (item.name && item.name.toLowerCase().includes(query)) ||
+            (item.key && item.key.toLowerCase().includes(query))
+        );
+        renderOptions(filtered);
+    }
 }
 
 async function loadProjectMetrics(projectKey, projectName, filters = null) {
@@ -6489,13 +6561,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const selectedArea = areaSelect.value;
             const formData = new FormData(storiesForm);
-            storiesGenerateBtn.disabled = true;
-            storiesGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
-            showDownloadNotification('Generando historias...', 'loading');
+            // UI Setup for Progress
+            storiesGenerateBtn.disabled = true;
+            storiesGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+            const progressContainer = document.getElementById('stories-progress-container');
+            const progressBar = document.getElementById('stories-progress-bar');
+            const progressPhase = document.getElementById('stories-progress-phase');
+            const progressPercentage = document.getElementById('stories-progress-percentage');
+            const progressMessage = document.getElementById('stories-progress-message');
+
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPhase) progressPhase.textContent = 'Iniciando generación...';
+            if (progressPercentage) progressPercentage.textContent = '0%';
 
             try {
-                const response = await fetchWithTimeout('/api/stories/generate', {
+                const response = await fetch('/api/stories/generate', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -6503,43 +6586,82 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
 
-                    if (data.status === 'success' && data.stories) {
-                        // Ocultar formulario y mostrar vista previa
-                        const formContainer = document.getElementById('stories-form-container');
-                        const previewSection = document.getElementById('stories-preview-section');
-                        const backBtnContainer = document.getElementById('stories-back-btn-container');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-                        if (formContainer) formContainer.style.display = 'none';
-                        if (previewSection) previewSection.style.display = 'block';
-                        if (backBtnContainer) backBtnContainer.style.display = 'block';
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
 
-                        // Mostrar vista previa
-                        displayStoriesPreview(data);
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop();
 
-                        // Actualizar métricas con el área seleccionada
-                        if (data.stories_count > 0) {
-                            updateMetrics('stories', data.stories_count, selectedArea);
+                    for (const line of lines) {
+                        if (line.trim().startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.trim().substring(6));
+
+                                // Update Progress UI
+                                if (data.progress !== undefined) {
+                                    if (progressBar) progressBar.style.width = `${data.progress}%`;
+                                    if (progressPercentage) progressPercentage.textContent = `${data.progress}%`;
+                                }
+                                if (data.status && progressPhase) progressPhase.textContent = data.status;
+                                if (data.message && progressMessage) progressMessage.textContent = data.message;
+
+                                // Handle Terminal Event
+                                if (data.terminal) {
+                                    if (data.error) {
+                                        throw new Error(data.error);
+                                    }
+
+                                    if (data.data && data.data.stories) {
+                                        const resultData = data.data;
+                                        // Ocultar formulario y mostrar vista previa
+                                        const formContainer = document.getElementById('stories-form-container');
+                                        const previewSection = document.getElementById('stories-preview-section');
+                                        const backBtnContainer = document.getElementById('stories-back-btn-container');
+
+                                        if (formContainer) formContainer.style.display = 'none';
+                                        if (previewSection) previewSection.style.display = 'block';
+                                        if (backBtnContainer) backBtnContainer.style.display = 'block';
+
+                                        // Guardar datos globales
+                                        currentStoriesData = resultData.stories;
+                                        currentStoriesHtml = resultData.html_content;
+                                        currentStoriesCsv = resultData.csv_content;
+
+                                        // Mostrar vista previa
+                                        displayStoriesPreview(resultData);
+
+                                        // Actualizar métricas
+                                        if (resultData.stories_count > 0) {
+                                            updateMetrics('stories', resultData.stories_count, selectedArea);
+                                        }
+
+                                        showDownloadNotification(`Historias generadas exitosamente: ${resultData.stories_count} historias`, 'success');
+                                        document.getElementById('crear-historias').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e, line);
+                            }
                         }
-
-                        showDownloadNotification(`Historias generadas exitosamente: ${data.stories_count} historias`, 'success');
-
-                        // Scroll suave a la parte superior de la sección
-                        document.getElementById('crear-historias').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    } else {
-                        showDownloadNotification('Error: ' + (data.message || 'Error desconocido'), 'error');
                     }
-                } else {
-                    const error = await response.json();
-                    showDownloadNotification('Error: ' + (error.message || 'Error desconocido'), 'error');
                 }
             } catch (error) {
-                showDownloadNotification('Error de conexión: ' + error.message, 'error');
+                console.error('Error en generación:', error);
+                showDownloadNotification('Error: ' + error.message, 'error');
             } finally {
                 storiesGenerateBtn.disabled = false;
                 storiesGenerateBtn.innerHTML = '<i class="fas fa-eye"></i> Generar e Ir a Vista Previa';
+                if (progressContainer) progressContainer.style.display = 'none';
             }
         });
     }
@@ -6957,6 +7079,15 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('jira-upload-modal').style.display = 'none';
         document.getElementById('jira-assignee-input').value = '';
         document.getElementById('jira-assignee-validation').style.display = 'none';
+
+        // Limpiar búsqueda y selección
+        const searchInput = document.getElementById('jira-project-search-input');
+        const hiddenInput = document.getElementById('jira-project-select');
+        const dropdown = document.getElementById('jira-project-dropdown');
+
+        if (searchInput) searchInput.value = '';
+        if (hiddenInput) hiddenInput.value = '';
+        if (dropdown) dropdown.style.display = 'none';
     }
 
     // Validar email de asignado
@@ -7015,8 +7146,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Cargar proyectos de Jira
     async function loadJiraProjects() {
-        const select = document.getElementById('jira-project-select');
-        if (!select) return;
+        const hiddenInput = document.getElementById('jira-project-select');
+        const searchInput = document.getElementById('jira-project-search-input');
+        if (!hiddenInput) return;
 
         try {
             const response = await fetch('/api/jira/projects', {
@@ -7025,21 +7157,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (response.ok) {
                 const data = await response.json();
-                // El endpoint retorna {success: true, projects: [...]}
-                const projects = data.projects || [];
-                select.innerHTML = '<option value="">Seleccionar proyecto...</option>';
+                allProjectsStories = data.projects || [];
 
-                if (projects.length === 0) {
-                    select.innerHTML += '<option value="" disabled>No hay proyectos disponibles</option>';
+                if (allProjectsStories.length === 0) {
                     showDownloadNotification('No se encontraron proyectos de Jira. Verifica tu configuración.', 'error');
                     return;
                 }
 
-                projects.forEach(project => {
-                    const option = document.createElement('option');
-                    option.value = project.key || project.get?.('key', '');
-                    option.textContent = `${project.key || project.get?.('key', '')} - ${project.name || project.get?.('name', '')}`;
-                    select.appendChild(option);
+                // Configurar el combo box
+                setupSearchableCombo({
+                    inputId: 'jira-project-search-input',
+                    dropdownId: 'jira-project-dropdown',
+                    hiddenId: 'jira-project-select',
+                    dataArray: allProjectsStories
                 });
             } else {
                 const errorData = await response.json();
@@ -7925,17 +8055,25 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const selectedArea = areaSelect.value;
-
             const formData = new FormData(testsForm);
-            selectedTypes.forEach(type => formData.append('test_types', type));
 
+            // UI Setup for Progress
             testsGenerateBtn.disabled = true;
-            testsGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+            testsGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
-            showDownloadNotification('Procesando archivo...', 'loading');
+            const progressContainer = document.getElementById('tests-progress-container');
+            const progressBar = document.getElementById('tests-progress-bar');
+            const progressPhase = document.getElementById('tests-progress-phase');
+            const progressPercentage = document.getElementById('tests-progress-percentage');
+            const progressMessage = document.getElementById('tests-progress-message');
+
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressPhase) progressPhase.textContent = 'Iniciando generación...';
+            if (progressPercentage) progressPercentage.textContent = '0%';
 
             try {
-                const response = await fetchWithTimeout('/api/tests/generate', {
+                const response = await fetch('/api/tests/generate', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -7943,43 +8081,80 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('📊 Respuesta completa:', data);
-                    console.log('📋 test_cases recibidos:', data.test_cases);
-                    console.log('🔢 Cantidad:', data.test_cases ? data.test_cases.length : 0);
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
 
-                    // Validar estructura
-                    if (!data.test_cases || !Array.isArray(data.test_cases)) {
-                        console.error('❌ Error: test_cases no es un array válido');
-                        showDownloadNotification('Error: Formato de datos incorrecto', 'error');
-                        return;
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop();
+
+                    for (const line of lines) {
+                        if (line.trim().startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.trim().substring(6));
+
+                                // Update Progress UI
+                                if (data.progress !== undefined) {
+                                    if (progressBar) progressBar.style.width = `${data.progress}%`;
+                                    if (progressPercentage) progressPercentage.textContent = `${data.progress}%`;
+                                }
+                                if (data.status && progressPhase) progressPhase.textContent = data.status;
+                                if (data.message && progressMessage) progressMessage.textContent = data.message;
+
+                                // Handle Terminal Event
+                                if (data.terminal) {
+                                    if (data.error) {
+                                        throw new Error(data.error);
+                                    }
+
+                                    if (data.data && data.data.test_cases) {
+                                        const resultData = data.data;
+                                        // Ocultar formulario y mostrar vista previa
+                                        const formContainer = document.getElementById('crear-casos-prueba').querySelector('.form-card');
+                                        const previewSection = document.getElementById('tests-preview-section');
+
+                                        if (formContainer) formContainer.style.display = 'none';
+                                        if (previewSection) previewSection.style.display = 'block';
+
+                                        // Guardar datos globales
+                                        currentTestsData = resultData.test_cases;
+                                        currentTestsHtml = resultData.html_content;
+                                        currentTestsCsv = resultData.csv_content;
+
+                                        // Mostrar vista previa
+                                        displayTestsPreview(resultData);
+
+                                        // Actualizar métricas
+                                        if (resultData.test_cases_count > 0) {
+                                            updateMetrics('test_cases', resultData.test_cases_count, selectedArea);
+                                        }
+
+                                        showDownloadNotification(`Casos de prueba generados exitosamente: ${resultData.test_cases_count} casos`, 'success');
+                                        document.getElementById('crear-casos-prueba').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Error parsing SSE data:', e, line);
+                            }
+                        }
                     }
-
-                    if (data.test_cases.length === 0) {
-                        console.warn('⚠️ Advertencia: test_cases está vacío');
-                        showDownloadNotification('No se generaron casos de prueba', 'error');
-                        return;
-                    }
-
-                    // Actualizar métricas con el área seleccionada
-                    if (data.test_cases_count > 0) {
-                        updateMetrics('test_cases', data.test_cases_count, selectedArea);
-                    }
-
-                    // Mostrar vista previa
-                    displayTestsPreview(data);
-
-                    showDownloadNotification('Casos de prueba generados exitosamente', 'success');
-                } else {
-                    const error = await response.json();
-                    showDownloadNotification('Error: ' + (error.error || error.message || 'Error desconocido'), 'error');
                 }
             } catch (error) {
-                showDownloadNotification('Error de conexión: ' + error.message, 'error');
+                console.error('Error en generación:', error);
+                showDownloadNotification('Error: ' + error.message, 'error');
             } finally {
                 testsGenerateBtn.disabled = false;
                 testsGenerateBtn.innerHTML = '<i class="fas fa-eye"></i> Generar e Ir a Vista Previa';
+                if (progressContainer) progressContainer.style.display = 'none';
             }
         });
     }
@@ -8026,6 +8201,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (projectSelect) projectSelect.value = '';
         if (assigneeInput) assigneeInput.value = '';
+
+        // Limpiar búsqueda y selección
+        const searchInput = document.getElementById('jira-tests-project-search-input');
+        const dropdown = document.getElementById('jira-tests-project-dropdown');
+        if (searchInput) searchInput.value = '';
+        if (dropdown) dropdown.style.display = 'none';
 
         // Reiniciar selects de campos
         const selects = ['jira-tests-tipo-prueba-select', 'jira-tests-nivel-prueba-select',
@@ -8074,9 +8255,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function loadJiraProjectsForTests() {
-        const projectSelect = document.getElementById('jira-tests-project-select');
+        const hiddenInput = document.getElementById('jira-tests-project-select');
+        const searchInput = document.getElementById('jira-tests-project-search-input');
         const validateBtn = document.getElementById('jira-tests-validate-fields-btn');
-        if (!projectSelect) return;
+        if (!hiddenInput) return;
 
         try {
             const response = await fetch('/api/jira/projects', {
@@ -8087,21 +8269,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (response.ok) {
                 const data = await response.json();
-                projectSelect.innerHTML = '<option value="">Seleccionar proyecto...</option>';
-                if (data.projects && Array.isArray(data.projects)) {
-                    data.projects.forEach(project => {
-                        const option = document.createElement('option');
-                        option.value = project.key;
-                        option.textContent = `${project.name} (${project.key})`;
-                        projectSelect.appendChild(option);
-                    });
+                allProjectsTests = data.projects || [];
+
+                if (allProjectsTests.length === 0) {
+                    showDownloadNotification('No se encontraron proyectos de Jira.', 'error');
+                    return;
                 }
 
-                // Habilitar botón de validar cuando se seleccione un proyecto
-                if (projectSelect) {
-                    projectSelect.onchange = function () {
+                // Configurar el combo box
+                setupSearchableCombo({
+                    inputId: 'jira-tests-project-search-input',
+                    dropdownId: 'jira-tests-project-dropdown',
+                    hiddenId: 'jira-tests-project-select',
+                    dataArray: allProjectsTests,
+                    onSelect: (item) => {
+                        // Habilitar botón de validar cuando se seleccione un proyecto
                         if (validateBtn) {
-                            validateBtn.disabled = !this.value;
+                            validateBtn.disabled = false;
                         }
                         // Resetear validación si cambia el proyecto
                         const validationResult = document.getElementById('jira-tests-validation-result');
@@ -8137,8 +8321,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 msg.innerHTML = '';
                             }
                         });
-                    };
-                }
+                    }
+                });
             }
         } catch (error) {
             console.error('Error al cargar proyectos de Jira:', error);

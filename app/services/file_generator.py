@@ -52,8 +52,20 @@ class FileGenerator:
         # Escribir datos
         for row in data:
             if isinstance(row, dict):
-                # Asegurar que todas las claves estén presentes
-                complete_row = {key: row.get(key, "") for key in fieldnames}
+                # Asegurar que todas las claves estén presentes y tipos correctos para CSV
+                complete_row = {}
+                for key in fieldnames:
+                    value = row.get(key, "")
+                    if isinstance(value, list):
+                        # Formatear la lista dependiendo del campo
+                        if key in ['Pasos', 'steps']:
+                            value = '\n'.join([f"{i+1}. {item}" for i, item in enumerate(value) if item])
+                        else:
+                            value = '\n'.join([f"- {item}" for item in value if item])
+                    elif value is None:
+                        value = ""
+                    complete_row[key] = value
+                
                 writer.writerow(complete_row)
         
         csv_content = output.getvalue()

@@ -31,7 +31,7 @@ class Config:
     # Reintentos
     # ============================================================================
     MAX_RETRIES = int(os.getenv('MAX_RETRIES', '3'))
-    RETRY_DELAY = int(os.getenv('RETRY_DELAY', '2'))
+    RETRY_DELAY = int(os.getenv('RETRY_DELAY', '5'))  # Aumentado para manejar mejor el rate limit
     
     # ============================================================================
     # Procesamiento de Documentos
