@@ -17,9 +17,13 @@
             if (window.clearJiraReport) window.clearJiraReport();
         }
 
-        // Limpiar carga masiva si se está saliendo de carga-masiva
-        if (currentSection && currentSection.id === 'carga-masiva' && sectionId !== 'carga-masiva') {
-            if (window.resetCargaMasiva) window.resetCargaMasiva();
+        // Limpiar carga masiva si se está saliendo de jira-carga-masiva
+        if (currentSection && (currentSection.id === 'jira-carga-masiva' || currentSection.id === 'carga-masiva') && sectionId !== currentSection.id) {
+            if (window.NexusModules?.Jira?.BulkUpload?.reset) {
+                window.NexusModules.Jira.BulkUpload.reset();
+            } else if (window.resetCargaMasiva) {
+                window.resetCargaMasiva();
+            }
         }
 
         // Hide all sections
@@ -53,8 +57,12 @@
         }
 
         // Inicializar carga masiva si se navega a jira-carga-masiva
-        if (sectionId === 'jira-carga-masiva' && window.initCargaMasiva) {
-            window.initCargaMasiva();
+        if (sectionId === 'jira-carga-masiva') {
+            if (window.NexusModules?.Jira?.BulkUpload?.init) {
+                window.NexusModules.Jira.BulkUpload.init();
+            } else if (window.initCargaMasiva) {
+                window.initCargaMasiva();
+            }
         }
 
         // Cargar métricas del dashboard si se navega al dashboard
