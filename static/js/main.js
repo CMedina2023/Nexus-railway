@@ -19,27 +19,19 @@ function expandAccordionForSection(sectionId) {
 // MÉTRICAS DEL BACKEND - Filtradas por rol
 // ============================================
 
+// getMetrics y sus helpers ahora usan NexusApi.dashboard
 async function getMetrics() {
     try {
-        const response = await fetch('/api/dashboard/activity-metrics', {
-            method: 'GET',
-            credentials: 'include'
-        });
+        const metrics = await window.NexusApi.dashboard.getActivityMetrics();
 
-        if (!response.ok) {
-            console.error('Error al obtener métricas:', response.status);
-            return { stories: 0, testCases: 0, history: [] };
-        }
-
-        const data = await response.json();
-        if (data.success) {
+        if (metrics) {
             // Obtener historial de historias y casos de prueba
             const storiesHistory = await getStoriesHistory();
             const testCasesHistory = await getTestCasesHistory();
 
             return {
-                stories: data.metrics.stories_generated || 0,
-                testCases: data.metrics.test_cases_generated || 0,
+                stories: metrics.stories_generated || 0,
+                testCases: metrics.test_cases_generated || 0,
                 history: [...storiesHistory, ...testCasesHistory].sort((a, b) =>
                     new Date(b.date) - new Date(a.date)
                 ).slice(0, 50)
@@ -54,88 +46,43 @@ async function getMetrics() {
 }
 
 async function getStoriesHistory() {
-    try {
-        const response = await fetch('/api/dashboard/stories?limit=50', {
-            method: 'GET',
-            credentials: 'include'
-        });
+    const rawStories = await window.NexusApi.dashboard.getStoriesHistory(50);
+    return rawStories.map(story => {
+        let count = 1;
+        try {
+            const stories = JSON.parse(story.story_content);
+            count = Array.isArray(stories) ? stories.length : 1;
+        } catch (e) { console.warn('Error al parsear story_content:', e); }
 
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        if (data.success && data.stories) {
-            // NO agrupar - cada registro ya representa una generación completa
-            // El backend guarda 1 registro con TODAS las historias generadas
-            // El conteo real está en story_content (JSON con array de historias)
-
-            return data.stories.map(story => {
-                // Parsear story_content para obtener el conteo real
-                let count = 1;
-                try {
-                    const stories = JSON.parse(story.story_content);
-                    count = Array.isArray(stories) ? stories.length : 1;
-                } catch (e) {
-                    console.warn('Error al parsear story_content:', e);
-                }
-
-                return {
-                    type: 'stories',
-                    count: count,  // Conteo real de historias en el JSON
-                    area: story.area || 'Sin Área',  // Usar campo area
-                    date: story.created_at,
-                    timestamp: new Date(story.created_at).getTime()
-                };
-            }).sort((a, b) => b.timestamp - a.timestamp).slice(0, 25);
-        }
-
-        return [];
-    } catch (error) {
-        console.error('Error al obtener historial de historias:', error);
-        return [];
-    }
+        return {
+            type: 'stories',
+            count: count,
+            area: story.area || 'Sin Área',
+            date: story.created_at,
+            timestamp: new Date(story.created_at).getTime()
+        };
+    }).sort((a, b) => b.timestamp - a.timestamp).slice(0, 25);
 }
 
 async function getTestCasesHistory() {
-    try {
-        const response = await fetch('/api/dashboard/test-cases?limit=50', {
-            method: 'GET',
-            credentials: 'include'
-        });
+    const rawCases = await window.NexusApi.dashboard.getTestCasesHistory(50);
+    return rawCases.map(testCase => {
+        let count = 1;
+        try {
+            const cases = JSON.parse(testCase.test_case_content);
+            count = Array.isArray(cases) ? cases.length : 1;
+        } catch (e) { console.warn('Error al parsear test_case_content:', e); }
 
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        if (data.success && data.test_cases) {
-            // NO agrupar - cada registro ya representa una generación completa
-            // El backend guarda 1 registro con TODOS los casos generados
-            // El conteo real está en test_case_content (JSON con array de casos)
-
-            return data.test_cases.map(testCase => {
-                // Parsear test_case_content para obtener el conteo real
-                let count = 1;
-                try {
-                    const cases = JSON.parse(testCase.test_case_content);
-                    count = Array.isArray(cases) ? cases.length : 1;
-                } catch (e) {
-                    console.warn('Error al parsear test_case_content:', e);
-                }
-
-                return {
-                    type: 'test_cases',
-                    count: count,  // Conteo real de casos en el JSON
-                    area: testCase.area || 'Sin Área',  // Usar campo area
-                    date: testCase.created_at,
-                    timestamp: new Date(testCase.created_at).getTime()
-                };
-            }).sort((a, b) => b.timestamp - a.timestamp).slice(0, 25);
-        }
-
-        return [];
-    } catch (error) {
-        console.error('Error al obtener historial de casos de prueba:', error);
-        return [];
-    }
+        return {
+            type: 'test_cases',
+            count: count,
+            area: testCase.area || 'Sin Área',
+            date: testCase.created_at,
+            timestamp: new Date(testCase.created_at).getTime()
+        };
+    }).sort((a, b) => b.timestamp - a.timestamp).slice(0, 25);
 }
+
 
 // Esta función ya no guarda en localStorage, el backend maneja el guardado
 function saveMetrics(metrics) {
@@ -144,58 +91,36 @@ function saveMetrics(metrics) {
 }
 
 // Jira Metrics Management
+// getJiraMetrics usan NexusApi.dashboard
 async function getJiraMetrics() {
     try {
-        const response = await fetch('/api/dashboard/activity-metrics', {
-            method: 'GET',
-            credentials: 'include'
-        });
+        const metrics = await window.NexusApi.dashboard.getActivityMetrics();
 
-        if (!response.ok) {
-            console.error('Error al obtener métricas de Jira:', response.status);
-            return {
-                reports: { count: 0, lastDate: null, byProject: {}, history: [] },
-                uploads: { count: 0, itemsCount: 0, lastDate: null, byProject: {}, issueTypesDistribution: {}, history: [] }
-            };
-        }
-
-        const data = await response.json();
-        if (data.success) {
-            // Obtener historial de reportes y cargas masivas
+        if (metrics) {
             const reportsHistory = await getReportsHistory();
             const uploadsHistory = await getUploadsHistory();
 
-            // Construir byProject para reportes desde el historial
+            // Construcción de métricas derivadas (igual que antes pero más limpio)
+            // ... (lógica de agrupación por proyecto se mantiene aquí para no romper compatibilidad UI)
             const reportsByProject = {};
             reportsHistory.forEach(report => {
                 const projectKey = report.projectKey || 'Unknown';
                 if (!reportsByProject[projectKey]) {
-                    reportsByProject[projectKey] = {
-                        name: report.projectName || projectKey,
-                        count: 0
-                    };
+                    reportsByProject[projectKey] = { name: report.projectName || projectKey, count: 0 };
                 }
                 reportsByProject[projectKey].count++;
             });
 
-            // Construir byProject para cargas masivas desde el historial
             const uploadsByProject = {};
+            const issueTypesDistribution = {};
             uploadsHistory.forEach(upload => {
                 const projectKey = upload.projectKey || 'Unknown';
                 if (!uploadsByProject[projectKey]) {
-                    uploadsByProject[projectKey] = {
-                        name: upload.projectName || projectKey,
-                        count: 0,
-                        itemsCount: 0
-                    };
+                    uploadsByProject[projectKey] = { name: upload.projectName || projectKey, count: 0, itemsCount: 0 };
                 }
                 uploadsByProject[projectKey].count++;
                 uploadsByProject[projectKey].itemsCount += upload.itemsCount || 0;
-            });
 
-            // Construir issueTypesDistribution desde el historial de cargas
-            const issueTypesDistribution = {};
-            uploadsHistory.forEach(upload => {
                 const types = upload.issueTypesDistribution || {};
                 Object.keys(types).forEach(type => {
                     issueTypesDistribution[type] = (issueTypesDistribution[type] || 0) + types[type];
@@ -204,13 +129,13 @@ async function getJiraMetrics() {
 
             return {
                 reports: {
-                    count: data.metrics.reports_created || 0,
+                    count: metrics.reports_created || 0,
                     lastDate: reportsHistory.length > 0 ? new Date(reportsHistory[0].date).toLocaleDateString('es-ES') : null,
                     byProject: reportsByProject,
                     history: reportsHistory
                 },
                 uploads: {
-                    count: data.metrics.bulk_uploads_performed || 0,
+                    count: metrics.bulk_uploads_performed || 0,
                     itemsCount: uploadsHistory.reduce((sum, upload) => sum + (upload.itemsCount || 0), 0),
                     lastDate: uploadsHistory.length > 0 ? new Date(uploadsHistory[0].date).toLocaleDateString('es-ES') : null,
                     byProject: uploadsByProject,
@@ -220,85 +145,52 @@ async function getJiraMetrics() {
             };
         }
 
-        return {
-            reports: { count: 0, lastDate: null, byProject: {}, history: [] },
-            uploads: { count: 0, itemsCount: 0, lastDate: null, byProject: {}, issueTypesDistribution: {}, history: [] }
-        };
+        return getEmptyJiraMetrics();
     } catch (error) {
         console.error('Error al obtener métricas de Jira:', error);
-        return {
-            reports: { count: 0, lastDate: null, byProject: {}, history: [] },
-            uploads: { count: 0, itemsCount: 0, lastDate: null, byProject: {}, issueTypesDistribution: {}, history: [] }
-        };
+        return getEmptyJiraMetrics();
     }
+}
+
+function getEmptyJiraMetrics() {
+    return {
+        reports: { count: 0, lastDate: null, byProject: {}, history: [] },
+        uploads: { count: 0, itemsCount: 0, lastDate: null, byProject: {}, issueTypesDistribution: {}, history: [] }
+    };
 }
 
 async function getReportsHistory() {
-    try {
-        const response = await fetch('/api/dashboard/reports?limit=50', {
-            method: 'GET',
-            credentials: 'include'
-        });
-
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        if (data.success && data.reports) {
-            return data.reports.map(report => ({
-                projectKey: report.project_key || 'Unknown',
-                projectName: report.project_key || 'Unknown',
-                date: report.created_at,
-                timestamp: new Date(report.created_at).getTime()
-            }));
-        }
-
-        return [];
-    } catch (error) {
-        console.error('Error al obtener historial de reportes:', error);
-        return [];
-    }
+    const rawReports = await window.NexusApi.dashboard.getReportsHistory(50);
+    return rawReports.map(report => ({
+        projectKey: report.project_key || 'Unknown',
+        projectName: report.project_key || 'Unknown',
+        date: report.created_at,
+        timestamp: new Date(report.created_at).getTime()
+    }));
 }
 
 async function getUploadsHistory() {
-    try {
-        const response = await fetch('/api/dashboard/bulk-uploads?limit=50', {
-            method: 'GET',
-            credentials: 'include'
-        });
+    const rawUploads = await window.NexusApi.dashboard.getBulkUploadsHistory(50);
+    return rawUploads.map(upload => {
+        let issueTypesDistribution = {};
+        try {
+            if (upload.upload_details) {
+                const details = JSON.parse(upload.upload_details);
+                issueTypesDistribution = details.issue_types_distribution || {};
+            }
+        } catch (e) { console.warn('Error al parsear upload_details:', e); }
 
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        if (data.success && data.bulk_uploads) {
-            return data.bulk_uploads.map(upload => {
-                // Parsear upload_details para obtener issue_types_distribution
-                let issueTypesDistribution = {};
-                try {
-                    if (upload.upload_details) {
-                        const details = JSON.parse(upload.upload_details);
-                        issueTypesDistribution = details.issue_types_distribution || {};
-                    }
-                } catch (e) {
-                    console.warn('Error al parsear upload_details:', e);
-                }
-
-                return {
-                    projectKey: upload.project_key || 'Unknown',
-                    projectName: upload.project_key || 'Unknown',
-                    itemsCount: upload.total_items || 0,
-                    issueTypesDistribution: issueTypesDistribution,
-                    date: upload.created_at,
-                    timestamp: new Date(upload.created_at).getTime()
-                };
-            });
-        }
-
-        return [];
-    } catch (error) {
-        console.error('Error al obtener historial de cargas masivas:', error);
-        return [];
-    }
+        return {
+            projectKey: upload.project_key || 'Unknown',
+            projectName: upload.project_key || 'Unknown',
+            itemsCount: upload.total_items || 0,
+            issueTypesDistribution: issueTypesDistribution,
+            date: upload.created_at,
+            timestamp: new Date(upload.created_at).getTime()
+        };
+    });
 }
+
 
 // Esta función ya no guarda en localStorage, el backend maneja el guardado
 function saveJiraMetrics(metrics) {
@@ -1406,32 +1298,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Helper function for fetch with extended timeout
-async function fetchWithTimeout(url, options = {}, timeout = 600000) { // 10 minutos por defecto
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+// fetchWithTimeout reemplazada por NexusApi.client.request
+// Mantenemos binding por retrocompatibilidad con scripts inline si los hubiera
+window.fetchWithTimeout = window.NexusApi.client.request.bind(window.NexusApi.client);
 
-    // Agregar token CSRF a los headers si no está presente
-    const headers = { ...(options.headers || {}) };
-    if (!headers['X-CSRFToken']) {
-        headers['X-CSRFToken'] = getCsrfToken();
-    }
-
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: headers,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        return response;
-    } catch (error) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-            throw new Error('La solicitud tardó demasiado tiempo. El documento puede ser muy grande. Intenta con un documento más pequeño o divide el contenido.');
-        }
-        throw error;
-    }
-}
 
 // [REMOVED] AI Agent Chat Functionality - Obsoleto, reemplazado por generadores especializados
 // La funcionalidad del agente AI antiguo ha sido eliminada.
