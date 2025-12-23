@@ -1,8 +1,5 @@
-// Helper function to get CSRF token
-function getCsrfToken() {
-    const metaTag = document.querySelector('meta[name="csrf-token"]');
-    return metaTag ? metaTag.getAttribute('content') : '';
-}
+// getCsrfToken movido a core/utils.js
+
 
 // Accordion Management System - DEPRECADO (ya no hay acordeón)
 function toggleAccordion(accordionItem) {
@@ -14,78 +11,8 @@ function expandAccordionForSection(sectionId) {
 }
 
 // SPA Navigation System
-async function navigateToSection(sectionId) {
-    // Limpiar reporte si se está saliendo de jira-reportes
-    const currentSection = document.querySelector('.content-section.active');
-    if (currentSection && currentSection.id === 'jira-reportes' && sectionId !== 'jira-reportes') {
-        clearJiraReport();
-    }
+// navigateToSection movido a core/navigation.js
 
-    // Limpiar carga masiva si se está saliendo de carga-masiva
-    if (currentSection && currentSection.id === 'carga-masiva' && sectionId !== 'carga-masiva') {
-        resetCargaMasiva();
-    }
-
-    // Hide all sections
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    // Show selected section
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.add('active');
-    }
-
-    // Update active nav item (usar active-link en lugar de active)
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active-link', 'active');
-    });
-
-    const activeNav = document.querySelector(`[data-section="${sectionId}"]`);
-    if (activeNav) {
-        activeNav.classList.add('active-link');
-
-        // Inicializar reportes si se navega a jira-reportes
-        if (sectionId === 'jira-reportes') {
-            initJiraReports();
-        }
-
-        // Inicializar carga masiva si se navega a jira-carga-masiva
-        if (sectionId === 'jira-carga-masiva') {
-            initCargaMasiva();
-        }
-
-        // Cargar métricas del dashboard si se navega al dashboard
-        if (sectionId === 'dashboard') {
-            await loadDashboardMetrics();
-        }
-    }
-
-    // Initialize charts if navigating to infografia
-    if (sectionId === 'infografia') {
-        setTimeout(() => {
-            initializeCharts();
-        }, 100);
-    }
-
-    // Load metrics if navigating to metricas
-    if (sectionId === 'metricas') {
-        setTimeout(() => {
-            loadAllMetrics();
-        }, 100);
-    }
-
-    // Load admin panel if navigating to admin
-    if (sectionId === 'admin') {
-        setTimeout(() => {
-            adminInitPanel();
-        }, 100);
-    }
-
-    // Scroll to top
-    window.scrollTo(0, 0);
-}
 
 // Metrics Management System
 // ============================================
@@ -697,12 +624,8 @@ async function resetMetrics() {
     }
 }
 
-// Función helper para obtener cookies
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-}
+// getCookie movido a core/utils.js
+
 
 // Chart instances for Jira metrics
 let reportsByProjectChart = null;
@@ -1461,85 +1384,8 @@ async function getJiraMetrics() {
 // Download Metrics - Ahora asíncrona
 
 
-// Show Download Notification
-function showDownloadNotification(message, type = 'loading') {
-    // Buscar notificación existente
-    let notification = document.getElementById('download-notification');
+// showDownloadNotification movido a core/utils.js
 
-    // Si existe y es de tipo loading, actualizarla en lugar de removerla
-    if (notification && notification.classList.contains('loading') && (type === 'success' || type === 'error')) {
-        // Actualizar la notificación existente
-        notification.className = `download-notification ${type}`;
-
-        let icon = '⏳';
-        if (type === 'success') {
-            icon = '✅';
-        } else if (type === 'error') {
-            icon = '❌';
-        }
-
-        const iconElement = notification.querySelector('.download-notification-icon');
-        const messageElement = notification.querySelector('.download-notification-message');
-
-        if (iconElement) {
-            iconElement.innerHTML = icon;
-        }
-        if (messageElement) {
-            messageElement.textContent = message;
-        }
-
-        // Auto-ocultar después de 3 segundos
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 3000);
-
-        return;
-    }
-
-    // Si no existe o no es de tipo loading, remover la existente y crear nueva
-    if (notification) {
-        notification.remove();
-    }
-
-    // Crear nueva notificación
-    notification = document.createElement('div');
-    notification.id = 'download-notification';
-    notification.className = `download-notification ${type}`;
-
-    let icon = '⏳';
-    if (type === 'success') {
-        icon = '✅';
-    } else if (type === 'error') {
-        icon = '❌';
-    } else {
-        icon = '<i class="fas fa-spinner"></i>';
-    }
-
-    notification.innerHTML = `
-                <div class="download-notification-icon">${icon}</div>
-                <div class="download-notification-message">${message}</div>
-            `;
-
-    document.body.appendChild(notification);
-
-    // Mostrar con animación
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-
-    // Auto-ocultar después de 3 segundos si es success o error
-    if (type === 'success' || type === 'error') {
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 3000);
-    }
-}
 
 // Event Listeners para Filtros
 document.addEventListener('DOMContentLoaded', () => {
@@ -1556,52 +1402,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Sidebar Toggle
-const sidebar = document.getElementById('sidebar');
-const sidebarToggle = document.getElementById('sidebarToggle');
+// Sidebar y Nav Listeners movidos a core/navigation.js
 
-sidebarToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
-});
-
-// Accordion Click Handlers
-document.querySelectorAll('.accordion-header').forEach(header => {
-    header.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const accordionItem = header.closest('.accordion-item');
-        if (accordionItem) {
-            toggleAccordion(accordionItem);
-        }
-    });
-});
-
-// Nav Item Click Handlers - Actualizado para nuevo sidebar
-document.querySelectorAll('.nav-item, .quick-link, .card-action').forEach(item => {
-    item.addEventListener('click', (e) => {
-        const dataRoute = item.getAttribute('data-route');
-        const href = item.getAttribute('href');
-        const sectionId = item.getAttribute('data-section');
-
-        // Si tiene data-route o href que sea una ruta externa (excepto admin que ahora es interna)
-        // permitir navegación normal
-        if (dataRoute && dataRoute.startsWith('/auth/')) {
-            window.location.href = dataRoute;
-            return;
-        }
-
-        if (href && href !== '#' && href.startsWith('/auth/')) {
-            window.location.href = href;
-            return;
-        }
-
-        // Para secciones internas (incluyendo admin), prevenir default y usar navigateToSection
-        e.preventDefault();
-        e.stopPropagation();
-        if (sectionId) {
-            navigateToSection(sectionId);
-        }
-    });
-});
 
 // Helper function for fetch with extended timeout
 async function fetchWithTimeout(url, options = {}, timeout = 600000) { // 10 minutos por defecto
