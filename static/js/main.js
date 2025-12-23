@@ -7250,7 +7250,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('stories-loading-overlay').style.display = 'flex';
 
             try {
-                const response = await fetch('/api/stories/upload-to-jira', {
+                const response = await fetch('/api/jira/stories/upload-to-jira', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -8767,7 +8767,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
             try {
-                const response = await fetch('/api/tests/upload-to-jira', {
+                const response = await fetch('/api/jira/tests/upload-to-jira', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
