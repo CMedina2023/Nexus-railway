@@ -14,8 +14,14 @@ from app.services.text_processor import TextProcessor
 class DataTransformer:
     """Transforma y normaliza datos de diferentes formatos"""
     
-    def __init__(self):
-        self.text_processor = TextProcessor()
+    def __init__(self, text_processor: TextProcessor):
+        """
+        Inicializa el transformador de datos (DIP)
+        
+        Args:
+            text_processor: Servicio para procesamiento de texto
+        """
+        self.text_processor = text_processor
     
     def clean_matrix_data(self, matrix_data: Any) -> List[Dict]:
         """

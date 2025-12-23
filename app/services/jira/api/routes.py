@@ -24,6 +24,7 @@ from app.core.config import Config
 from app.backend import jira_backend
 from app.utils.decorators import handle_errors
 from app.services.pdf.application.pdf_service import PdfService
+from app.core.dependencies import get_user_service, get_jira_token_manager, get_jira_client, get_pdf_service
 from app.services.jira.api.helpers import (
     generate_upload_summary_txt, 
     generate_stories_upload_summary_txt, 
@@ -33,7 +34,8 @@ from app.services.jira.api.helpers import (
 logger = logging.getLogger(__name__)
 
 jira_bp = Blueprint('jira', __name__, url_prefix='/api/jira')
-pdf_service = PdfService()
+# pdf_service será obtenido vía dependencia en la ruta
+# pdf_service = PdfService()
 
 @jira_bp.route('/test-connection', methods=['GET'])
 @login_required
@@ -41,7 +43,7 @@ pdf_service = PdfService()
 def jira_test_connection():
     """Prueba la conexión con Jira"""
     try:
-        client = jira_backend.JiraClient()
+        client = get_jira_client()
         result = client.test_connection()
         return jsonify(result)
     except Exception as e:
@@ -54,7 +56,7 @@ def jira_get_projects():
     """Obtiene la lista de proyectos de Jira"""
     try:
         user_id = get_current_user_id()
-        user = UserService().get_user_by_id(user_id)
+        user = get_user_service().get_user_by_id(user_id)
         if not user:
             return jsonify({"success": False, "error": "Usuario no encontrado", "projects": []}), 401
         
@@ -68,7 +70,7 @@ def jira_get_projects():
                 return jsonify({"success": True, "projects": projects})
             return jsonify({"success": False, "error": "No hay configuración de Jira disponible", "projects": []}), 400
         
-        token_manager = JiraTokenManager()
+        token_manager = get_jira_token_manager()
         jira_config = token_manager.get_token_for_user(user, all_configs[0].project_key)
         connection = JiraConnection(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
         projects = ProjectService(connection).get_projects()
@@ -93,8 +95,8 @@ def jira_validate_project_access():
         if role in ['admin', 'analista_qa']:
             return jsonify({'hasAccess': True, 'message': 'Acceso permitido por rol'}), 200
 
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         target_email = session_email if session_email else requested_email
 
         connection = JiraConnection(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
@@ -110,7 +112,7 @@ def jira_get_filter_fields(project_key):
     try:
         issuetype = request.args.get('issuetype', None)
         include_all_fields = request.args.get('include_all_fields', 'false').lower() == 'true'
-        jira = JiraClient()
+        jira = get_jira_client()
         result = jira.get_filter_fields(project_key, issuetype=issuetype, include_all_fields=include_all_fields)
         available_fields = []
         field_values = {}
@@ -169,7 +171,7 @@ def jira_get_project_metrics(project_key):
 def jira_get_project_fields(project_key):
     try:
         issue_type = request.args.get('issue_type')
-        fields_info = JiraClient().get_project_fields_for_creation(project_key, issue_type)
+        fields_info = get_jira_client().get_project_fields_for_creation(project_key, issue_type)
         if fields_info.get('success'):
             return jsonify({"success": True, "required_fields": fields_info.get('required_fields', []), "optional_fields": fields_info.get('optional_fields', []), "issue_type": fields_info.get('issue_type', '')})
         return jsonify({"success": False, "error": fields_info.get('error', 'Error al obtener campos')}), 400
@@ -184,7 +186,7 @@ def jira_validate_csv_fields():
         data = request.get_json()
         csv_columns, project_key, issue_type = data.get('csv_columns', []), data.get('project_key'), data.get('issue_type')
         if not project_key or not csv_columns: return jsonify({"success": False, "error": "Datos incompletos"}), 400
-        return jsonify(JiraClient().validate_csv_fields(csv_columns, project_key, issue_type))
+        return jsonify(get_jira_client().validate_csv_fields(csv_columns, project_key, issue_type))
     except Exception as e:
         logger.error(f"Error al validar campos CSV: {e}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
@@ -195,8 +197,8 @@ def jira_validate_test_case_fields():
     try:
         data = request.get_json()
         project_key = data.get('project_key', '').strip()
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
         fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'tests Case')
         if not fields_info.get('success', True): return jsonify({"success": False, "error": fields_info.get('error')}), 400
@@ -245,8 +247,8 @@ def get_test_case_field_values():
     try:
         data = request.get_json()
         project_key = data.get('project_key', '').strip()
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
         fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'tests Case')
         
@@ -282,8 +284,8 @@ def upload_stories_to_jira():
         if not project_key:
             return jsonify({"success": False, "error": "No se proporcionó la clave del proyecto"}), 400
         
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
         issue_service = IssueService(connection, ProjectService(connection))
         
@@ -357,8 +359,8 @@ def upload_test_cases_to_jira():
         if not project_key:
             return jsonify({"success": False, "error": "No se proporcionó la clave del proyecto"}), 400
         
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
         project_service = ProjectService(connection)
         issue_service = IssueService(connection, project_service)
@@ -412,7 +414,7 @@ def jira_validate_user():
         email = request.get_json().get('email', '').strip()
         if not email: return jsonify({"valid": False}), 400
         
-        user = UserService().get_user_by_id(get_current_user_id())
+        user = get_user_service().get_user_by_id(get_current_user_id())
         
         # Obtener configuración de Jira (con validación)
         configs = ProjectConfigRepository().get_all(active_only=True)
@@ -420,7 +422,7 @@ def jira_validate_user():
         if configs:
             # Usar la primera configuración activa de la BD
             config = configs[0]
-            jira_config = JiraTokenManager().get_token_for_user(user, config.project_key)
+            jira_config = get_jira_token_manager().get_token_for_user(user, config.project_key)
             connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
         elif Config.JIRA_BASE_URL and Config.JIRA_EMAIL and Config.JIRA_API_TOKEN:
             # Fallback: usar configuración del .env si no hay en BD
@@ -456,8 +458,8 @@ def jira_upload_csv():
         if not project_key:
             return jsonify({"success": False, "error": "No se proporcionó la clave del proyecto"}), 400
         
-        user = UserService().get_user_by_id(get_current_user_id())
-        jira_config = JiraTokenManager().get_token_for_user(user, project_key)
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         
         # Leer el CSV con detección de encoding (versión robusta)
         encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']
@@ -480,7 +482,7 @@ def jira_upload_csv():
                 if isinstance(v, dict): field_mappings[k] = v.get('jira_field_id')
                 else: field_mappings[k] = v
         
-        client = JiraClient(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
+        client = get_jira_client(base_url=jira_config.base_url, email=jira_config.email, api_token=jira_config.token)
         results = client.create_issues_from_csv(csv_data, project_key, field_mappings, filter_issue_types=False)
         
         # Métricas y resumen
@@ -582,7 +584,7 @@ def jira_download_report():
                                      widget_data=widget_data,
                                      date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         
-        pdf_buffer = pdf_service.generate_pdf(html_content)
+        pdf_buffer = get_pdf_service().generate_pdf(html_content)
         
         # Guardar historial local
         try:
@@ -620,7 +622,7 @@ def jira_download_template():
         
         if project_key:
             try:
-                itypes = JiraClient().get_issue_types(project_key)
+                itypes = get_jira_client().get_issue_types(project_key)
                 names = [it.get('name', '').lower() for it in itypes]
                 for n in names:
                     if 'story' in n: story_type = n

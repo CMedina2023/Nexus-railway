@@ -21,22 +21,26 @@ class JiraClient:
     Mantiene la misma interfaz pública para compatibilidad hacia atrás
     """
     
-    def __init__(self, base_url: str = None, email: str = None, api_token: str = None):
+    def __init__(
+        self, 
+        connection: JiraConnection,
+        project_service: ProjectService,
+        issue_service: IssueService,
+        metrics_calculator: MetricsCalculator
+    ):
         """
-        Inicializa el cliente Jira con servicios especializados
+        Inicializa el cliente Jira con servicios especializados (DIP)
         
         Args:
-            base_url: URL base de Jira (default: Config.JIRA_BASE_URL)
-            email: Email de Jira (default: Config.JIRA_EMAIL)
-            api_token: Token de API de Jira (default: Config.JIRA_API_TOKEN)
+            connection: Conexión con Jira
+            project_service: Servicio de proyectos
+            issue_service: Servicio de issues
+            metrics_calculator: Calculador de métricas
         """
-        # Crear conexión
-        self._connection = JiraConnection(base_url, email, api_token)
-        
-        # Crear servicios especializados (inyección de dependencias)
-        self._project_service = ProjectService(self._connection)
-        self._issue_service = IssueService(self._connection, self._project_service)
-        self._metrics_calculator = MetricsCalculator()
+        self._connection = connection
+        self._project_service = project_service
+        self._issue_service = issue_service
+        self._metrics_calculator = metrics_calculator
         
         # Mantener propiedades públicas para compatibilidad
         self.base_url = self._connection.base_url

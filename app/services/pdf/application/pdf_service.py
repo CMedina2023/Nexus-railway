@@ -26,13 +26,13 @@ class PdfService:
     Orchestrates the selection of the appropriate engine based on environment.
     """
     
-    def __init__(self, playwright_gen: Optional[PdfGenerator] = None, 
-                 weasyprint_gen: Optional[PdfGenerator] = None):
+    def __init__(self, playwright_gen: PdfGenerator, 
+                 weasyprint_gen: PdfGenerator):
         """
-        Initializes the service with optional dependency injection.
+        Initializes the service (DIP).
         """
-        self.playwright_gen = playwright_gen or PlaywrightPdfGenerator()
-        self.weasyprint_gen = weasyprint_gen or WeasyPrintPdfGenerator()
+        self.playwright_gen = playwright_gen
+        self.weasyprint_gen = weasyprint_gen
         
     def _is_railway_environment(self) -> bool:
         """Detects if running on Railway."""

@@ -24,16 +24,23 @@ class FeedbackService:
     # Proyecto permitido para feedback
     ALLOWED_PROJECT_KEY = "NA"  # Nexus AI en Jira
     
-    def __init__(self, jira_connection: JiraConnection):
+    def __init__(
+        self, 
+        jira_connection: JiraConnection,
+        project_service: ProjectService,
+        issue_service: IssueService
+    ):
         """
         Inicializa el servicio de feedback
         
         Args:
             jira_connection: Conexión a Jira
+            project_service: Servicio de proyectos (DIP)
+            issue_service: Servicio de issues (DIP)
         """
         self._connection = jira_connection
-        self._project_service = ProjectService(jira_connection)
-        self._issue_service = IssueService(jira_connection, self._project_service)
+        self._project_service = project_service
+        self._issue_service = issue_service
         logger.info("FeedbackService inicializado")
     
     def validate_project(self, project_key: str) -> bool:

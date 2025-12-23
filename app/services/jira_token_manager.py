@@ -47,9 +47,9 @@ class JiraTokenManager:
     
     def __init__(
         self,
-        encryption_service: Optional[EncryptionService] = None,
-        project_config_repository: Optional[ProjectConfigRepository] = None,
-        user_jira_config_repository: Optional[UserJiraConfigRepository] = None
+        encryption_service: EncryptionService,
+        project_config_repository: ProjectConfigRepository,
+        user_jira_config_repository: UserJiraConfigRepository
     ):
         """
         Inicializa el gestor de tokens (DIP - inyección de dependencias)
@@ -59,9 +59,9 @@ class JiraTokenManager:
             project_config_repository: Repositorio de configuración de proyectos
             user_jira_config_repository: Repositorio de configuración personal
         """
-        self._encryption_service = encryption_service or EncryptionService()
-        self._project_config_repo = project_config_repository or ProjectConfigRepository()
-        self._user_jira_config_repo = user_jira_config_repository or UserJiraConfigRepository()
+        self._encryption_service = encryption_service
+        self._project_config_repo = project_config_repository
+        self._user_jira_config_repo = user_jira_config_repository
     
     def get_token_for_user(self, user: User, project_key: str) -> JiraConfig:
         """

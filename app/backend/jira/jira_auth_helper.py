@@ -9,6 +9,7 @@ from app.backend.jira.connection import JiraConnection
 from app.services.jira_token_manager import JiraTokenManager
 from app.auth.session_service import SessionService
 from app.auth.user_service import UserService
+from app.core.dependencies import get_user_service, get_jira_token_manager
 from app.utils.exceptions import ConfigurationError
 
 logger = logging.getLogger(__name__)
@@ -40,13 +41,13 @@ def get_jira_connection_for_user(project_key: str) -> JiraConnection:
         raise ConfigurationError("Usuario no autenticado")
     
     # Obtener usuario actual
-    user_service = UserService()
+    user_service = get_user_service()
     user = user_service.get_user_by_id(user_id)
     if not user:
         raise ConfigurationError("Usuario no encontrado")
     
     # Obtener configuración de Jira usando JiraTokenManager
-    token_manager = JiraTokenManager()
+    token_manager = get_jira_token_manager()
     jira_config = token_manager.get_token_for_user(user, project_key)
     
     # Crear conexión con los tokens obtenidos
@@ -82,7 +83,8 @@ def get_jira_connection_shared(project_key: str) -> Optional[JiraConnection]:
             return None
         
         # Desencriptar tokens
-        encryption_service = EncryptionService()
+        from app.core.dependencies import get_encryption_service
+        encryption_service = get_encryption_service()
         decrypted_email = encryption_service.decrypt(project_config.shared_email)
         decrypted_token = encryption_service.decrypt(project_config.shared_token)
         

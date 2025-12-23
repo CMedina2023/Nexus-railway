@@ -7,9 +7,8 @@ import re
 from flask import Blueprint, request, jsonify
 
 from app.auth.decorators import login_required, get_current_user_id
-from app.services.jira_token_manager import JiraTokenManager
+from app.core.dependencies import get_jira_token_manager, get_encryption_service
 from app.backend.jira.connection import JiraConnection
-from app.auth.encryption_service import EncryptionService
 from app.database.repositories.user_jira_config_repository import UserJiraConfigRepository
 from app.database.repositories.project_config_repository import ProjectConfigRepository
 from app.utils.exceptions import ValidationError
@@ -93,7 +92,7 @@ def save_personal_token(project_key: str):
             }), 400
         
         # Encriptar token
-        encryption_service = EncryptionService()
+        encryption_service = get_encryption_service()
         encrypted_email = encryption_service.encrypt(email)
         encrypted_token = encryption_service.encrypt(token)
         

@@ -10,6 +10,7 @@ from app.auth.decorators import login_required, role_required, get_current_user_
 from app.auth.user_service import UserService
 from app.database.repositories.user_repository import UserRepository
 from app.utils.exceptions import ValidationError
+from app.core.dependencies import get_user_service
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ def update_user_role(user_id: str) -> Tuple[Response, int]:
         if not new_role:
             return jsonify({"error": "Rol requerido"}), 400
         
-        user_service = UserService()
+        user_service = get_user_service()
         current_user_id = get_current_user_id()
         
         # No permitir cambiar su propio rol (seguridad)
@@ -203,7 +204,7 @@ def update_user_status(user_id: str) -> Tuple[Response, int]:
         if active is None:
             return jsonify({"error": "Estado requerido (active: true/false)"}), 400
         
-        user_service = UserService()
+        user_service = get_user_service()
         current_user_id = get_current_user_id()
         
         # No permitir desactivarse a sí mismo
@@ -253,7 +254,7 @@ def delete_user(user_id: str) -> Tuple[Response, int]:
         if user_id == current_user_id:
             return jsonify({"error": "No puedes eliminar tu propia cuenta"}), 400
         
-        user_service = UserService()
+        user_service = get_user_service()
         user_repo = UserRepository()
         
         # Verificar que el usuario existe

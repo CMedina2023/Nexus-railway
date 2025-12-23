@@ -8,6 +8,7 @@ from typing import Optional
 
 from app.auth.decorators import login_required, get_current_user_id
 from app.auth.user_service import UserService
+from app.core.dependencies import get_user_service
 from app.database.repositories.user_story_repository import UserStoryRepository
 from app.database.repositories.test_case_repository import TestCaseRepository
 from app.database.repositories.jira_report_repository import JiraReportRepository
@@ -33,7 +34,7 @@ def get_user_stories():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -76,7 +77,7 @@ def get_user_test_cases():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -120,7 +121,7 @@ def get_user_reports():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -164,7 +165,7 @@ def get_user_bulk_uploads():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -204,7 +205,7 @@ def get_activity_metrics():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -258,7 +259,7 @@ def get_dashboard_summary():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -320,7 +321,7 @@ def clear_all_metrics():
     """
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:

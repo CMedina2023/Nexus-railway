@@ -107,17 +107,10 @@ def inject_csrf_token():
     from flask_wtf.csrf import generate_csrf
     return dict(csrf_token=lambda: generate_csrf())
 
-# Inicializar servicios y orquestador
-file_manager = FileManager(UPLOAD_FOLDER)
-data_transformer = DataTransformer()
-validator_service = Validator()
-file_generator = FileGenerator()
-orchestrator = GenerationOrchestrator(
-    file_manager, 
-    data_transformer, 
-    validator_service, 
-    file_generator
-)
+# Inicializar servicios y orquestador (vía Dependency Injection)
+from app.core.dependencies import get_file_manager, get_generation_orchestrator
+file_manager = get_file_manager(UPLOAD_FOLDER)
+orchestrator = get_generation_orchestrator(file_manager)
 
 
 # Inicializar base de datos

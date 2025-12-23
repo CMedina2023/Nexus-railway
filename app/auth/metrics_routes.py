@@ -20,6 +20,7 @@ from app.backend.jira.issue_service import IssueService
 from app.auth.metrics_helpers import build_jql_from_filters, calculate_metrics_from_issues
 from app.models.user import User
 from app.auth.user_service import UserService
+from app.core.dependencies import get_user_service, get_jira_token_manager
 from app.utils.exceptions import ConfigurationError
 from app.core.config import Config
 from app.database.repositories.jira_report_repository import JiraReportRepository
@@ -51,7 +52,7 @@ def get_project_metrics(project_key: str):
         user_id = get_current_user_id()
         logger.info(f"[DEBUG] User ID obtenido: {user_id}")
         
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id) if user_id else None
         
         if not user:
@@ -88,7 +89,7 @@ def get_project_metrics(project_key: str):
         
         # Obtener configuración de Jira para el usuario
         logger.info(f"[DEBUG] Obteniendo configuración de Jira para usuario {user.email}, proyecto {project_key}")
-        token_manager = JiraTokenManager()
+        token_manager = get_jira_token_manager()
         
         try:
             jira_config = token_manager.get_token_for_user(user, project_key)
@@ -377,7 +378,7 @@ def generate_report_stream(project_key: str):
     # Obtener usuario ANTES del generador para evitar problemas de contexto
     try:
         user_id = get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id) if user_id else None
     except Exception as e:
         logger.error(f"Error al obtener usuario en SSE: {e}", exc_info=True)
@@ -423,7 +424,7 @@ def generate_report_stream(project_key: str):
                 return
             
             # Obtener configuración de Jira
-            token_manager = JiraTokenManager()
+            token_manager = get_jira_token_manager()
             try:
                 jira_config = token_manager.get_token_for_user(user, project_key)
             except ConfigurationError as e:

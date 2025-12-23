@@ -25,8 +25,8 @@ class UserService:
     
     def __init__(
         self,
-        user_repository: Optional[UserRepository] = None,
-        password_service: Optional[PasswordService] = None
+        user_repository: UserRepository,
+        password_service: PasswordService
     ):
         """
         Inicializa el servicio de usuarios
@@ -35,8 +35,8 @@ class UserService:
             user_repository: Repositorio de usuarios (DIP - inyección de dependencias)
             password_service: Servicio de contraseñas (DIP - inyección de dependencias)
         """
-        self._user_repository = user_repository or UserRepository()
-        self._password_service = password_service or PasswordService()
+        self._user_repository = user_repository
+        self._password_service = password_service
     
     def validate_email(self, email: str) -> bool:
         """

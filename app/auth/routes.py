@@ -8,9 +8,8 @@ from flask_limiter.util import get_remote_address
 
 from app.auth.user_service import UserService
 from app.auth.session_service import SessionService
-from app.auth.password_service import PasswordService
-from app.utils.exceptions import ValidationError
 from app.core.config import Config
+from app.core.dependencies import get_user_service
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +94,8 @@ def login():
                 return jsonify({"error": error_msg}), 400
             return render_template('auth/login.html', error=error_msg), 400
         
-        # Autenticar usuario
-        user_service = UserService()
+        # Autenticar usuario (vía Dependency Injection)
+        user_service = get_user_service()
         user, message = user_service.authenticate_user(email, password)
         
         if user:
@@ -226,8 +225,8 @@ def register():
         if role not in valid_roles:
             role = 'usuario'  # Default seguro
         
-        # Crear usuario
-        user_service = UserService()
+        # Crear usuario (vía Dependency Injection)
+        user_service = get_user_service()
         user = user_service.create_user(
             email=email,
             password=password,

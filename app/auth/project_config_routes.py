@@ -10,6 +10,7 @@ from app.auth.decorators import login_required, role_required, get_current_user_
 from app.services.jira_token_manager import JiraTokenManager
 from app.backend.jira.connection import JiraConnection
 from app.utils.exceptions import ValidationError, ConfigurationError
+from app.core.dependencies import get_jira_token_manager
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def create_project_config():
         
         # Guardar configuración (encriptada)
         user_id = get_current_user_id()
-        token_manager = JiraTokenManager()
+        token_manager = get_jira_token_manager()
         
         config = token_manager.save_project_config(
             project_key=project_key,
@@ -161,7 +162,7 @@ def update_project_config(project_key: str):
             return jsonify({"error": "Datos requeridos"}), 400
         
         user_id = get_current_user_id()
-        token_manager = JiraTokenManager()
+        token_manager = get_jira_token_manager()
         
         # Obtener configuración actual
         from app.database.repositories.project_config_repository import ProjectConfigRepository
@@ -183,7 +184,7 @@ def update_project_config(project_key: str):
             
             # Necesitamos desencriptar email actual si no se actualiza
             if not email:
-                encryption_service = JiraTokenManager()._encryption_service
+                encryption_service = get_jira_token_manager()._encryption_service
                 test_email = encryption_service.decrypt(current_config.shared_email)
             
             try:

@@ -12,7 +12,9 @@ from app.auth.user_service import UserService
 from app.auth.password_service import PasswordService
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.user_jira_config_repository import UserJiraConfigRepository
+from app.database.repositories.user_jira_config_repository import UserJiraConfigRepository
 from app.utils.exceptions import ValidationError
+from app.core.dependencies import get_user_service
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ def profile_dashboard():
     from app.auth.session_service import SessionService
     
     user_id = SessionService.get_current_user_id()
-    user_service = UserService()
+    user_service = get_user_service()
     user = user_service.get_user_by_id(user_id)
     
     if not user:
@@ -94,7 +96,7 @@ def change_password():
             return render_template('profile/dashboard.html', error=error_msg), 400
         
         # Obtener usuario
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
@@ -168,7 +170,7 @@ def get_profile_info():
         from app.auth.session_service import SessionService
         
         user_id = SessionService.get_current_user_id()
-        user_service = UserService()
+        user_service = get_user_service()
         user = user_service.get_user_by_id(user_id)
         
         if not user:
