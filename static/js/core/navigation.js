@@ -14,7 +14,11 @@
         // Limpiar reporte si se está saliendo de jira-reportes
         const currentSection = document.querySelector('.content-section.active');
         if (currentSection && currentSection.id === 'jira-reportes' && sectionId !== 'jira-reportes') {
-            if (window.clearJiraReport) window.clearJiraReport();
+            if (window.NexusModules?.Dashboard?.clearJiraReport) {
+                window.NexusModules.Dashboard.clearJiraReport();
+            } else if (window.clearJiraReport) {
+                window.clearJiraReport();
+            }
         }
 
         // Limpiar carga masiva si se está saliendo de jira-carga-masiva
@@ -66,8 +70,12 @@
         }
 
         // Cargar métricas del dashboard si se navega al dashboard
-        if (sectionId === 'dashboard' && window.loadDashboardMetrics) {
-            await window.loadDashboardMetrics();
+        if (sectionId === 'dashboard') {
+            if (window.NexusModules?.Dashboard?.loadDashboardMetrics) {
+                await window.NexusModules.Dashboard.loadDashboardMetrics();
+            } else if (window.loadDashboardMetrics) {
+                await window.loadDashboardMetrics();
+            }
         }
 
         // Initialize charts if navigating to infografia
@@ -78,9 +86,13 @@
         }
 
         // Load metrics if navigating to metricas
-        if (sectionId === 'metricas' && window.loadAllMetrics) {
+        if (sectionId === 'metricas') {
             setTimeout(() => {
-                window.loadAllMetrics();
+                if (window.NexusModules?.Dashboard?.loadAllMetrics) {
+                    window.NexusModules.Dashboard.loadAllMetrics();
+                } else if (window.loadAllMetrics) {
+                    window.loadAllMetrics();
+                }
             }, 100);
         }
 

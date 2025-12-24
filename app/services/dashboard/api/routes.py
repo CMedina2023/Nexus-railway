@@ -92,7 +92,9 @@ def get_dashboard_metrics():
         
         # ===== MÉTRICAS DE JIRA =====
         # Obtener reportes del usuario
-        reports = report_repo.get_by_user_id(user_id)
+        reports_all = report_repo.get_by_user_id(user_id)
+        # Filtrar reportes de tipo 'metrics' que son logs internos automáticos
+        reports = [r for r in reports_all if r.report_type != 'metrics']
         
         # Agrupar reportes por proyecto y construir historial
         reports_by_project = defaultdict(lambda: {'count': 0, 'name': '', 'lastDate': None})
@@ -195,4 +197,75 @@ def get_dashboard_metrics():
         
     except Exception as e:
         logger.error(f"Error al obtener métricas del dashboard: {e}", exc_info=True)
-        return jsonify({'success': False, 'error': str(e)}), 500
+
+@dashboard_bp.route('/clear-metrics', methods=['DELETE'])
+@login_required
+def clear_all_metrics():
+    """
+    Limpia todas las métricas del dashboard (historias, casos de prueba, reportes y cargas masivas)
+    
+    ✅ Solo Admin puede ejecutar esta acción
+    ❌ Analista QA y Usuario NO tienen acceso
+    """
+    try:
+        user_id = get_current_user_id()
+        # Se requiere importar get_user_service y UserService si no estan disponibles
+        # Asumimos que get_current_user_id funciona
+        # Necesitamos verificar el rol del usuario. 
+        # En la arquitectura actual, parece que podemos usar un repositorio o servicio.
+        
+        # Como no tenemos acceso facil a UserService aqui (no esta importado), 
+        # vamos a obtener el usuario a través de un repositorio o inyección si es posible.
+        # Revisando importaciones: from app.auth.decorators import login_required, get_current_user_id
+        
+        # Vamos a importar UserService localmente para evitar dependencias circulares si las hubiera, 
+        # o agregarlo arriba. Mejor agregarlo arriba si es posible, pero voy a usar import local para ser seguro.
+        from app.auth.user_service import UserService
+        from app.core.dependencies import get_user_service
+
+        user_service = get_user_service()
+        user = user_service.get_user_by_id(user_id)
+        
+        if not user:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        
+        # Verificar que sea admin
+        if user.role != 'admin':
+            logger.warning(f"Intento no autorizado de limpiar métricas por usuario {user.email} (rol: {user.role})")
+            return jsonify({"error": "No autorizado. Solo Admin puede limpiar métricas"}), 403
+        
+        # Limpiar todas las tablas de métricas
+        story_repo = UserStoryRepository()
+        test_case_repo = TestCaseRepository()
+        report_repo = JiraReportRepository()
+        upload_repo = BulkUploadRepository()
+        
+        # Contar antes de limpiar para el log
+        stories_count = story_repo.count_all()
+        test_cases_count = test_case_repo.count_all()
+        reports_count = report_repo.count_all()
+        uploads_count = upload_repo.count_all()
+        
+        # Limpiar todas las tablas
+        story_repo.delete_all()
+        test_case_repo.delete_all()
+        report_repo.delete_all()
+        upload_repo.delete_all()
+        
+        logger.info(f"Admin {user.email} limpió todas las métricas: {stories_count} historias, {test_cases_count} casos de prueba, {reports_count} reportes, {uploads_count} cargas masivas")
+        
+        return jsonify({
+            "success": True,
+            "message": "Todas las métricas han sido limpiadas exitosamente",
+            "deleted": {
+                "stories": stories_count,
+                "test_cases": test_cases_count,
+                "reports": reports_count,
+                "bulk_uploads": uploads_count
+            }
+        }), 200
+    
+    except Exception as e:
+        logger.error(f"Error al limpiar métricas: {e}", exc_info=True)
+        return jsonify({"error": "Error al limpiar métricas"}), 500
+

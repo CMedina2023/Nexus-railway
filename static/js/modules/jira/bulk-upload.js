@@ -1193,17 +1193,15 @@
 
             if (data.success) {
                 if (uploadStatusIcon) uploadStatusIcon.textContent = '✅';
-                if (uploadStatusMessage) uploadStatusMessage.textContent = `✅ ${data.message || 'Archivo cargado exitosamente'}`;
+                if (uploadStatusMessage) uploadStatusMessage.textContent = data.message || 'Archivo cargado exitosamente';
                 if (uploadStatus) uploadStatus.classList.add('success');
 
                 // Try calling global increment or mock it if module isolated
-                if (typeof window.incrementUploadCount === 'function') {
-                    window.incrementUploadCount(
-                        data.results?.success_count || 0,
-                        projectSelector.value,
-                        projectSelector.value,
-                        data.results?.issue_types_distribution || {}
-                    );
+                // Actualizar métricas del dashboard si el módulo está disponible
+                if (window.NexusModules && window.NexusModules.Dashboard) {
+                    await window.NexusModules.Dashboard.refreshMetrics();
+                } else if (typeof window.loadJiraMetrics === 'function') {
+                    await window.loadJiraMetrics();
                 }
 
                 if (data.txt_content && data.txt_filename) {

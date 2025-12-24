@@ -51,7 +51,7 @@
 
                 <div class="metrics-actions">
                     {% if user_info and user_info.role == 'admin' %}
-                    <button class="reset-btn" onclick="resetMetrics()">
+                    <button class="reset-btn" onclick="NexusModules.Dashboard.resetMetrics()">
                         <i class="fas fa-redo"></i>
                         <span>Reiniciar Métricas</span>
                     </button>
