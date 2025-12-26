@@ -469,11 +469,12 @@ Tienes **archivos monstruosos** que son **bombas de tiempo** para el mantenimien
 - [ ] Implementar metodología BEM (En progreso en módulos)
 - [x] Crear archivo main.css de importación (styles.css actúa como main)
 
-### JavaScript (generators.js - 2,534 líneas)
-- [ ] Identificar responsabilidades únicas
-- [ ] Crear módulos separados por feature
-- [ ] Extraer lógica de UI a archivos dedicados
-- [ ] Implementar patron Facade para API
+### JavaScript (generators.js - 1,608 líneas) [REDUCCIÓN: -926] 🚀
+- [x] Identificar responsabilidades únicas
+- [x] Crear módulos separados por feature (`modules/generators/story/`, `modules/generators/test-case/`)
+- [x] Extraer lógica de UI a archivos dedicados (`story-ui.js`, `test-case-ui.js`)
+- [x] Implementar patron Facade para API (`generator-api.js`)
+- [x] Extraer lógica de Jira a módulos dedicados (`story-jira.js`, `test-case-jira.js`)
 - [ ] Crear tests unitarios para cada módulo
 
 ### Python (story_backend.py - 1,837 líneas)

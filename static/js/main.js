@@ -76,9 +76,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 100);
     }
 
-    // Configurar event listeners de paginación (por si acaso ya existen los elementos)
-    setupPaginationListeners();
-
     // Initialize Feedback Module
     if (window.NexusModules && window.NexusModules.Feedback && window.NexusModules.Feedback.init) {
         window.NexusModules.Feedback.init();

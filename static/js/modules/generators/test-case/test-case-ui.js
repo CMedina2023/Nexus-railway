@@ -1,0 +1,229 @@
+/**
+ * Nexus AI - Test Case Generator UI
+ * Maneja la interfaz de usuario para la generación de casos de prueba.
+ */
+(function (window) {
+    'use strict';
+
+    const NexusModules = window.NexusModules || {};
+    NexusModules.Generators = NexusModules.Generators || {};
+
+    // Alias para utilidades
+    const Utils = NexusModules.Generators.Utils;
+
+    /**
+     * Componente de UI para Casos de Prueba
+     */
+    NexusModules.Generators.TestUI = {
+        /**
+         * Muestra la vista previa de los casos de prueba generados
+         * @param {Object} data - Datos de los casos de prueba
+         * @param {Object} state - Estado del generador
+         */
+        displayPreview(data, state) {
+            const previewSection = document.getElementById('tests-preview-section');
+            const previewCount = document.getElementById('tests-preview-count');
+            const previewTbody = document.getElementById('tests-preview-tbody');
+
+            if (!previewSection || !previewCount || !previewTbody) return;
+
+            // Mostrar sección
+            previewSection.style.display = 'block';
+            previewCount.textContent = data.test_cases_count;
+
+            // Limpiar tabla
+            previewTbody.innerHTML = '';
+
+            // Agregar casos a la tabla
+            data.test_cases.forEach((testCase, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <input type="checkbox" class="test-checkbox" data-index="${index}" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--accent); text-align: center;">${testCase.index}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <input type="text" class="test-summary-input" data-index="${index}" value="${Utils.escapeHtml(testCase.summary)}" style="width: 100%; max-width: 300px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <textarea class="test-preconditions-input" data-index="${index}" rows="2" style="width: 100%; max-width: 400px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; resize: none; min-height: 50px;">${Utils.escapeHtml(testCase.preconditions)}</textarea>
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; background: rgba(16, 185, 129, 0.2); color: #10b981;">Manual</span>
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <select class="test-priority-select" data-index="${index}" style="padding: 0.5rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
+                            <option value="High" ${testCase.priority === 'High' ? 'selected' : ''}>High</option>
+                            <option value="Medium" ${testCase.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                            <option value="Low" ${testCase.priority === 'Low' ? 'selected' : ''}>Low</option>
+                        </select>
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button class="test-edit-btn" data-index="${index}" style="padding: 0.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent); border-radius: 6px; cursor: pointer; font-size: 1rem;" title="Editar">✏️</button>
+                            <button class="test-delete-btn" data-index="${index}" style="padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--error); border-radius: 6px; cursor: pointer; font-size: 1rem;" title="Eliminar">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                previewTbody.appendChild(row);
+            });
+
+            this.updateEventListeners(state);
+            this.updateSelectedCount();
+        },
+
+        /**
+         * Actualiza los event listeners de la tabla de vista previa
+         */
+        updateEventListeners(state) {
+            const selectAllCheckbox = document.getElementById('tests-select-all');
+            const tableSelectAllCheckbox = document.getElementById('tests-table-select-all');
+
+            const handleSelectAll = (e) => {
+                const checkboxes = document.querySelectorAll('.test-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                if (selectAllCheckbox) selectAllCheckbox.checked = e.target.checked;
+                if (tableSelectAllCheckbox) tableSelectAllCheckbox.checked = e.target.checked;
+                this.updateSelectedCount();
+            };
+
+            if (selectAllCheckbox) selectAllCheckbox.onclick = handleSelectAll;
+            if (tableSelectAllCheckbox) tableSelectAllCheckbox.onclick = handleSelectAll;
+
+            // Checkboxes individuales
+            document.querySelectorAll('.test-checkbox').forEach(cb => {
+                cb.onchange = () => this.updateSelectedCount();
+            });
+
+            // Inputs de edición rápida
+            document.querySelectorAll('.test-summary-input, .test-preconditions-input, .test-priority-select').forEach(input => {
+                input.onchange = (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    if (state.currentData && state.currentData[index]) {
+                        const val = e.target.value;
+                        if (e.target.classList.contains('test-summary-input')) state.currentData[index].summary = val;
+                        else if (e.target.classList.contains('test-preconditions-input')) state.currentData[index].preconditions = val;
+                        else if (e.target.classList.contains('test-priority-select')) state.currentData[index].priority = val;
+                    }
+                };
+            });
+
+            // Botones de acción
+            document.querySelectorAll('.test-edit-btn').forEach(btn => {
+                btn.onclick = (e) => this.openEditModal(parseInt(e.target.getAttribute('data-index')), state);
+            });
+
+            document.querySelectorAll('.test-delete-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    if (confirm('¿Estás seguro de eliminar este caso de prueba?')) {
+                        state.currentData.splice(index, 1);
+                        this.displayPreview({ test_cases: state.currentData, test_cases_count: state.currentData.length }, state);
+                    }
+                };
+            });
+        },
+
+        /**
+         * Actualiza el contador de casos seleccionados
+         */
+        updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.test-checkbox:checked');
+            const count = checkboxes.length;
+            const countEl = document.getElementById('tests-selected-count');
+            if (countEl) {
+                countEl.textContent = `${count} casos de prueba seleccionados`;
+            }
+        },
+
+        /**
+         * Abre el modal de edición para un caso de prueba
+         */
+        openEditModal(index, state) {
+            if (!state.currentData || !state.currentData[index]) return;
+
+            const testCase = state.currentData[index];
+            state.editingIndex = index;
+
+            document.getElementById('edit-test-summary').value = testCase.summary || '';
+            document.getElementById('edit-test-preconditions').value = testCase.preconditions || '';
+            document.getElementById('edit-test-steps').value = testCase.steps || '';
+            document.getElementById('edit-test-expected').value = testCase.expected_result || '';
+            document.getElementById('edit-test-priority').value = testCase.priority || 'Medium';
+
+            const modal = document.getElementById('edit-test-modal');
+            if (modal) modal.style.display = 'flex';
+        },
+
+        /**
+         * Cierra el modal de edición
+         */
+        closeEditModal(state) {
+            const modal = document.getElementById('edit-test-modal');
+            if (modal) modal.style.display = 'none';
+            state.editingIndex = null;
+        },
+
+        /**
+         * Guarda los cambios del modal de edición
+         */
+        saveEditChanges(state) {
+            if (state.editingIndex === null) return;
+
+            const summary = document.getElementById('edit-test-summary').value.trim();
+            const preconditions = document.getElementById('edit-test-preconditions').value.trim();
+            const steps = document.getElementById('edit-test-steps').value.trim();
+            const expected = document.getElementById('edit-test-expected').value.trim();
+            const priority = document.getElementById('edit-test-priority').value;
+
+            if (!summary || !steps || !expected) {
+                window.showDownloadNotification('Por favor completa los campos requeridos', 'error');
+                return;
+            }
+
+            state.currentData[state.editingIndex].summary = summary;
+            state.currentData[state.editingIndex].preconditions = preconditions;
+            state.currentData[state.editingIndex].steps = steps;
+            state.currentData[state.editingIndex].expected_result = expected;
+            state.currentData[state.editingIndex].priority = priority;
+
+            this.displayPreview({ test_cases: state.currentData, test_cases_count: state.currentData.length }, state);
+            this.closeEditModal(state);
+            window.showDownloadNotification('Caso de prueba actualizado exitosamente', 'success');
+        },
+
+        /**
+         * Abre el modal de revisión de HTML
+         */
+        openReviewModal(state) {
+            const modal = document.getElementById('tests-review-modal');
+            const iframe = document.getElementById('tests-html-viewer');
+
+            if (!modal || !iframe || !state.currentHtml) {
+                window.showDownloadNotification('No hay contenido disponible para revisar', 'error');
+                return;
+            }
+
+            const blob = new Blob([state.currentHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            iframe.src = url;
+            modal.style.display = 'flex';
+        },
+
+        /**
+         * Cierra el modal de revisión
+         */
+        closeReviewModal() {
+            const modal = document.getElementById('tests-review-modal');
+            const iframe = document.getElementById('tests-html-viewer');
+
+            if (iframe && iframe.src) {
+                URL.revokeObjectURL(iframe.src);
+                iframe.src = '';
+            }
+            if (modal) modal.style.display = 'none';
+        }
+    };
+
+    window.NexusModules = NexusModules;
+})(window);

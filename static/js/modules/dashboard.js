@@ -16,6 +16,7 @@
 
     // Variable global para cachear las métricas
     let cachedMetrics = null;
+    let activePeriod = 'total'; // Default active period
 
     // Chart instances
     let areaChartInstance = null;
@@ -339,6 +340,27 @@
     // Esta función ya no guarda en localStorage, el backend maneja el guardado
     // Se mantiene por compatibilidad
     async function updateMetrics(type, count, area = null) {
+        // Optimistic UI update
+        try {
+            if (activePeriod === 'total') {
+                if (type === 'stories') {
+                    const el = document.getElementById('stories-count');
+                    if (el) {
+                        const current = parseInt(el.textContent.replace(/,/g, '')) || 0;
+                        el.textContent = (current + count).toLocaleString();
+                    }
+                } else if (type === 'test_cases') {
+                    const el = document.getElementById('test-cases-count');
+                    if (el) {
+                        const current = parseInt(el.textContent.replace(/,/g, '')) || 0;
+                        el.textContent = (current + count).toLocaleString();
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Error updating metric UI optimistically:', e);
+        }
+
         // El backend guarda automáticamente cuando se generan historias/casos de prueba
         // Solo necesitamos recargar las métricas del backend
         cachedMetrics = null; // Invalidar cache
@@ -983,6 +1005,8 @@
     // ============================================
 
     function showMetricsSection(filterType) {
+        activePeriod = filterType; // Update active period state
+
         // Ocultar todas las secciones
         document.querySelectorAll('.metrics-section').forEach(section => {
             section.classList.remove('active');
