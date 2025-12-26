@@ -8,6 +8,7 @@ import json
 import threading
 import time
 from typing import Dict, Tuple, Optional, Any, List
+from datetime import datetime
 
 from app.services.file_manager import FileManager
 from app.services.data_transformer import DataTransformer
@@ -15,6 +16,13 @@ from app.services.validator import Validator
 from app.services.file_generator import FileGenerator
 from app.utils.matrix_utils import extract_matrix_data
 from app.backend.matrix_backend import generate_test_cases_html_document, parse_test_cases_to_dict
+
+# Imports de base de datos y modelos
+from app.models.user_story import UserStory
+from app.models.test_case import TestCase
+from app.database.repositories.user_story_repository import UserStoryRepository
+from app.database.repositories.test_case_repository import TestCaseRepository
+from app.auth.session_service import SessionService
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +50,8 @@ class GenerationOrchestrator:
         self.data_transformer = data_transformer
         self.validator = validator
         self.file_generator = file_generator
+        self.user_story_repo = UserStoryRepository()
+        self.test_case_repo = TestCaseRepository()
 
     def stream_generation_pipeline(
         self,
@@ -68,7 +78,12 @@ class GenerationOrchestrator:
                     ("Identificando actores y perfiles de usuario...", 25, "Análisis"),
                     ("Estructurando criterios de aceptación...", 38, "Redacción"),
                     ("Aplicando contexto de negocio adicional...", 50, "Contexto"),
-                    ("Finalizando borrador de historias...", 65, "Finalización")
+                    ("Finalizando borrador de historias...", 65, "Finalización"),
+                    ("Verificando consistencia de criterios de aceptación...", 72, "Verificación"),
+                    ("Refinando detalles técnicos y narrativos...", 79, "Refinamiento"),
+                    ("Validando reglas de negocio...", 86, "Validación"),
+                    ("Estandarizando formato de salida...", 92, "Formato"),
+                    ("Finalizando procesamiento...", 95, "Finalizando")
                 ]
             else:
                 sim_steps = [
@@ -76,7 +91,12 @@ class GenerationOrchestrator:
                     ("Identificando casos de éxito y flujos alternos...", 25, "Casos"),
                     ("Diseñando validaciones de entrada y salida...", 42, "Validación"),
                     ("Mapeando resultados esperados detallados...", 55, "Estructura"),
-                    ("Finalizando borrador de matriz técnica...", 65, "Finalización")
+                    ("Finalizando borrador de matriz técnica...", 65, "Finalización"),
+                    ("Verificando cobertura de escenarios...", 72, "Cobertura"),
+                    ("Generando datos de prueba sintéticos...", 80, "Datos"),
+                    ("Validando lógica secuencial de pasos...", 87, "Lógica"),
+                    ("Optimizando redacción de resultados esperados...", 93, "Optimización"),
+                    ("Finalizando procesamiento...", 95, "Finalizando")
                 ]
 
             result_container = {"data": None, "error": None, "completed": False}
@@ -105,9 +125,9 @@ class GenerationOrchestrator:
                     sim_index += 1
                 else:
                     # Si la IA tarda más de lo esperado, mantenemos el último porcentaje de simulación
-                    yield self._format_sse("Casi listo, procesando respuesta del modelo...", 65, "Procesando")
+                    yield self._format_sse("Casi listo, procesando respuesta del modelo...", 95, "Procesando")
                 
-                time.sleep(8.0) # Intervalo de 8 segundos por latido
+                time.sleep(5.0) # Intervalo de 5 segundos por latido
 
             # Verificar si hubo error
             if result_container["error"]:
@@ -170,9 +190,9 @@ class GenerationOrchestrator:
             yield self._format_sse("Ensamblando archivos finales y base de datos...", 95, "Ensamblaje")
             
             if task_type == 'story':
-                result_data, error = self.process_story_generation(result, output_filename, filepath, story_backend)
+                result_data, error = self.process_story_generation(result, output_filename, filepath, story_backend, parameters)
             elif task_type == 'matrix':
-                result_data, error = self.process_matrix_generation(result, output_filename, filepath)
+                result_data, error = self.process_matrix_generation(result, output_filename, filepath, parameters)
             else:
                 result_data, error = self.process_both_generation(document_text, parameters, output_filename, filepath, agent_processing_func, story_backend)
 
@@ -204,7 +224,8 @@ class GenerationOrchestrator:
         result: Any, 
         output_filename: str, 
         filepath: str,
-        story_backend
+        story_backend,
+        parameters: Dict = None
     ) -> Tuple[Optional[Dict], Optional[Dict]]:
         """Procesa la generación de historias de usuario"""
         try:
@@ -225,13 +246,39 @@ class GenerationOrchestrator:
             html_content = story_backend.generate_html_document(valid_stories)
             csv_content = story_backend.generate_jira_csv(valid_stories)
             
+            # Convertir historias a dict
+            stories_dicts = story_backend.parse_stories_to_dict(valid_stories) if hasattr(story_backend, 'parse_stories_to_dict') else []
+            
+            # --- GUARDAR EN BASE DE DATOS ---
+            try:
+                user_id = SessionService.get_current_user_id()
+                if user_id:
+                    area = parameters.get('area', 'General') if parameters else 'General'
+                    story_record = UserStory(
+                        user_id=user_id,
+                        project_key="", # Se deja vacío, se actualizará al subir a Jira
+                        area=area,
+                        story_title=f"Generación {datetime.now().strftime('%Y-%m-%d %H:%M')}", # Título genérico
+                        story_content=json.dumps(stories_dicts), # Guardar contenido estructurado
+                        jira_issue_key="",
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
+                    )
+                    self.user_story_repo.create(story_record)
+                    logger.info("Historias guardadas en base de datos correctamente")
+                else:
+                    logger.warning("No se pudo obtener user_id para guardar historias")
+            except Exception as db_err:
+                logger.error(f"Error al guardar historias en BD: {db_err}")
+                # No detenemos el flujo si falla el guardado en BD, pero lo logueamos
+            
             return {
                 "status": "success",
                 "message": f"Historias generadas: {len(valid_stories)}",
                 "download_url": f"/download/{stories_filename}",
                 "filename": stories_filename,
                 "stories_count": len(valid_stories),
-                "stories": story_backend.parse_stories_to_dict(valid_stories) if hasattr(story_backend, 'parse_stories_to_dict') else [],
+                "stories": stories_dicts,
                 "html_content": html_content,
                 "csv_content": csv_content
             }, None
@@ -243,7 +290,8 @@ class GenerationOrchestrator:
         self, 
         result: Any, 
         output_filename: str, 
-        filepath: str
+        filepath: str,
+        parameters: Dict = None
     ) -> Tuple[Optional[Dict], Optional[Dict]]:
         """Procesa la generación de matriz de pruebas"""
         try:
@@ -274,6 +322,29 @@ class GenerationOrchestrator:
             
             self.file_generator.create_zip_file(zip_filepath, files_to_add)
             
+            # --- GUARDAR EN BASE DE DATOS ---
+            try:
+                user_id = SessionService.get_current_user_id()
+                if user_id:
+                    area = parameters.get('area', 'General') if parameters else 'General'
+                    # El repositorio espera un objeto TestCases
+                    test_case_record = TestCase(
+                        user_id=user_id,
+                        project_key="", # Se deja vacío
+                        area=area,
+                        test_case_title=f"Generación {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                        test_case_content=json.dumps(test_cases_for_frontend),
+                        jira_issue_key="",
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
+                    )
+                    self.test_case_repo.create(test_case_record)
+                    logger.info("Casos de prueba guardados en base de datos correctamente")
+                else:
+                    logger.warning("No se pudo obtener user_id para guardar casos de prueba")
+            except Exception as db_err:
+                logger.error(f"Error al guardar casos de prueba en BD: {db_err}")
+
             return {
                 "status": "success",
                 "message": f"Matriz generada: {len(valid_cases)} casos",
@@ -301,11 +372,11 @@ class GenerationOrchestrator:
         try:
             # Generar historias
             stories_result = simple_agent_processing('story', document_text, parameters)
-            stories_data, s_error = self.process_story_generation(stories_result, f"{output_filename}_stories", filepath, story_backend)
+            stories_data, s_error = self.process_story_generation(stories_result, f"{output_filename}_stories", filepath, story_backend, parameters)
             
             # Generar matriz
             matrix_result = simple_agent_processing('matrix', document_text, parameters)
-            matrix_data, m_error = self.process_matrix_generation(matrix_result, f"{output_filename}_matrix", filepath)
+            matrix_data, m_error = self.process_matrix_generation(matrix_result, f"{output_filename}_matrix", filepath, parameters)
             
             if s_error or m_error:
                 return None, {"error": "Error en generación combinada"}
@@ -317,16 +388,18 @@ class GenerationOrchestrator:
             # Leer archivos generados
             files_to_add = {}
             if stories_data:
-                with open(self.file_manager.get_file_path(stories_data['filename']), 'rb') as f:
-                    files_to_add[stories_data['filename']] = f.read()
+                stories_path = self.file_manager.get_file_path(stories_data['filename'])
+                if os.path.exists(stories_path):
+                    with open(stories_path, 'rb') as f:
+                        files_to_add[stories_data['filename']] = f.read()
             
             if matrix_data:
-                # El ZIP de matriz contiene json y csv? 
-                # Para simplificar, agregamos los archivos individuales
-                csv_content = self.file_generator.generate_csv(matrix_data['test_cases'])
-                json_content = self.file_generator.generate_json(matrix_data['test_cases'])
-                files_to_add[f"{output_filename}_matrix.csv"] = csv_content.encode('utf-8')
-                files_to_add[f"{output_filename}_matrix.json"] = json_content.encode('utf-8')
+                # Agregar archivos individuales desde el contenido generado
+                if 'csv_content' in matrix_data:
+                    files_to_add[f"{output_filename}_matrix.csv"] = matrix_data['csv_content'].encode('utf-8') if isinstance(matrix_data['csv_content'], str) else matrix_data['csv_content']
+                if 'test_cases' in matrix_data:
+                    json_content = self.file_generator.generate_json(matrix_data['test_cases']) # Re-generate JSON from dict
+                    files_to_add[f"{output_filename}_matrix.json"] = json_content.encode('utf-8')
 
             self.file_generator.create_zip_file(zip_filepath, files_to_add)
             self.file_manager.clean_temp_file(filepath)

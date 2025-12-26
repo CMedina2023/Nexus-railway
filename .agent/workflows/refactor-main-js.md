@@ -23,8 +23,8 @@ Mantenemos la estructura de carpetas pero el flujo de trabajo es dinámico:
 ```
 static/js/
 ├── core/
-│   ├── utils.js              # ✅ Hecho: Utilidades globales
-│   ├── navigation.js         # ✅ Hecho: Navegación SPA
+│   ├── utils.js              # pendiente: Utilidades globales
+│   ├── navigation.js         # pendiente: Navegación SPA
 │   └── api-client.js         # Pendiente: Cliente HTTP
 ├── modules/
 │   ├── dashboard/            # Bajo demanda
