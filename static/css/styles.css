@@ -8,6 +8,7 @@
     --primary-bg: #0f172a;
     --secondary-bg: #1e293b;
     --card-bg: #1e293b;
+    --bg: #0f172a;
     --accent: #3b82f6;
     --accent-hover: #2563eb;
     --text-primary: #e2e8f0;
@@ -2318,8 +2319,15 @@ body {
 }
 
 @keyframes comboboxIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .combobox-option {
@@ -4196,11 +4204,12 @@ body {
     margin-bottom: 2rem;
     padding: 0.5rem 0;
     position: sticky;
-    top: -1px;
-    background: var(--bg);
+    top: 0;
+    background: rgba(15, 23, 42, 0.9);
     z-index: 1000;
-    border-bottom: 1px solid transparent;
+    border-bottom: 1px solid var(--border);
     transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
 }
 
 .report-action-buttons {
