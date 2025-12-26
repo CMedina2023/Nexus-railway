@@ -8,6 +8,8 @@
     const NexusModules = window.NexusModules || {};
     const Api = NexusModules.Generators.Api;
     const Utils = NexusModules.Generators.Utils;
+    const ProjectCache = NexusModules.Generators.JiraProjectCache;
+    const ButtonState = NexusModules.Generators.JiraButtonState;
 
     NexusModules.Generators.StoryJira = {
         /**
@@ -15,6 +17,8 @@
          */
         init() {
             this.setupEventListeners();
+            // Pre-cargar proyectos en background
+            ProjectCache.preloadProjects();
         },
 
         /**
@@ -52,48 +56,54 @@
                 return;
             }
 
-            // Obtener historias seleccionadas desde el estado global (o pasadas por parámetro)
-            // Asumimos que window.currentStoriesData está disponible o lo manejamos vía NexusModules.Generators.StoryGenerator.getState()
             const selectedStories = Array.from(selected).map(cb => {
                 const index = parseInt(cb.dataset.index);
                 return window.currentStoriesData[index];
             });
-
             window.selectedStoriesForUpload = selectedStories;
 
             try {
-                await this.loadJiraProjects();
+                ButtonState.showLoading('stories-upload-jira-btn', 'Cargando proyectos de Jira...');
+
+                const projects = await ProjectCache.getProjects();
+                await this.setupModalWithProjects(projects);
+
                 document.getElementById('jira-modal-stories-count').textContent = `${selectedStories.length} historias seleccionadas para subir`;
+                ButtonState.hideLoading('stories-upload-jira-btn');
                 document.getElementById('jira-upload-modal').style.display = 'flex';
             } catch (error) {
+                ButtonState.hideLoading('stories-upload-jira-btn');
                 console.error('Error opening Jira modal:', error);
+                window.showDownloadNotification('Error al abrir el modal de Jira', 'error');
             }
         },
 
         /**
-         * Carga los proyectos de Jira en el combobox
+         * Configura el modal con los proyectos cargados
+         */
+        async setupModalWithProjects(projects) {
+            if (projects.length === 0) {
+                window.showDownloadNotification('No se encontraron proyectos de Jira. Verifica tu configuración.', 'error');
+                throw new Error('No projects found');
+            }
+
+            // Usar la utilidad setupSearchableCombo
+            Utils.setupSearchableCombo({
+                inputId: 'jira-project-search-input',
+                dropdownId: 'jira-project-dropdown',
+                hiddenId: 'jira-project-select',
+                dataArray: projects
+            });
+        },
+
+        /**
+         * Carga los proyectos de Jira en el combobox (método legacy)
+         * @deprecated Usar setupModalWithProjects con ProjectCache.getProjects() en su lugar
          */
         async loadJiraProjects() {
-            const hiddenInput = document.getElementById('jira-project-select');
-            if (!hiddenInput) return;
-
             try {
-                const data = await Api.getJiraProjects();
-                const projects = data.projects || [];
-
-                if (projects.length === 0) {
-                    window.showDownloadNotification('No se encontraron proyectos de Jira. Verifica tu configuración.', 'error');
-                    throw new Error('No projects found');
-                }
-
-                // Usar la nueva utilidad setupSearchableCombo
-                Utils.setupSearchableCombo({
-                    inputId: 'jira-project-search-input',
-                    dropdownId: 'jira-project-dropdown',
-                    hiddenId: 'jira-project-select',
-                    dataArray: projects
-                });
-
+                const projects = await ProjectCache.getProjects();
+                await this.setupModalWithProjects(projects);
             } catch (error) {
                 console.error('Error loading Jira projects:', error);
                 window.showDownloadNotification('Error al cargar proyectos de Jira', 'error');

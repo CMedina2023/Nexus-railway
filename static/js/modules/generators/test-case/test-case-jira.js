@@ -8,6 +8,8 @@
     const NexusModules = window.NexusModules || {};
     const Api = NexusModules.Generators.Api;
     const Utils = NexusModules.Generators.Utils;
+    const ProjectCache = NexusModules.Generators.JiraProjectCache;
+    const ButtonState = NexusModules.Generators.JiraButtonState;
 
     NexusModules.Generators.TestCaseJira = {
         state: {
@@ -21,6 +23,8 @@
          */
         init() {
             this.setupEventListeners();
+            // Pre-cargar proyectos en background
+            ProjectCache.preloadProjects();
         },
 
         /**
@@ -63,7 +67,7 @@
                 return;
             }
 
-            // Historias seleccionadas (usando window.selectedTestsForUpload para compatibilidad o internal state)
+            // Historias seleccionadas
             const selectedTests = Array.from(selected).map(cb => {
                 const index = parseInt(cb.dataset.index);
                 return window.currentTestsData[index];
@@ -78,11 +82,38 @@
             }
 
             try {
-                await this.loadJiraProjects();
+                ButtonState.showLoading('tests-upload-jira-btn', 'Cargando proyectos de Jira...');
+
+                const projects = await ProjectCache.getProjects();
+                await this.setupModalWithProjects(projects);
+
+                ButtonState.hideLoading('tests-upload-jira-btn');
                 modal.style.display = 'flex';
             } catch (error) {
+                ButtonState.hideLoading('tests-upload-jira-btn');
                 console.error('Error opening Jira tests modal:', error);
+                window.showDownloadNotification('Error al abrir el modal de Jira', 'error');
             }
+        },
+
+        /**
+         * Configura el modal con los proyectos cargados
+         */
+        async setupModalWithProjects(projects) {
+            if (projects.length === 0) {
+                window.showDownloadNotification('No se encontraron proyectos de Jira.', 'error');
+                throw new Error('No projects found');
+            }
+
+            Utils.setupSearchableCombo({
+                inputId: 'jira-tests-project-search-input',
+                dropdownId: 'jira-tests-project-dropdown',
+                hiddenId: 'jira-tests-project-select',
+                dataArray: projects,
+                onSelect: (item) => {
+                    this.handleProjectSelect(item);
+                }
+            });
         },
 
         /**
@@ -160,29 +191,17 @@
         },
 
         /**
-         * Carga proyectos de Jira y configura combobox
+         * Carga proyectos de Jira y configura combobox (método legacy)
+         * @deprecated Usar setupModalWithProjects con ProjectCache.getProjects() en su lugar
          */
         async loadJiraProjects() {
             try {
-                const data = await Api.getJiraProjects();
-                const projects = data.projects || [];
-
-                if (projects.length === 0) {
-                    window.showDownloadNotification('No se encontraron proyectos de Jira.', 'error');
-                    return;
-                }
-
-                Utils.setupSearchableCombo({
-                    inputId: 'jira-tests-project-search-input',
-                    dropdownId: 'jira-tests-project-dropdown',
-                    hiddenId: 'jira-tests-project-select',
-                    dataArray: projects,
-                    onSelect: (item) => {
-                        this.handleProjectSelect(item);
-                    }
-                });
+                const projects = await ProjectCache.getProjects();
+                await this.setupModalWithProjects(projects);
             } catch (error) {
                 console.error('Error loading Jira projects for tests:', error);
+                window.showDownloadNotification('Error al cargar proyectos de Jira', 'error');
+                throw error;
             }
         },
 

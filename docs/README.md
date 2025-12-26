@@ -316,7 +316,11 @@ nexus-ai/
 │   └── utils/             # Utilidades y helpers
 ├── docs/                  # Documentación técnica
 ├── scripts/               # Scripts de utilidad
-├── static/                # Archivos estáticos (CSS, JS)
+├── static/                # Archivos estáticos
+│   ├── css/               # Estilos y temas
+│   ├── js/                # Scripts del cliente
+│   │   ├── modules/       # Módulos ES6 (Generators, Jira, etc.)
+│   │   └── lib/           # Librerías externas
 ├── templates/             # Plantillas HTML
 ├── tests/                 # Tests unitarios
 ├── build.sh               # Script de build para Render
