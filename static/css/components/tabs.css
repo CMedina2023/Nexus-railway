@@ -1,0 +1,57 @@
+/* Tabs Component Styles */
+
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -0.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.filter-tab:hover {
+    color: var(--text-primary);
+}
+
+.filter-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.filter-tab.test-case.active {
+    color: #10b981;
+    border-bottom-color: #10b981;
+}
+
+.filter-tab.bug.active {
+    color: #ef4444;
+    border-bottom-color: #ef4444;
+}
+
+.tab-icon {
+    font-size: 1.1rem;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}

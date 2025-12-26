@@ -30,41 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 window.fetchWithTimeout = window.NexusApi.client.request.bind(window.NexusApi.client);
 
 
-// Función para abrir el modal de guía
-function openGuideModal() {
-    const modal = document.getElementById('guide-modal');
-    if (modal) {
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-// Función para cerrar el modal de guía
-function closeGuideModal(event) {
-    if (event && event.target !== event.currentTarget) {
-        return;
-    }
-    const modal = document.getElementById('guide-modal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
-
-// Inicializar botón de guía
-document.addEventListener('DOMContentLoaded', () => {
-    const helpButton = document.getElementById('help-guide-button');
-    if (helpButton) {
-        helpButton.addEventListener('click', openGuideModal);
-    }
-
-    // Cerrar con ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeGuideModal();
-        }
-    });
-});
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {

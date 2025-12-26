@@ -1,0 +1,44 @@
+/* Infografía Styles */
+.infografia-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 350px;
+    max-height: 400px;
+}
+
+.chart-duo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    width: 100%;
+}
+
+.chart-box {
+    background: var(--secondary-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.chart-caption {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+}
+
+.chart-box .chart-container {
+    max-width: none;
+    height: 260px;
+    max-height: 320px;
+    margin: 0;
+}

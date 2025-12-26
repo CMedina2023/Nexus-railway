@@ -1,0 +1,79 @@
+/* Main Content Area */
+.main-content {
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+.sidebar.collapsed~.main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+.content-section {
+    display: none;
+    padding: 2rem;
+    animation: fadeIn 0.3s ease-in;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* Excepción para carga masiva que necesita flex */
+#jira-carga-masiva.content-section.active {
+    display: flex !important;
+}
+
+/* Específico para la sección agent */
+#agent.content-section {
+    padding: 0;
+}
+
+#agent.content-section.active {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 4rem);
+    box-sizing: border-box;
+    padding: 2rem;
+    overflow: hidden;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}

@@ -1,0 +1,70 @@
+/* Badge Component Styles */
+
+.tab-badge {
+    background: var(--border);
+    color: var(--text-muted);
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.filter-tab.active .tab-badge {
+    background: var(--accent);
+    color: white;
+}
+
+.filter-tab.test-case.active .tab-badge {
+    background: #10b981;
+}
+
+.filter-tab.bug.active .tab-badge {
+    background: #ef4444;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Report Badges */
+.report-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.report-badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.report-badge-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.report-badge-error {
+    background: #ef4444;
+    color: white;
+}
+
+.report-badge-low {
+    background: #fbbf24;
+    color: #1e293b;
+}
+
+.report-badge-major {
+    background: #dc2626;
+    color: white;
+}
+
+.report-badge-critical {
+    background: #991b1b;
+    color: white;
+}
