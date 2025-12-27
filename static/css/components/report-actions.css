@@ -5,10 +5,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding: 1rem;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
     animation: fadeIn 0.3s ease-out;
 }
 
@@ -35,29 +31,16 @@
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-back-hub {
-    display: flex;
-    background: var(--secondary-bg);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 0.625rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    align-items: center;
-    gap: 0.625rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-bottom: 0;
-}
-
 .customize-button:hover,
-.download-button:hover,
-.btn-back-hub:hover {
+.download-button:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(59, 130, 246, 0.05);
     transform: translateY(-1px);
+}
+
+.report-actions-container .btn-back-hub {
+    margin-bottom: 0;
 }
 
 /* Download Dropdown Logic */
