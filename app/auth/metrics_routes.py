@@ -527,7 +527,7 @@ def generate_report_stream(project_key: str):
                         jql = f'project = {project_key}'
                 
                 # Obtener total primero
-                from app.backend.jira.parallel_issue_fetcher import ParallelIssueFetcher
+                from app.backend.jira.parallel_fetcher import ParallelIssueFetcher
                 parallel_fetcher = ParallelIssueFetcher(connection)
                 
                 # Obtener total con maxResults=1 (Jira no permite 0, requiere entre 1 y 5,000)

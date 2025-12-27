@@ -319,11 +319,17 @@ static/css/
 
 ### CRÍTICAS (Hacer AHORA): 🔥
 
-#### 1. Refactorizar `parallel_issue_fetcher.py` (1,209 líneas)
+#### 8. Refactorizar `parallel_issue_fetcher.py` (1,209 líneas) - ✅ COMPLETADO
 - **Impacto:** ALTO
 - **Esfuerzo:** Medio (2 días)
 - **Razón:** Lógica compleja de fetching paralelo en un solo archivo
-- **Acción:** Separar en: coordinator, worker, cache, error_handler
+- **Estado:** ✅ **COMPLETADO** (27/Dic/2025)
+- **Resultado:**
+  - Separado en paquete `app/backend/jira/parallel_fetcher/`
+  - Módulos: `coordinator.py`, `worker.py`, `rate_limiter.py`, `strategies/`
+  - Eliminado monolito de 1,209 líneas
+  - Código muerto eliminado (~82 líneas)
+  - Estrategias de paginación robustas implementadas
 
 ### IMPORTANTES (Siguiente Sprint): 📋
 
@@ -588,6 +594,90 @@ El sistema es ahora **altamente modular**. La refactorización de `matrix_backen
 - [x] Implementar gestión de estado → `upload-state.js`
 - [x] Separar lógica de UI y Navegación → `ui-project-selector.js`, `ui-step-navigator.js`
 - [x] Crear orquestador ligero → `upload-wizard.js`
+ 
+### 7. Modularizar `dashboard.js` y `reports.js` - ✅ COMPLETADO 🚀
+- [x] Refactorizar `dashboard.js` → `modules/dashboard/`
+- [x] Refactorizar `reports.js` → `modules/jira/reports/`
+- [x] Extraer lógica de charts y data
+- [x] Verificar funcionamiento de métricas
+
+### Python (parallel_issue_fetcher.py - 1,209 líneas) [REDUCCIÓN: -1,000+] 🚀
+**Estado:** ✅ **COMPLETADO**
+
+**Fase 1: Análisis (COMPLETADO ✅)**
+- [x] Revisar funcionalidad completa del archivo
+- [x] Identificar responsabilidades (6 identificadas)
+- [x] Mapear flujos de ejecución
+- [x] Detectar código muerto (~82 líneas)
+- [x] Documentar funcionalidad crítica a preservar
+- [x] Crear documento de análisis (`PARALLEL_ISSUE_FETCHER_ANALYSIS.md`)
+
+**Fase 2: Diseño de Arquitectura (COMPLETADO ✅)**
+- [x] Definir estructura de paquete `app/backend/jira/parallel_fetcher/`
+- [x] Diseñar interfaces entre módulos
+- [x] Planificar estrategia de migración sin romper código existente
+- [x] Definir tests de regresión necesarios
+
+**Fase 3: Refactorización (COMPLETADO ✅)**
+- [x] Crear estructura de paquete base
+- [x] Extraer `rate_limiter.py`
+  - [x] Clase RateLimiter con Lock thread-safe
+  - [x] Método wait_for_rate_limit()
+- [x] Extraer `worker.py`
+  - [x] Método fetch_page() con reintentos
+  - [x] Método fetch_issue_details()
+  - [x] Manejo de HTTP 429
+  - [x] Exponential backoff
+- [x] Crear `utils/jql_helper.py`
+  - [x] Función simplify_jql_for_count()
+- [x] Crear `utils/deduplication.py`
+  - [x] Función deduplicate_issues()
+- [x] Crear `strategies/base_strategy.py`
+  - [x] Clase abstracta PaginationStrategy
+- [x] Crear `strategies/simple_parallel.py`
+  - [x] Implementar fetch_all en paralelo sin fields
+- [x] Crear `strategies/id_range.py`
+  - [x] Implementar estrategia basada en rangos de ID
+- [x] Crear `strategies/sequential.py`
+  - [x] Implementar estrategia secuencial como fallback
+- [x] Crear `coordinator.py`
+  - [x] Orquestación principal
+  - [x] Selección de estrategia
+  - [x] Manejo de progress callbacks
+- [x] Crear `__init__.py` (Facade Pattern)
+  - [x] Clase ParallelIssueFetcher como facade
+  - [x] Mantener compatibilidad hacia atrás
+- [x] Eliminar código muerto
+
+**Fase 4: Testing y Validación (COMPLETADO ✅)**
+- [x] Tests unitarios para cada módulo nuevo
+- [x] Tests de integración end-to-end
+- [x] Validar rate limiting funciona correctamente
+- [x] Validar detección de bugs de Jira
+- [x] Validar eliminación de duplicados
+- [x] Validar progress callbacks
+- [x] Pruebas de carga (múltiples threads)
+
+**Fase 5: Migración y Limpieza (COMPLETADO ✅)**
+- [x] Actualizar imports en archivos que usan ParallelIssueFetcher
+- [x] Verificar que no hay regresiones
+- [x] Eliminar archivo original
+- [x] Actualizar documentación
+- [x] Actualizar AUDITORIA_CODIGO.md con resultados
+
+**Funcionalidad Crítica Validada:**
+- [x] ✅ Rate limiting thread-safe funciona con múltiples workers
+- [x] ✅ Detección de bug "startAt ignorado con fields"
+- [x] ✅ Detección de bug "total=0 cuando hay issues"
+- [x] ✅ Detección de bug "páginas duplicadas"
+- [x] ✅ Reintentos exponenciales ante errores
+- [x] ✅ Manejo correcto de HTTP 429 con Retry-After
+- [x] ✅ Eliminación de duplicados por ID
+- [x] ✅ Progress callbacks reportan correctamente
+- [x] ✅ Estrategia paralela funciona sin fields
+- [x] ✅ Estrategia ID range funciona con fields
+- [x] ✅ Estrategia secuencial como fallback
+- [x] ✅ Cambio automático de estrategia al detectar bugs
 
 ### Calidad General
 - [x] Configurar linters
@@ -599,5 +689,3 @@ El sistema es ahora **altamente modular**. La refactorización de `matrix_backen
 
 **Fecha de auditoría:** 27 de Diciembre, 2025  
 **Auditor:** Antigravity AI Code Review System
-
-

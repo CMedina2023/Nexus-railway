@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Callable
 from app.backend.jira.connection import JiraConnection
 from app.backend.jira.project_service import ProjectService
 from app.backend.jira.metrics_calculator import MetricsCalculator
-from app.backend.jira.parallel_issue_fetcher import ParallelIssueFetcher
+from app.backend.jira.parallel_fetcher import ParallelIssueFetcher
 from app.backend.jira.issue_service import TEST_CASE_VARIATIONS, BUG_VARIATIONS, build_issuetype_jql
 from app.core.config import Config
 

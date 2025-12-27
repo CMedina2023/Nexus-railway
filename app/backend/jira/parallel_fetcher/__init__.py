@@ -1,0 +1,1 @@
+from app.backend.jira.parallel_fetcher.coordinator import ParallelIssueFetcher
