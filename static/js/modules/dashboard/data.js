@@ -33,7 +33,7 @@
             const csrfToken = window.getCsrfToken ? window.getCsrfToken() :
                 (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
 
-            const response = await fetch('/api/dashboard/metrics', {
+            const response = await fetch(`/api/dashboard/metrics?t=${Date.now()}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',

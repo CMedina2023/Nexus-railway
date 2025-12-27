@@ -283,83 +283,8 @@ def clean_temp_files(filepath):
 # API ENDPOINTS CON MANEJO DE ERRORES
 # ============================================================================
 
-@app.route('/api/matrix', methods=['POST'])
-@login_required
-@validate_file_upload
-@handle_errors("Error al generar matriz de pruebas", status_code=500)
-def generate_matrix():
-    filepath = None
-    try:
-        logger.info("Iniciando generación de matriz de pruebas")
-
-        file = request.files['file']
-
-        # Obtener parámetros del formulario, incluyendo el nuevo campo 'historia' y 'types'
-        context = request.form.get('contexto', '')
-        flow = request.form.get('flujo', '')
-        historia = request.form.get('historia', '')  # AÑADIDO: Obtiene la historia de usuario
-        types = request.form.getlist('types')  # AÑADIDO: Obtiene los tipos de prueba
-        if not types:  # Si types está vacío, usar funcional por defecto
-            types = ['funcional']
-            logger.warning("No se especificaron tipos de prueba, usando 'funcional' por defecto")
-        output_filename = request.form.get('output_filename', 'matriz_de_prueba')
-
-        logger.info(f"Procesando archivo: {file.filename}")
-        logger.info(f"Contexto: {len(context)} caracteres")
-        logger.info(f"Flujo: {len(flow)} caracteres")
-        logger.info(f"Historia de Usuario: {len(historia)} caracteres")
-        logger.info(f"Tipos de prueba: {types}")
-
-        # Guardar archivo temporal
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-
-        # Extraer texto
-        logger.info("Extrayendo texto del archivo")
-        text = extract_text_from_file(filepath)
-        logger.info(f"Texto extraído: {len(text)} caracteres")
-
-        # Generar matriz
-        logger.info("Generando matriz de pruebas")
-        # Se pasan los nuevos argumentos 'historia' y 'types'
-        result = matrix_backend.generar_matriz_test(context, flow, historia, text, types)
-        logger.info(f"Resultado: {result['status']}")
-
-        clean_temp_files(filepath)
-
-        if result['status'] == 'success':
-            matrix_data = result['matrix']
-            logger.info(f"Matriz generada con {len(matrix_data)} casos de prueba")
-
-            # Crear ZIP con archivos
-            zip_buffer = io.BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-                # JSON
-                json_content = matrix_backend.save_to_json_buffer(matrix_data)
-                zip_file.writestr(f"{output_filename}.json", json_content)
-
-                # CSV
-                csv_content = matrix_backend.save_to_csv_buffer(matrix_data)
-                zip_file.writestr(f"{output_filename}.csv", csv_content)
-
-            zip_buffer.seek(0)
-            logger.info("Archivo ZIP creado exitosamente")
-
-            return send_file(
-                zip_buffer,
-                as_attachment=True,
-                download_name=f"{output_filename}.zip",
-                mimetype='application/zip'
-            )
-        else:
-            logger.error(f"Error en la generación: {result['message']}")
-            return jsonify({"error": result['message']}), 500
-
-    except Exception as e:
-        logger.error(f"Error en generate_matrix: {e}", exc_info=True)
-        clean_temp_files(filepath)
-        return jsonify({"error": f"Error en el procesamiento: {str(e)}"}), 500
+# Endpoint /api/matrix eliminado por ser funcionalidad legacy (creación de ZIP/CSV/JSON).
+# Usar /api/tests/generate para la nueva funcionalidad.
 
 
 @app.route('/api/stories/generate', methods=['POST'])

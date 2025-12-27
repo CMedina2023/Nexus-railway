@@ -37,19 +37,28 @@
             // Agregar casos a la tabla
             data.test_cases.forEach((testCase, index) => {
                 const row = document.createElement('tr');
+                // Asegurar que raw_data existe
+                const rawDesc = testCase.raw_data && testCase.raw_data.Descripcion ? testCase.raw_data.Descripcion : '';
+
                 row.innerHTML = `
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <input type="checkbox" class="test-checkbox" data-index="${index}" checked style="width: 18px; height: 18px; cursor: pointer;">
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--accent); text-align: center;">${testCase.index}</td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
-                        <input type="text" class="test-summary-input" data-index="${index}" value="${Utils.escapeHtml(testCase.summary)}" style="width: 100%; max-width: 300px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
+                        <input type="text" class="test-summary-input" data-index="${index}" value="${Utils.escapeHtml(testCase.summary)}" style="width: 100%; min-width: 250px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
-                        <textarea class="test-preconditions-input" data-index="${index}" rows="2" style="width: 100%; max-width: 400px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; resize: none; min-height: 50px;">${Utils.escapeHtml(testCase.preconditions)}</textarea>
+                        <textarea class="test-desc-input" data-index="${index}" rows="2" style="width: 100%; min-width: 300px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; resize: none;">${Utils.escapeHtml(rawDesc)}</textarea>
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; background: rgba(16, 185, 129, 0.2); color: #10b981;">Manual</span>
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">${Utils.escapeHtml(testCase.tipo_prueba || 'Funcional')}</span>
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">${Utils.escapeHtml(testCase.categoria || '-')}</span>
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <select class="test-priority-select" data-index="${index}" style="padding: 0.5rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
@@ -96,14 +105,23 @@
             });
 
             // Inputs de edición rápida
-            document.querySelectorAll('.test-summary-input, .test-preconditions-input, .test-priority-select').forEach(input => {
+            document.querySelectorAll('.test-summary-input, .test-desc-input, .test-priority-select').forEach(input => {
                 input.onchange = (e) => {
                     const index = parseInt(e.target.dataset.index);
                     if (state.currentData && state.currentData[index]) {
                         const val = e.target.value;
-                        if (e.target.classList.contains('test-summary-input')) state.currentData[index].summary = val;
-                        else if (e.target.classList.contains('test-preconditions-input')) state.currentData[index].preconditions = val;
-                        else if (e.target.classList.contains('test-priority-select')) state.currentData[index].priority = val;
+                        if (e.target.classList.contains('test-summary-input')) {
+                            state.currentData[index].summary = val;
+                        } else if (e.target.classList.contains('test-desc-input')) {
+                            // Actualizar ambos lugares para consistencia
+                            if (state.currentData[index].raw_data) {
+                                state.currentData[index].raw_data.Descripcion = val;
+                            }
+                            // Nota: state.currentData[index].description suele ser el texto formateado completo
+                            // No lo sobrescribimos aquí para no romper el formato Jira, solo editamos el campo raw
+                        } else if (e.target.classList.contains('test-priority-select')) {
+                            state.currentData[index].priority = val;
+                        }
                     }
                 };
             });
