@@ -249,7 +249,7 @@ class IssueCreator:
                     csv_issue_type_raw = (
                         row.get('Tipo de Issue') or row.get('Tipo') or row.get('tipo de issue') or
                         row.get('TIPO DE ISSUE') or row.get('Issue Type') or row.get('issue type') or
-                        row.get('ISSUE TYPE') or None
+                        row.get('ISSUE TYPE') or row.get('Issuetype') or None
                     )
                     if csv_issue_type_raw:
                         mapped_issue_type = csv_issue_type_raw.strip()

@@ -255,7 +255,6 @@
             }
 
             try {
-                // Suponiendo que API tiene un endpoint para esto o usamos uno existente
                 const response = await fetch('/api/jira/validate-test-case-fields', {
                     method: 'POST',
                     headers: {
@@ -274,24 +273,27 @@
 
                 if (validationResult) {
                     validationResult.style.display = 'block';
-                    if (data.success) {
+
+                    // Filtramos los campos que son de configuración manual para no alertar sobre ellos aquí
+                    // ya que se manejarán visualmente en el siguiente paso
+                    const manualFields = ['Tipo de Prueba', 'Nivel de Prueba', 'Tipo de Ejecución', 'Ambiente'];
+                    const realMissingFields = (data.missing_fields || []).filter(f => !manualFields.includes(f.field));
+
+                    if (data.success || realMissingFields.length === 0) {
                         validationResult.innerHTML = `
                             <div style="padding: 1rem; border-radius: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success); color: #6ee7b7;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                                     <span>✅</span>
-                                    <span style="font-weight: 600;">Todos los campos necesarios están disponibles</span>
+                                    <span style="font-weight: 600;">Campos básicos validados</span>
                                 </div>
                                 <div style="font-size: 0.85rem; margin-top: 0.5rem;">
-                                    El proyecto cuenta con todos los campos requeridos para crear casos de prueba.
+                                    Podemos proceder con la configuración manual.
                                 </div>
                             </div>
                         `;
-                        await this.loadFieldValues(projectKey);
-                        document.getElementById('jira-tests-step1').style.display = 'none';
-                        document.getElementById('jira-tests-step1-5').style.display = 'block';
                     } else {
-                        // Mostrar campos faltantes
-                        const missingList = (data.missing_fields || []).map(f => {
+                        // Mostrar campos faltantes (excluyendo los manuales) como advertencia
+                        const missingList = realMissingFields.map(f => {
                             const expectedNames = (f.possible_names || []).join(', ');
                             return `<li style="margin-bottom: 0.25rem;">
                                 <strong>${f.field}</strong>
@@ -302,23 +304,27 @@
                         }).join('');
 
                         validationResult.innerHTML = `
-                            <div style="padding: 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error); color: var(--error);">
+                            <div style="padding: 1rem; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: #f59e0b;">
                                 <div style="display: flex; align-items: start; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <span style="font-size: 1.25rem;">❌</span>
+                                    <span style="font-size: 1.25rem;">⚠️</span>
                                     <div>
-                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">Faltan campos obligatorios en Jira</div>
-                                        <div style="font-size: 0.85rem; opacity: 0.9;">Tu proyecto de Jira no tiene configurados los siguientes campos necesarios para crear casos de prueba:</div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">Configuración incompleta</div>
+                                        <div style="font-size: 0.85rem; opacity: 0.9;">
+                                            El proyecto no tiene algunos campos básicos configurados. La información relacionada se omitirá.
+                                        </div>
                                     </div>
                                 </div>
                                 <ul style="margin-top: 0.5rem; padding-left: 2rem; font-size: 0.9rem; list-style-type: disc;">
                                     ${missingList}
                                 </ul>
-                                <div style="font-size: 0.8rem; margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid rgba(239, 68, 68, 0.2); opacity: 0.8;">
-                                    <strong>Sugerencia:</strong> Contacta al administrador de Jira para agregar estos campos a la pantalla de creación de issues del proyecto.
-                                </div>
                             </div>
                         `;
                     }
+
+                    // Siempre procedemos
+                    await this.loadFieldValues(projectKey);
+                    document.getElementById('jira-tests-step1').style.display = 'none';
+                    document.getElementById('jira-tests-step1-5').style.display = 'block';
                 }
             } catch (error) {
                 console.error('Error validating fields:', error);
@@ -362,21 +368,27 @@
                     if (!select || !container || !message) continue;
 
                     select.innerHTML = '';
-                    select.removeAttribute('required');
+                    // Reseteamos estado visual
+                    select.style.display = 'block';
+                    select.disabled = false;
                     message.style.display = 'none';
 
-                    if (!fieldData || !fieldData.exists) {
+                    // Si el campo no existe o no tiene valores
+                    if (!fieldData || !fieldData.exists || !fieldData.has_values || fieldData.values.length === 0) {
+                        select.disabled = true; // Deshabilitamos el select pero lo dejamos visible
+                        select.removeAttribute('required'); // Ya no es obligatorio porque no se puede llenar
+
+                        // Añadimos una opción dummy
+                        const opt = document.createElement('option');
+                        opt.textContent = "No disponible";
+                        select.appendChild(opt);
+
+                        // Mostramos el mensaje de advertencia debajo
                         message.style.display = 'block';
-                        message.style.color = 'var(--warning)';
-                        message.innerHTML = `⚠️ El campo "${config.label}" no existe en este proyecto.`;
-                        select.style.display = 'none';
-                    } else if (!fieldData.has_values || fieldData.values.length === 0) {
-                        message.style.display = 'block';
-                        message.style.color = 'var(--warning)';
-                        message.innerHTML = `⚠️ El campo "${config.label}" no tiene opciones configuradas.`;
-                        select.style.display = 'none';
+                        message.style.color = 'var(--warning)'; // O usar var(--text-orange) si existe, o #f59e0b
+                        message.innerHTML = `⚠️ El campo "${config.label}" no se encontró en Jira. Se omitirá en la carga.`;
                     } else {
-                        select.style.display = 'block';
+                        // Campo existe y tiene valores
                         select.setAttribute('required', 'required');
                         select.innerHTML = '<option value="">Seleccionar...</option>';
                         fieldData.values.forEach(v => {
@@ -402,8 +414,10 @@
          */
         checkAndShowUploadButton() {
             const step1_5 = document.getElementById('jira-tests-step1-5');
+            // Solo validamos los selects que SI son requeridos (los que existen)
             const requiredSelects = step1_5.querySelectorAll('select[required]');
             let allFilled = true;
+
             for (let s of requiredSelects) {
                 if (!s.value) { allFilled = false; break; }
             }
@@ -412,12 +426,14 @@
             const uploadBtn = document.getElementById('jira-tests-modal-upload');
             const assigneeInput = document.getElementById('jira-tests-assignee-input');
 
+            // Si hay campos requeridos sin llenar, ocultamos lo siguiente
             if (!allFilled) {
                 if (step2) step2.style.display = 'none';
                 if (uploadBtn) uploadBtn.style.display = 'none';
                 return;
             }
 
+            // Si todo lo obligatorio está lleno (o no había nada obligatorio), seguimos
             if (step2) step2.style.display = 'block';
 
             const email = assigneeInput ? assigneeInput.value.trim() : '';

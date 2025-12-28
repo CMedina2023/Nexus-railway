@@ -200,7 +200,7 @@ def jira_validate_test_case_fields():
         user = get_user_service().get_user_by_id(get_current_user_id())
         jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
-        fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'tests Case')
+        fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'Test Case')
         if not fields_info.get('success', True): return jsonify({"success": False, "error": fields_info.get('error')}), 400
         
         required_fields = {
@@ -250,7 +250,7 @@ def get_test_case_field_values():
         user = get_user_service().get_user_by_id(get_current_user_id())
         jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
         connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
-        fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'tests Case')
+        fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'Test Case')
         
         def normalize(n):
             import unicodedata, re
@@ -369,13 +369,37 @@ def upload_test_cases_to_jira():
             if not issue_service.get_user_account_id_by_email(assignee_email):
                 return jsonify({"success": False, "error": f"Email {assignee_email} no encontrado"}), 400
         
+        # Determinar el tipo de issue para casos de prueba
+        # 1. Intentar usar lo que venga en el test case individual
+        # 2. Si no, buscar un nombre común válido en la lista de tipos del proyecto (si pudiéramos acceder a ella aquí fácilmente, pero para mantenerlo simple usaremos una lista de fallbacks comunes)
+        
+        default_test_type = 'Test Case'
+        
+        # Lista de nombres comunes para tipos de issue de prueba
+        test_type_candidates = ['Test Case', 'Test', 'QA Task', 'Prueba', 'Caso de Prueba']
+        
         csv_data = []
         for tc in test_cases:
             raw = tc.get('raw_data', {})
+            
+            # Lógica para determinar el issue type:
+            # Prioridad 1: Lo que venga explícitamente en el objeto tc
+            # Prioridad 2: Un default sensato ('Test Case')
+            # Nota: 'tests Case' era un error tipográfico
+            issue_type = tc.get('issuetype')
+            
+            # Si el issue_type viene sucio o incorrecto, intentamos limpiarlo, pero lo ideal_
+            # es confiar en que la configuración del proyecto o el usuario sabe lo que hace.
+            # Sin embargo, si es el valor por defecto incorrecto antiguo, lo corregimos.
+            if issue_type == 'tests Case':
+                issue_type = 'Test Case'
+            elif not issue_type:
+                issue_type = default_test_type
+
             csv_row = {
                 'Summary': tc.get('summary', 'Sin título'),
                 'Description': raw.get('Descripcion', tc.get('description', '')),
-                'Issuetype': tc.get('issuetype', 'tests Case'),
+                'Issuetype': issue_type,
                 'Priority': tc.get('priority', 'Medium')
             }
             # Mapear campos de prueba
@@ -618,7 +642,7 @@ def jira_download_template():
     """Descarga una plantilla CSV para Jira"""
     try:
         project_key = request.args.get('project_key')
-        story_type, test_case_type, bug_type = 'Story', 'tests Case', 'Bug'
+        story_type, test_case_type, bug_type = 'Story', 'Test Case', 'Bug'
         
         if project_key:
             try:

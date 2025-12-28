@@ -107,7 +107,7 @@ RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de c
   "Categoria": "Categoría según el tipo de prueba",
   "Ambiente": "QA",
   "Ciclo": "Ciclo 1",
-  "issuetype": "tests Case",
+  "issuetype": "Test Case",
   "Prioridad": "Alta/Media/Baja",
   "historia_de_usuario": "Referencia a la historia de usuario"
 }

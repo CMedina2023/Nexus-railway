@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS AI - Presentación Ejecutiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-bg: #0f0f23;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --accent: #667eea;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .presentation-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            opacity: 0;
+            transform: translateX(100%) rotateY(45deg);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            background: radial-gradient(circle at top right, rgba(102, 126, 234, 0.1), transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(118, 75, 162, 0.1), transparent 50%);
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0) rotateY(0);
+            z-index: 10;
+        }
+
+        .slide.prev {
+            transform: translateX(-100%) rotateY(-45deg);
+        }
+
+        /* Slide 1 - Portada */
+        .slide-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-align: center;
+        }
+
+        .slide-1 h1 {
+            font-size: 5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .slide-1 .subtitle {
+            font-size: 2rem;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.2s backwards;
+        }
+
+        .slide-1 .tagline {
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 1.5rem 3rem;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: fadeInUp 1s ease-out 0.4s backwards;
+        }
+
+        /* Slide 2 - Enfoque */
+        .slide-2 .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: slideInLeft 0.6s ease-out backwards;
+        }
+
+        .feature-card:nth-child(2) {
+            animation: slideInRight 0.6s ease-out backwards;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+
+        .feature-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .feature-card p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Slide 3 - Hub de Control */
+        .slide-3 .metrics-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 3rem;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .metric-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .metric-card:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .metric-card:hover {
+            transform: scale(1.05);
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .metric-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Slide 4 - Integración */
+        .integration-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            max-width: 1000px;
+            margin-top: 3rem;
+        }
+
+        .integration-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem 3rem;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            font-size: 1.5rem;
+            font-weight: 600;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .integration-arrow {
+            font-size: 3rem;
+            color: var(--accent);
+            animation: slideRight 1.5s ease-in-out infinite;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.6s backwards;
+        }
+
+        /* Slide 5 - ROI */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 3rem;
+        }
+
+        .roi-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border-left: 4px solid var(--accent);
+            animation: slideInLeft 0.6s ease-out backwards;
+        }
+
+        .roi-card:nth-child(even) {
+            animation: slideInRight 0.6s ease-out backwards;
+        }
+
+        .roi-percentage {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--success-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .roi-description {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Slide 6 - Roadmap */
+        .roadmap-container {
+            max-width: 1200px;
+            width: 100%;
+            margin-top: 3rem;
+        }
+
+        .roadmap-item {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent);
+            animation: slideInLeft 0.6s ease-out backwards;
+        }
+
+        .roadmap-item:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .roadmap-item:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .roadmap-item h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .roadmap-item p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1.5rem 4rem;
+            background: var(--primary-gradient);
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out 0.6s backwards;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Common Elements */
+        .slide-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .slide-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        /* Navigation */
+        .nav-controls {
+            position: fixed;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .nav-button {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: translateY(-3px);
+        }
+
+        .slide-indicator {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+            z-index: 101;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes slideRight {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(10px);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .slide-1 h1 {
+                font-size: 3rem;
+            }
+            
+            .slide-title {
+                font-size: 2.5rem;
+            }
+            
+            .content-grid,
+            .roi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-indicator" id="slideIndicator">1 / 6</div>
+
+    <div class="presentation-container">
+        <!-- Slide 1: Portada -->
+        <div class="slide slide-1 active" data-slide="1">
+            <h1>NEXUS AI</h1>
+            <div class="subtitle">Transformando el Desarrollo de Software con IA</div>
+            <div class="tagline">⚡ De días de trabajo a minutos de ejecución</div>
+        </div>
+
+        <!-- Slide 2: El Enfoque Nexus -->
+        <div class="slide slide-2" data-slide="2">
+            <h2 class="slide-title">El Enfoque Nexus: Productividad Aumentada</h2>
+            <p class="slide-subtitle">IA como Copiloto - Human-in-the-Loop</p>
+            <div class="content-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>No es Magia, es Eficiencia</h3>
+                    <p>La IA actúa como copiloto inteligente, realizando el 80% del trabajo operativo mientras el analista mantiene el control estratégico y la validación final.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Eliminación del Trabajo Repetitivo</h3>
+                    <p>Automatización completa del "boilerplate" en la redacción de requisitos, historias de usuario y casos de prueba con calidad enterprise.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Hub de Control -->
+        <div class="slide slide-3" data-slide="3">
+            <h2 class="slide-title">Hub de Control y Reporteo Ejecutivo</h2>
+            <p class="slide-subtitle">Métricas de Jira al instante - Visualización Premium</p>
+            <div class="metrics-container">
+                <div class="metric-card">
+                    <div class="metric-number">⚡</div>
+                    <div class="metric-label">Reportes en 2 minutos vs 2-3 horas manual</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">📊</div>
+                    <div class="metric-label">Gráficos dinámicos y exportación PDF premium</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-number">🎯</div>
+                    <div class="metric-label">Trazabilidad 100% automática</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Integración -->
+        <div class="slide slide-4" data-slide="4">
+            <h2 class="slide-title">Impacto en el Ecosistema Core</h2>
+            <p class="slide-subtitle">Integración sin fricción en tu stack actual</p>
+            <div class="integration-flow">
+                <div class="integration-box">📄 Docs</div>
+                <div class="integration-arrow">→</div>
+                <div class="integration-box">🤖 Nexus AI</div>
+                <div class="integration-arrow">→</div>
+                <div class="integration-box">📋 Jira</div>
+            </div>
+            <div style="text-align: center;">
+                <div class="status-badge">✅ Producción Activa - Integración Jira Completada</div>
+            </div>
+            <div style="margin-top: 3rem; text-align: center; max-width: 800px;">
+                <p style="font-size: 1.2rem; color: var(--text-secondary); line-height: 1.8;">
+                    Sincronización bidireccional automática. Carga masiva de historias y casos de prueba. 
+                    Flujo de trabajo completamente automatizado desde la documentación hasta la ejecución.
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 5: ROI -->
+        <div class="slide slide-5" data-slide="5">
+            <h2 class="slide-title">Métricas de Valor y ROI Estimado</h2>
+            <p class="slide-subtitle">Impacto medible en eficiencia operativa</p>
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-percentage">-70%</div>
+                    <div class="roi-description">Reducción en tiempo de refinamiento de requisitos (de días a horas)</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-percentage">-85%</div>
+                    <div class="roi-description">Reducción en tiempo de carga masiva a Jira (automatización completa)</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-percentage">-90%</div>
+                    <div class="roi-description">Reducción en generación de reportes ejecutivos (de 2-3 horas a 2 minutos)</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-percentage">100%</div>
+                    <div class="roi-description">Estandarización y trazabilidad completa de requisitos a ejecución</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Roadmap -->
+        <div class="slide slide-6" data-slide="6">
+            <h2 class="slide-title">Próximos Pasos y Escalabilidad</h2>
+            <div class="roadmap-container">
+                <div class="roadmap-item">
+                    <h3>📅 Roadmap Q1-Q2 2025</h3>
+                    <p>Integración con Azure DevOps, soporte multiformato (Excel, Confluence) y análisis predictivo con Machine Learning para estimación de esfuerzo.</p>
+                </div>
+                <div class="roadmap-item">
+                    <h3>🎯 Diferenciador Clave</h3>
+                    <p>Única solución que combina IA generativa + integración nativa Jira + reporteo ejecutivo automático en un solo hub centralizado.</p>
+                </div>
+                <div class="roadmap-item">
+                    <h3>🚀 Llamado a la Acción</h3>
+                    <p>Expansión a otros equipos y proyectos estratégicos. Escalamiento horizontal con capacidad multi-tenant.</p>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <div class="cta-button">Iniciar Expansión</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-controls">
+        <button class="nav-button" id="prevBtn">← Anterior</button>
+        <button class="nav-button" id="nextBtn">Siguiente →</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideIndicator = document.getElementById('slideIndicator');
+        const progressBar = document.getElementById('progressBar');
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index + 1 === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index + 1 < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+
+            slideIndicator.textContent = `${currentSlide} / ${totalSlides}`;
+            progressBar.style.width = `${(currentSlide / totalSlides) * 100}%`;
+
+            prevBtn.disabled = currentSlide === 1;
+            nextBtn.disabled = currentSlide === totalSlides;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            } else if (e.key === 'ArrowRight' && currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>
