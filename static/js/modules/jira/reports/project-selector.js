@@ -152,6 +152,11 @@
         if (projectKey && window.NexusModules.Jira.Reports.loadFilterFieldsForReport) {
             window.NexusModules.Jira.Reports.loadFilterFieldsForReport(projectKey);
         }
+
+        // Reset widgets when selecting a new project
+        if (typeof window.activeWidgets !== 'undefined') {
+            window.activeWidgets = [];
+        }
     }
 
     function handleProjectKeydown(event) {

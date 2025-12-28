@@ -1,0 +1,70 @@
+/* Layout & Header */
+.metricas-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.metricas-header {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.metricas-header h1 {
+    margin: 0;
+}
+
+.metrics-header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.download-metrics-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.download-metrics-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.metricas-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.metricas-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+}
+
+/* Secciones de Métricas */
+.metrics-section {
+    display: none;
+}
+
+.metrics-section.active {
+    display: block;
+}

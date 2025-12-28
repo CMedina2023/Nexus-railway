@@ -1,0 +1,28 @@
+/* Charts */
+.metrics-chart-container {
+    margin-top: 3rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.chart-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    max-height: 400px;
+}
+
+#area-distribution-chart {
+    max-height: 400px;
+}

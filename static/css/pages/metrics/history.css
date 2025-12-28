@@ -1,0 +1,107 @@
+/* History */
+.metrics-history {
+    margin-top: 3rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.history-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.history-list {
+    list-style: none;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.history-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.history-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.25rem;
+}
+
+.history-icon.reports {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.history-icon.uploads {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.history-icon.story {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.history-icon.test {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.history-details {
+    flex: 1;
+}
+
+.history-type {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.history-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.history-area {
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.history-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.history-count {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+}

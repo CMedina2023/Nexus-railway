@@ -1,0 +1,25 @@
+/* Actions */
+.metrics-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: center;
+}
+
+.reset-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.reset-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+}
