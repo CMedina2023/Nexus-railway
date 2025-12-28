@@ -210,7 +210,7 @@ def test_generate_story_from_chunk(mock_config, mock_genai, mock_gemini_model):
 
 @patch('app.backend.document_processor.genai')
 @patch('app.backend.document_processor.Config')
-def test_split_document_into_chunks(mock_config):
+def test_split_document_into_chunks(mock_config, mock_genai):
     """Test de división de documento en chunks."""
     from app.backend.document_processor import split_document_into_chunks
     

@@ -1,100 +1,73 @@
 """
-Tests unitarios para el procesador de documentos
+Tests unitarios actualizados para document_processor.py
 """
-import unittest
-from unittest.mock import patch, MagicMock, mock_open
-from app.backend.document_processor import DocumentProcessor
+import pytest
+from unittest.mock import Mock, patch
+from app.backend import document_processor
 
+@patch('app.backend.document_processor.Config')
+@patch('app.backend.document_processor.DocumentChunker')
+def test_split_document_into_chunks(mock_chunker_cls, mock_config):
+    """Test de división de documentos usando DocumentChunker."""
+    mock_config.STORY_MAX_CHUNK_SIZE = 1000
+    mock_chunker_instance = mock_chunker_cls.return_value
+    mock_chunker_instance.split_document_into_chunks.return_value = ["chunk1", "chunk2"]
+    
+    result = document_processor.split_document_into_chunks("text")
+    
+    assert len(result) == 2
+    assert result == ["chunk1", "chunk2"]
 
-class TestDocumentProcessor(unittest.TestCase):
-    """Tests para DocumentProcessor"""
-
-    def setUp(self):
-        """Configuración inicial para cada test"""
-        self.document_processor = DocumentProcessor()
-
-    @patch('builtins.open', new_callable=mock_open, read_data='test content')
-    def test_read_file_success(self, mock_file):
-        """Test lectura de archivo exitosa"""
-        result = self.document_processor.read_file('test.txt')
+@patch('app.backend.document_processor.Config')
+@patch('app.backend.document_processor.genai')
+def test_process_large_document_success(mock_genai, mock_config):
+    """Test de integración simulada para el procesamiento de documentos grandes."""
+    # Setup
+    mock_config.GOOGLE_API_KEY = "key"
+    mock_config.GEMINI_MODEL = "model"
+    mock_config.GEMINI_TIMEOUT_ANALYSIS = 10
+    mock_config.STORY_BATCH_SIZE = 1
+    mock_config.GEMINI_TIMEOUT_BASE = 1
+    mock_config.GEMINI_TIMEOUT_INCREMENT = 0
+    mock_config.MAX_RETRIES = 1
+    mock_config.RETRY_DELAY = 0
+    mock_config.MIN_RESPONSE_LENGTH = 5
+    
+    # Mock analysis response
+    mock_model = Mock()
+    mock_analysis_resp = Mock()
+    mock_analysis_resp.text = "1. Funcionalidad A\n2. Funcionalidad B"
+    
+    # Mock story response
+    mock_story_resp = Mock()
+    mock_story_resp.text = "Story Content A"
+    
+    # Configure side_effect for generate_content to return analysis first, then stories
+    # Se llamará 1 vez para análisis y luego N veces para lotes (aquí 2 funcionalidades, batch size 1 -> 2 lotes)
+    mock_model.generate_content.side_effect = [mock_analysis_resp, mock_story_resp, mock_story_resp]
+    
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    # Mock dependencies
+    with patch('app.services.text_processor.TextProcessor') as mock_tp, \
+         patch('app.backend.document_processor._heal_stories_in_batch') as mock_heal, \
+         patch('time.sleep'): # Evitar delay real
         
-        self.assertEqual(result, 'test content')
-        mock_file.assert_called_once_with('test.txt', 'r', encoding='utf-8')
-
-    @patch('builtins.open', side_effect=FileNotFoundError)
-    def test_read_file_not_found(self, mock_file):
-        """Test lectura de archivo no encontrado"""
-        with self.assertRaises(FileNotFoundError):
-            self.document_processor.read_file('nonexistent.txt')
-
-    @patch('builtins.open', new_callable=mock_open, read_data=b'PDF content')
-    def test_process_pdf_success(self, mock_file):
-        """Test procesamiento de PDF exitoso"""
-        with patch('app.backend.document_processor.PyPDF2.PdfReader') as mock_pdf:
-            mock_pdf.return_value.pages = [MagicMock(extract_text=lambda: 'PDF text')]
-            
-            result = self.document_processor.process_pdf('test.pdf')
-            
-            self.assertIsNotNone(result)
-
-    def test_extract_text_from_docx(self):
-        """Test extracción de texto de DOCX"""
-        with patch('app.backend.document_processor.Document') as mock_doc:
-            mock_doc.return_value.paragraphs = [
-                MagicMock(text='Paragraph 1'),
-                MagicMock(text='Paragraph 2')
-            ]
-            
-            result = self.document_processor.extract_text_from_docx('test.docx')
-            
-            self.assertIn('Paragraph 1', result)
-            self.assertIn('Paragraph 2', result)
-
-    def test_validate_file_extension_valid(self):
-        """Test validación de extensión de archivo válida"""
-        result = self.document_processor.validate_file_extension('test.pdf', ['.pdf', '.docx'])
+        mock_tp_inst = mock_tp.return_value
+        mock_tp_inst.split_story_text_into_individual_stories.return_value = ["Story A"]
         
-        self.assertTrue(result)
-
-    def test_validate_file_extension_invalid(self):
-        """Test validación de extensión de archivo inválida"""
-        result = self.document_processor.validate_file_extension('test.txt', ['.pdf', '.docx'])
+        # Execute
+        result = document_processor.process_large_document("doc text", "role", "story", skip_healing=True)
         
-        self.assertFalse(result)
+        # Assert
+        assert result['status'] == 'success'
+        assert "ANÁLISIS COMPLETO" in result['story']
+        assert "Funcionalidad A" in result['story']
 
-    @patch('builtins.open', new_callable=mock_open)
-    def test_save_processed_content(self, mock_file):
-        """Test guardado de contenido procesado"""
-        content = 'processed content'
-        
-        self.document_processor.save_processed_content(content, 'output.txt')
-        
-        mock_file.assert_called_once()
-
-    def test_chunk_document_by_size(self):
-        """Test división de documento por tamaño"""
-        large_text = 'word ' * 1000
-        
-        chunks = self.document_processor.chunk_document(large_text, chunk_size=100)
-        
-        self.assertGreater(len(chunks), 1)
-
-    def test_extract_metadata_from_file(self):
-        """Test extracción de metadatos de archivo"""
-        with patch('os.path.getsize', return_value=1024):
-            with patch('os.path.getmtime', return_value=1234567890):
-                metadata = self.document_processor.extract_metadata('test.txt')
-                
-                self.assertIn('size', metadata)
-                self.assertIn('modified', metadata)
-
-    def test_process_empty_document(self):
-        """Test procesamiento de documento vacío"""
-        with patch('builtins.open', new_callable=mock_open, read_data=''):
-            result = self.document_processor.read_file('empty.txt')
-            
-            self.assertEqual(result, '')
-
-
-if __name__ == '__main__':
-    unittest.main()
+@patch('app.backend.document_processor.Config')
+def test_process_large_document_no_api_key(mock_config):
+    """Test error cuando no hay API key."""
+    mock_config.GOOGLE_API_KEY = None
+    result = document_processor.process_large_document("text", "role", "story")
+    assert result['status'] == 'error'
+    assert "API Key no configurada" in result['message']

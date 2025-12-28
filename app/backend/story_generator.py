@@ -112,6 +112,7 @@ def generate_story_from_text(
 ) -> Dict:
     """
     Función wrapper para mantener compatibilidad con la API existente.
+    Ahora mejorada con estrategia de DOS PASADAS (Contexto Global + Generación Local).
     
     Args:
         text: Texto del documento
@@ -123,11 +124,23 @@ def generate_story_from_text(
     Returns:
         dict: Resultado con status y lista de historias
     """
+    # [PASO 1] Análisis Global: Extraer "memoria compartida" del documento
+    from app.backend.context_extractor import ContextExtractor
+    
+    context_extractor = ContextExtractor()
+    global_context = context_extractor.extract_global_context(text)
+    
+    # Combinar contexto manual (business_context) con el extraído (global_context)
+    enhanced_context = business_context or ""
+    if global_context:
+        enhanced_context += f"\n\n{global_context}"
+    
     chunks = split_document_into_chunks(text)
     stories = []
 
+    # [PASO 2] Generación Contextual: Cada chunk ahora "sabe" lo que dice el resto del doc
     for chunk in chunks:
-        result = generate_story_from_chunk(chunk, role, story_type, business_context, skip_healing)
+        result = generate_story_from_chunk(chunk, role, story_type, enhanced_context, skip_healing)
         if result['status'] == 'success':
             stories.append(result['story'])
         else:

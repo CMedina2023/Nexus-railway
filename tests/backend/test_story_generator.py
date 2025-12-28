@@ -1,111 +1,119 @@
 """
-Tests unitarios para el generador de historias
+Tests unitarios actualizados para el generador de historias (story_generator.py)
 """
-import unittest
-from unittest.mock import patch, MagicMock
-from app.backend.story_generator import StoryGenerator
+import pytest
+from unittest.mock import Mock, patch
+from app.backend import story_generator
 
+@pytest.fixture
+def mock_genai():
+    with patch('app.backend.story_generator.genai') as mock:
+        yield mock
 
-class TestStoryGenerator(unittest.TestCase):
-    """Tests para StoryGenerator"""
+@pytest.fixture
+def mock_config():
+    with patch('app.backend.story_generator.Config') as mock:
+        mock.GOOGLE_API_KEY = "fake_key"
+        mock.GEMINI_MODEL = "gemini-pro"
+        mock.MAX_RETRIES = 1
+        mock.RETRY_DELAY = 0
+        mock.GEMINI_TIMEOUT_BASE = 1
+        mock.GEMINI_TIMEOUT_INCREMENT = 0
+        mock.MIN_RESPONSE_LENGTH = 10
+        yield mock
 
-    def setUp(self):
-        """Configuración inicial para cada test"""
-        self.story_generator = StoryGenerator()
+def test_generate_story_from_chunk_success(mock_genai, mock_config):
+    """Test de generación exitosa desde un chunk."""
+    # Setup mock model
+    mock_model = Mock()
+    mock_response = Mock()
+    mock_response.text = "Historia generada exitosa..."
+    mock_model.generate_content.return_value = mock_response
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    # Execute
+    result = story_generator.generate_story_from_chunk(
+        chunk="Texto de prueba", 
+        role="Usuario", 
+        story_type="Funcionalidad",
+        skip_healing=True
+    )
+    
+    # Assert
+    assert result['status'] == 'success'
+    assert result['story'] == "Historia generada exitosa..."
+    mock_model.generate_content.assert_called()
 
-    @patch('app.backend.story_generator.openai')
-    def test_generate_story_success(self, mock_openai):
-        """Test generación de historia exitosa"""
-        mock_openai.ChatCompletion.create.return_value = {
-            'choices': [{'message': {'content': 'Generated story'}}]
-        }
-        
-        result = self.story_generator.generate_story('Create a login feature')
-        
-        self.assertEqual(result, 'Generated story')
+def test_generate_story_from_chunk_api_key_missing(mock_genai, mock_config):
+    """Test de manejo de error cuando falta la API Key."""
+    mock_config.GOOGLE_API_KEY = None
+    
+    result = story_generator.generate_story_from_chunk("t", "r", "s")
+    
+    assert result['status'] == 'error'
+    assert "API Key no configurada" in result['message']
 
-    @patch('app.backend.story_generator.openai')
-    def test_generate_story_api_error(self, mock_openai):
-        """Test generación de historia con error de API"""
-        mock_openai.ChatCompletion.create.side_effect = Exception('API Error')
-        
-        with self.assertRaises(Exception):
-            self.story_generator.generate_story('Create a feature')
+def test_generate_story_from_chunk_short_response(mock_genai, mock_config):
+    """Test de manejo de respuestas demasiado cortas."""
+    mock_model = Mock()
+    mock_response = Mock()
+    mock_response.text = "Corta" # < Config.MIN_RESPONSE_LENGTH
+    mock_model.generate_content.return_value = mock_response
+    mock_genai.GenerativeModel.return_value = mock_model
+    
+    result = story_generator.generate_story_from_chunk("t", "r", "s", skip_healing=True)
+    
+    # Debe fallar tras reintentos
+    assert result['status'] == 'error'
+    assert "Error en la generación" in result['message']
 
-    def test_generate_story_empty_prompt(self):
-        """Test generación de historia con prompt vacío"""
-        with self.assertRaises(ValueError):
-            self.story_generator.generate_story('')
+def test_generate_story_from_text_end_to_end(mock_genai, mock_config):
+    """Test de integración simulada de generate_story_from_text (Dos Pasadas)"""
+    # Mocks adicionales necesarios para las dependencias internas
+    with patch('app.backend.story_generator.split_document_into_chunks') as mock_split, \
+         patch('app.backend.story_generator.process_large_document') as mock_process, \
+         patch('app.services.text_processor.TextProcessor') as mock_tp_cls, \
+         patch('app.services.validator.Validator') as mock_val_cls, \
+         patch('app.backend.story_generator.create_advanced_prompt') as mock_prompt, \
+         patch('app.backend.context_extractor.ContextExtractor') as mock_extractor_cls, \
+         patch('app.backend.story_generator.call_with_retry', side_effect=lambda func, **kwargs: func()): # Bypass retry
+        
+        # [NEW] Mock Context Extractor
+        mock_extractor_instance = mock_extractor_cls.return_value
+        mock_extractor_instance.extract_global_context.return_value = "CONTEXTO GLOBAL MOCKEADO"
 
-    def test_generate_story_none_prompt(self):
-        """Test generación de historia con prompt None"""
-        with self.assertRaises((ValueError, TypeError)):
-            self.story_generator.generate_story(None)
+        # Flujo simple: 1 chunk
+        mock_split.return_value = ["chunk1"]
+        mock_prompt.return_value = "Prompt normal" # Asegurar que no sea CHUNK_PROCESSING_NEEDED
+        
+        # Mock generate_story_from_chunk (llamada interna)
+        mock_model = Mock()
+        mock_response = Mock()
+        mock_response.text = "Historia generada valida 1"
+        mock_model.generate_content.return_value = mock_response
+        mock_genai.GenerativeModel.return_value = mock_model
+        
+        # Mock TextProcessor y Validator
+        mock_tp = mock_tp_cls.return_value
+        mock_tp.split_story_text_into_individual_stories.return_value = ["Historia generada valida 1"]
+        
+        mock_val = mock_val_cls.return_value
+        mock_val.find_duplicates.return_value = []
+        mock_val.semantic_validate_story.return_value = {"is_valid": True, "score": 10}
+        
+        # Execute
+        result = story_generator.generate_story_from_text("doc completo", "rol", "tipo", skip_healing=True)
+        
+        # Verify Context Extractor was called
+        mock_extractor_cls.assert_called_once()
+        mock_extractor_instance.extract_global_context.assert_called_with("doc completo")
 
-    @patch('app.backend.story_generator.openai')
-    def test_generate_multiple_stories(self, mock_openai):
-        """Test generación de múltiples historias"""
-        mock_openai.ChatCompletion.create.return_value = {
-            'choices': [{'message': {'content': 'Story 1\n---\nStory 2'}}]
-        }
+        if result['status'] != 'success':
+            pytest.fail(f"TEST FAILED: Status={result.get('status')} Message={result.get('message', 'No message')}")
         
-        result = self.story_generator.generate_stories(['Prompt 1', 'Prompt 2'])
+        # Verify generation was called
+        mock_model.generate_content.assert_called()
         
-        self.assertEqual(len(result), 2)
-
-    @patch('app.backend.story_generator.openai')
-    def test_generate_story_with_context(self, mock_openai):
-        """Test generación de historia con contexto"""
-        mock_openai.ChatCompletion.create.return_value = {
-            'choices': [{'message': {'content': 'Contextual story'}}]
-        }
-        
-        result = self.story_generator.generate_story_with_context(
-            'Create feature',
-            context={'project': 'Test Project'}
-        )
-        
-        self.assertIsNotNone(result)
-
-    def test_validate_story_format(self):
-        """Test validación de formato de historia"""
-        valid_story = "As a user, I want to login, So that I can access my account"
-        
-        result = self.story_generator.validate_story_format(valid_story)
-        
-        self.assertTrue(result)
-
-    def test_validate_story_format_invalid(self):
-        """Test validación de formato de historia inválido"""
-        invalid_story = "This is not a proper user story"
-        
-        result = self.story_generator.validate_story_format(invalid_story)
-        
-        self.assertFalse(result)
-
-    @patch('app.backend.story_generator.openai')
-    def test_generate_story_with_retry(self, mock_openai):
-        """Test generación de historia con reintentos"""
-        mock_openai.ChatCompletion.create.side_effect = [
-            Exception('Temporary error'),
-            {'choices': [{'message': {'content': 'Success on retry'}}]}
-        ]
-        
-        result = self.story_generator.generate_with_retry('Create feature', max_retries=2)
-        
-        self.assertEqual(result, 'Success on retry')
-
-    @patch('app.backend.story_generator.openai')
-    def test_generate_story_max_tokens(self, mock_openai):
-        """Test generación de historia con límite de tokens"""
-        mock_openai.ChatCompletion.create.return_value = {
-            'choices': [{'message': {'content': 'Short story'}}]
-        }
-        
-        result = self.story_generator.generate_story('Prompt', max_tokens=100)
-        
-        self.assertIsNotNone(result)
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert result['status'] == 'success'
+        assert len(result['stories']) == 1
+        assert result['stories'][0] == "Historia generada valida 1"

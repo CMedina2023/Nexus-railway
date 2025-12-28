@@ -26,7 +26,7 @@ def extract_story_titles(stories: List[str]) -> List[str]:
     for story in stories:
         # Buscar título después de "HISTORIA #X:" pero solo hasta encontrar COMO, QUIERO, PARA, etc.
         match = re.search(
-            r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)',
+            r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n]+)',
             story,
             re.IGNORECASE
         )
@@ -47,7 +47,7 @@ def extract_story_titles(stories: List[str]) -> List[str]:
             lines = story.split('\n')
             for line in lines[:10]:
                 cleaned = line.strip()
-                if cleaned and not cleaned.startswith('═') and not cleaned.startswith('HISTORIA') and len(cleaned) > 10:
+                if cleaned and not cleaned.startswith(('═', '╔', '╚')) and not cleaned.startswith('HISTORIA') and len(cleaned) > 10:
                     if not cleaned.upper().startswith(('COMO:', 'QUIERO:', 'PARA:', 'CRITERIOS', 'REGLAS', 'PRIORIDAD', 'COMPLEJIDAD')):
                         # Limpiar también aquí para evitar campos
                         cleaned_title = cleaned
@@ -85,7 +85,7 @@ def parse_story_data(story_text: str) -> Dict:
     }
     
     # Extraer título (Summary)
-    title_pattern = r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
+    title_pattern = r'HISTORIA\s*#?\s*(?:\d+)?\s*:\s*([^\n]+)'
     title_match = re.search(title_pattern, story_text, re.IGNORECASE)
     if title_match:
         data['summary'] = title_match.group(1).strip()
@@ -103,7 +103,7 @@ def parse_story_data(story_text: str) -> Dict:
         lines = story_text.split('\n')
         for line in lines[:5]:
             line_clean = line.strip()
-            if line_clean and not line_clean.startswith(('*', '═', 'COMO', 'QUIERO', 'PARA', 'CRITERIOS', 'REGLAS', 'PRIORIDAD', 'COMPLEJIDAD')):
+            if line_clean and not line_clean.startswith(('*', '═', '╔', '╚', 'COMO', 'QUIERO', 'PARA', 'CRITERIOS', 'REGLAS', 'PRIORIDAD', 'COMPLEJIDAD')):
                 if len(line_clean) > 10 and len(line_clean) < 200:
                     data['summary'] = line_clean[:200]
                     break
@@ -121,13 +121,13 @@ def parse_story_data(story_text: str) -> Dict:
     if not para_match:
         para_match = re.search(r'PARA:\s*([^\n]+?)(?:\s+CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD|CONTINÚA|$)', story_text, re.IGNORECASE)
     
-    prioridad_match = re.search(r'(?:\*\s*)?\*\*Prioridad:\*\*\s*([^\n]+?)(?:\s+COMPLEJIDAD|CRITERIOS|REGLAS|CONTINÚA|$)', story_text, re.IGNORECASE)
+    prioridad_match = re.search(r'(?:\*\s*)?\*\*Prioridad:\*\*\s*([^\n]+)', story_text, re.IGNORECASE)
     if not prioridad_match:
-        prioridad_match = re.search(r'PRIORIDAD:\s*([^\n]+?)(?:\s+COMPLEJIDAD|CRITERIOS|REGLAS|CONTINÚA|$)', story_text, re.IGNORECASE)
+        prioridad_match = re.search(r'PRIORIDAD:\s*([^\n]+)', story_text, re.IGNORECASE)
     
-    complejidad_match = re.search(r'(?:\*\s*)?\*\*Complejidad:\*\*\s*([^\n]+?)(?:\s+CRITERIOS|REGLAS|CONTINÚA|$)', story_text, re.IGNORECASE)
+    complejidad_match = re.search(r'(?:\*\s*)?\*\*Complejidad:\*\*\s*([^\n]+)', story_text, re.IGNORECASE)
     if not complejidad_match:
-        complejidad_match = re.search(r'COMPLEJIDAD:\s*([^\n]+?)(?:\s+CRITERIOS|REGLAS|CONTINÚA|$)', story_text, re.IGNORECASE)
+        complejidad_match = re.search(r'COMPLEJIDAD:\s*([^\n]+)', story_text, re.IGNORECASE)
     
     # Construir descripción
     description_parts = []

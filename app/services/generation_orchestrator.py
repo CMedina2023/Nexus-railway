@@ -73,17 +73,19 @@ class GenerationOrchestrator:
             
             # Definir mensajes para la simulación
             if task_type == 'story':
+                # AJUSTE: Incluir pasos de la nueva estrategia "Dos Pasadas"
                 sim_steps = [
-                    ("Analizando requerimientos en el documento...", 15, "Extracción"),
+                    ("Iniciando análisis profundo del documento...", 5, "Inicio"),
+                    ("Extrayendo Contexto Global y Reglas de Negocio...", 15, "Contexto Global"),  # Nuevo paso crítico
                     ("Identificando actores y perfiles de usuario...", 25, "Análisis"),
-                    ("Estructurando criterios de aceptación...", 38, "Redacción"),
-                    ("Aplicando contexto de negocio adicional...", 50, "Contexto"),
-                    ("Finalizando borrador de historias...", 65, "Finalización"),
-                    ("Verificando consistencia de criterios de aceptación...", 72, "Verificación"),
-                    ("Refinando detalles técnicos y narrativos...", 79, "Refinamiento"),
-                    ("Validando reglas de negocio...", 86, "Validación"),
+                    ("Estructurando criterios de aceptación por lotes...", 35, "Estructura"),
+                    ("Aplicando contexto de negocio a cada historia...", 45, "Fusión Contextual"), # Nuevo paso
+                    ("Generando historias de usuario detalladas...", 55, "Generación"),
+                    ("Verificando consistencia de criterios de aceptación...", 65, "Verificación"),
+                    ("Refinando detalles técnicos y narrativos...", 75, "Refinamiento"),
+                    ("Validando reglas de negocio...", 85, "Validación"),
                     ("Estandarizando formato de salida...", 92, "Formato"),
-                    ("Finalizando procesamiento...", 95, "Finalizando")
+                    ("Finalizando procesamiento...", 97, "Finalizando")
                 ]
             else:
                 sim_steps = [
@@ -116,18 +118,28 @@ class GenerationOrchestrator:
             ia_thread = threading.Thread(target=run_ia_task)
             ia_thread.start()
 
-            # Bucle de progreso fluido (Simulado)
+            # Bucle de progreso fluido (Simulado pero sincronizado)
             sim_index = 0
+            # Aumentamos el heartbeat para evitar timeouts de red en proxies (ej. Nginx corta a los 60s si no hay datos)
+            HEARTBEAT_INTERVAL = 2.0 
+            
             while not result_container["completed"]:
                 if sim_index < len(sim_steps):
                     msg, prog, phase = sim_steps[sim_index]
                     yield self._format_sse(msg, prog, phase)
+                    # Avanzamos más lento en los primeros pasos que son los pesados (Context Extraction)
+                    steps_delay = 5 if sim_index < 3 else 3
+                    
+                    # Esperar N segundos pero enviando "latidos" si es necesario (para mantener viva conexión)
+                    for _ in range(steps_delay):
+                        if result_container["completed"]: break
+                        time.sleep(1)
+                    
                     sim_index += 1
                 else:
-                    # Si la IA tarda más de lo esperado, mantenemos el último porcentaje de simulación
-                    yield self._format_sse("Casi listo, procesando respuesta del modelo...", 95, "Procesando")
-                
-                time.sleep(5.0) # Intervalo de 5 segundos por latido
+                    # Si la IA tarda más de lo esperado (fase de generación masiva), mantenemos viva la conexión
+                    yield self._format_sse("Procesando lotes de historias con IA...", 98, "Procesando")
+                    time.sleep(HEARTBEAT_INTERVAL)
 
             # Verificar si hubo error
             if result_container["error"]:

@@ -329,3 +329,37 @@ IMPORTANTE: Integra el contexto adicional de negocio en los criterios y métrica
         return create_advanced_prompt(document_text, role, 'funcionalidad', business_context)
 
     return prompt
+
+
+# ----------------------------
+# Prompts de Análisis Global (Contexto)
+# ----------------------------
+GLOBAL_ANALYSIS_PROMPT = """
+Eres un Arquitecto de Soluciones experto. Tu tarea es analizar este documento para extraer el CONTEXTO GLOBAL del sistema.
+No te enfoques en funcionalidades individuales todavía. Enfócate en las "Reglas de Juego" que aplican a todo el proyecto.
+
+DOCUMENTO:
+{document_text}
+
+Tu misión es identificar y extraer:
+
+1. GLOSARIO Y DEFINICIONES:
+   - Términos de negocio clave y sus significados exactos.
+   - Roles de usuario y sus jerarquías.
+
+2. REGLAS DE NEGOCIO GLOBALES:
+   - Reglas transversales (ej: "Todos los montos son en USD", "El usuario debe estar activo para cualquier operación").
+   - Restricciones técnicas o de seguridad que afecten a todas las historias.
+
+3. DEPENDENCIAS Y FLUJOS MACRO:
+   - Cómo se conectan los módulos principales entre sí.
+   - Pre-condiciones globales.
+
+SALIDA ESPERADA:
+Un resumen estructurado y conciso (máximo 500 palabras) que sirva como "Memoria de Proyecto" para un desarrollador que leerá partes aisladas del documento después.
+
+Formato:
+--- INICIO CONTEXTO GLOBAL ---
+[Tu resumen aquí]
+--- FIN CONTEXTO GLOBAL ---
+"""

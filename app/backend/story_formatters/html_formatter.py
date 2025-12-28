@@ -25,7 +25,7 @@ def format_story_for_html(story_text: str, story_num: int) -> str:
     full_text = story_text
     
     # Extraer título y número
-    title_pattern = r'HISTORIA\s*#?\s*(\d+)?\s*:\s*([^\n═]+?)(?:\s+(?:COMO|QUIERO|PARA|CRITERIOS|REGLAS|PRIORIDAD|COMPLEJIDAD):|$)'
+    title_pattern = r'HISTORIA\s*#?\s*(\d+)?\s*:\s*([^\n]+)'
     title_match = re.search(title_pattern, story_text, re.IGNORECASE)
     
     if title_match:
