@@ -256,15 +256,44 @@ def get_test_case_field_values():
             import unicodedata, re
             return re.sub(r'[^a-z0-9\s]', '', unicodedata.normalize('NFD', n.lower()).encode('ascii', 'ignore').decode()).strip()
             
-        selects = {'tipo_prueba': ['tipo de prueba'], 'nivel_prueba': ['nivel de prueba'], 'tipo_ejecucion': ['tipo de ejecución'], 'ambiente': ['ambiente']}
+        selects = {
+            'tipo_prueba': ['tipo de prueba', 'tipo prueba', 'test type', 'type of test', 'test_type'],
+            'nivel_prueba': ['nivel de prueba', 'nivel prueba', 'test level', 'level', 'test_level'],
+            'tipo_ejecucion': ['tipo de ejecución', 'tipo de ejecucion', 'execution type', 'execution', 'execution_type'],
+            'ambiente': ['ambiente', 'environment', 'env', 'entorno'],
+            'ciclo': ['ciclo', 'cycle']
+        }
         all_fs = fields_info.get('required_fields', []) + fields_info.get('optional_fields', [])
+        
+        # Log para depuración
+        logger.info(f"Campos disponibles en Jira para Test Case: {[f['name'] for f in all_fs]}")
+        
         res = {}
         for k, names in selects.items():
             f_info = {'exists': False, 'values': []}
             for f in all_fs:
-                if any(normalize(n) == normalize(f['name']) for n in names):
-                    f_info = {'exists': True, 'field_name': f['name'], 'field_id': f['id'], 'values': [{'value': str(v.get('value', v.get('name'))), 'name': v.get('name')} for v in f.get('allowedValues', []) if isinstance(v, dict)]}
+                # Normalización robusta
+                normalized_fname = normalize(f['name'])
+                if any(normalize(n) == normalized_fname for n in names):
+                    # Extracción mejorada de valores: Priorizar 'value' sobre 'name' para custom options
+                    values_list = []
+                    for v in f.get('allowedValues', []):
+                        if isinstance(v, dict):
+                            val = str(v.get('value', v.get('name', '')))
+                            if val:
+                                values_list.append({'value': val, 'name': val})
+                    
+                    f_info = {
+                        'exists': True, 
+                        'has_values': len(values_list) > 0,
+                        'field_name': f['name'], 
+                        'field_id': f['id'], 
+                        'values': values_list
+                    }
+                    logger.info(f"Campo encontrado: {k} -> {f['name']} (ID: {f['id']}) - Valores: {len(values_list)}")
                     break
+            if not f_info['exists']:
+                logger.warning(f"Campo NO encontrado: {k}. Buscado como: {names}")
             res[k] = f_info
         return jsonify({"success": True, "field_values": res}), 200
     except Exception as e: return jsonify({"success": False, "error": str(e)}), 500
@@ -349,10 +378,13 @@ def upload_test_cases_to_jira():
         assignee_email = data.get('assignee_email', '').strip() or None
         
         # Valores de campos select desde el modal
-        tipo_prueba = data.get('tipo_prueba', '').strip()
-        nivel_prueba = data.get('nivel_prueba', '').strip()
-        tipo_ejecucion = data.get('tipo_ejecucion', '').strip()
-        ambiente = data.get('ambiente', '').strip()
+        custom_fields_data = data.get('custom_fields', {})
+        # Mantener retrocompatibilidad o buscar en custom_fields
+        tipo_prueba = custom_fields_data.get('tipo_prueba') or data.get('tipo_prueba', '')
+        nivel_prueba = custom_fields_data.get('nivel_prueba') or data.get('nivel_prueba', '')
+        tipo_ejecucion = custom_fields_data.get('tipo_ejecucion') or data.get('tipo_ejecucion', '')
+        ambiente = custom_fields_data.get('ambiente') or data.get('ambiente', '')
+        ciclo = custom_fields_data.get('ciclo') or data.get('ciclo', '')
         
         if not test_cases:
             return jsonify({"success": False, "error": "No se proporcionaron casos de prueba"}), 400
@@ -378,19 +410,46 @@ def upload_test_cases_to_jira():
         # Lista de nombres comunes para tipos de issue de prueba
         test_type_candidates = ['Test Case', 'Test', 'QA Task', 'Prueba', 'Caso de Prueba']
         
+        # Obtener metadata de campos para mapeo dinámico
+        user = get_user_service().get_user_by_id(get_current_user_id())
+        jira_config = get_jira_token_manager().get_token_for_user(user, project_key)
+        connection = JiraConnection(jira_config.base_url, jira_config.email, jira_config.token)
+        
+        # Validar issue type para obtener campos
+        fields_info = ProjectService(connection).get_project_fields_for_creation(project_key, 'Test Case')
+        all_fields = fields_info.get('required_fields', []) + fields_info.get('optional_fields', [])
+        
+        def normalize(n):
+            import unicodedata, re
+            return re.sub(r'[^a-z0-9\s]', '', unicodedata.normalize('NFD', n.lower()).encode('ascii', 'ignore').decode()).strip()
+
+        # Diccionario de alias para búsqueda de campos
+        field_aliases = {
+            'tipo_prueba': ['tipo de prueba', 'test type', 'type of test'],
+            'nivel_prueba': ['nivel de prueba', 'test level', 'level'],
+            'tipo_ejecucion': ['tipo de ejecución', 'execution type', 'execution'],
+            'ambiente': ['ambiente', 'environment', 'env', 'entorno'],
+            'pasos': ['pasos', 'steps', 'test steps', 'action', 'pasos de prueba'],
+            'resultado_esperado': ['resultado esperado', 'expected result', 'expected results', 'test result'],
+            'precondiciones': ['precondiciones', 'preconditions', 'pre-requisites', 'prerrequisitos'],
+            'ciclo': ['ciclo', 'cycle']
+        }
+
+        # Mapear nombres internos a IDs de Jira encontrados
+        jira_field_map = {}
+        for internal_key, aliases in field_aliases.items():
+            for f in all_fields:
+                if any(normalize(alias) == normalize(f['name']) for alias in aliases):
+                    jira_field_map[internal_key] = f['id'] # Guardamos ID del campo (customfield_XXXX)
+                    break
+
+        logger.info(f"Mapeo de campos detectado: {jira_field_map}")
+        
         csv_data = []
         for tc in test_cases:
             raw = tc.get('raw_data', {})
             
-            # Lógica para determinar el issue type:
-            # Prioridad 1: Lo que venga explícitamente en el objeto tc
-            # Prioridad 2: Un default sensato ('Test Case')
-            # Nota: 'tests Case' era un error tipográfico
             issue_type = tc.get('issuetype')
-            
-            # Si el issue_type viene sucio o incorrecto, intentamos limpiarlo, pero lo ideal_
-            # es confiar en que la configuración del proyecto o el usuario sabe lo que hace.
-            # Sin embargo, si es el valor por defecto incorrecto antiguo, lo corregimos.
             if issue_type == 'tests Case':
                 issue_type = 'Test Case'
             elif not issue_type:
@@ -402,22 +461,65 @@ def upload_test_cases_to_jira():
                 'Issuetype': issue_type,
                 'Priority': tc.get('priority', 'Medium')
             }
-            # Mapear campos de prueba
-            if 'Pasos' in raw or 'pasos' in raw:
-                csv_row['Pasos'] = '\n'.join(raw.get('Pasos', raw.get('pasos', [])))
-            if 'Resultado_esperado' in raw:
-                csv_row['Resultado Esperado'] = '\n'.join(raw.get('Resultado_esperado', []))
+
+            # Agregar campos mapeados si existen en Jira
+            if 'pasos' in jira_field_map:
+                pasos_content = '\n'.join(raw.get('Pasos', raw.get('pasos', [])))
+                csv_row['Pasos'] = pasos_content
             
-            # Aplicar valores globales del modal si están presentes
-            if tipo_prueba: csv_row['Tipo de Prueba'] = tipo_prueba
-            if nivel_prueba: csv_row['Nivel de Prueba'] = nivel_prueba
-            if ambiente: csv_row['Ambiente'] = ambiente
-            if tipo_ejecucion: csv_row['Tipo de Ejecución'] = tipo_ejecucion
-            if assignee_email: csv_row['Asignado'] = assignee_email
+            if 'resultado_esperado' in jira_field_map:
+                res_content = '\n'.join(raw.get('Resultado_esperado', []))
+                csv_row['Resultado Esperado'] = res_content
+                
+            if 'precondiciones' in jira_field_map:
+                pre_content = raw.get('Precondiciones', tc.get('preconditions', ''))
+                csv_row['Precondiciones'] = pre_content
+
+            # Campos de configuración manual (SELECTS)
+            if tipo_prueba and 'tipo_prueba' in jira_field_map:
+                csv_row['Tipo de Prueba'] = tipo_prueba
+            if nivel_prueba and 'nivel_prueba' in jira_field_map:
+                csv_row['Nivel de Prueba'] = nivel_prueba
+            if ambiente and 'ambiente' in jira_field_map:
+                csv_row['Ambiente'] = ambiente
+            if tipo_ejecucion and 'tipo_ejecucion' in jira_field_map:
+                csv_row['Tipo de Ejecución'] = tipo_ejecucion
+            if ciclo and 'ciclo' in jira_field_map:
+                csv_row['Ciclo'] = ciclo
+                
+            if assignee_email:
+                csv_row['Asignado'] = assignee_email
             
             csv_data.append(csv_row)
+        
+        # Construir mappings para issue_service
+        field_mappings = {
+            'Summary': 'summary',
+            'Description': 'description',
+            'Issuetype': 'issuetype',
+            'Priority': 'priority'
+        }
+        
+        if 'pasos' in jira_field_map: field_mappings['Pasos'] = jira_field_map['pasos']
+        if 'resultado_esperado' in jira_field_map: field_mappings['Resultado Esperado'] = jira_field_map['resultado_esperado']
+        if 'precondiciones' in jira_field_map: field_mappings['Precondiciones'] = jira_field_map['precondiciones']
+        
+        if 'tipo_prueba' in jira_field_map: field_mappings['Tipo de Prueba'] = jira_field_map['tipo_prueba']
+        if 'nivel_prueba' in jira_field_map: field_mappings['Nivel de Prueba'] = jira_field_map['nivel_prueba']
+        if 'ambiente' in jira_field_map: field_mappings['Ambiente'] = jira_field_map['ambiente']
+        if 'tipo_ejecucion' in jira_field_map: field_mappings['Tipo de Ejecución'] = jira_field_map['tipo_ejecucion']
+        if 'ciclo' in jira_field_map: field_mappings['Ciclo'] = jira_field_map['ciclo']
             
-        results = issue_service.create_issues_from_csv(csv_data, project_key, {}, filter_issue_types=False)
+        if assignee_email:
+            field_mappings['Asignado'] = 'assignee'
+
+        results = issue_service.create_issues_from_csv(
+            csv_data=csv_data,
+            project_key=project_key,
+            field_mappings=field_mappings,
+            default_values={},
+            filter_issue_types=False
+        )
         txt_content = generate_test_cases_upload_summary_txt(results, project_key, len(test_cases))
         txt_base64 = base64.b64encode(txt_content.encode('utf-8')).decode('utf-8')
         

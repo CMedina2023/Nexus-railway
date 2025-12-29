@@ -356,7 +356,8 @@
                     'tipo_prueba': { select: 'jira-tests-tipo-prueba-select', container: 'jira-tests-tipo-prueba-container', message: 'jira-tests-tipo-prueba-message', label: 'Tipo de Prueba' },
                     'nivel_prueba': { select: 'jira-tests-nivel-prueba-select', container: 'jira-tests-nivel-prueba-container', message: 'jira-tests-nivel-prueba-message', label: 'Nivel de Prueba' },
                     'tipo_ejecucion': { select: 'jira-tests-tipo-ejecucion-select', container: 'jira-tests-tipo-ejecucion-container', message: 'jira-tests-tipo-ejecucion-message', label: 'Tipo de Ejecución' },
-                    'ambiente': { select: 'jira-tests-ambiente-select', container: 'jira-tests-ambiente-container', message: 'jira-tests-ambiente-message', label: 'Ambiente' }
+                    'ambiente': { select: 'jira-tests-ambiente-select', container: 'jira-tests-ambiente-container', message: 'jira-tests-ambiente-message', label: 'Ambiente' },
+                    'ciclo': { select: 'jira-tests-ciclo-select', container: 'jira-tests-ciclo-container', message: 'jira-tests-ciclo-message', label: 'Ciclo' }
                 };
 
                 for (const [key, config] of Object.entries(fieldConfig)) {
@@ -518,7 +519,8 @@
                 tipo_prueba: document.getElementById('jira-tests-tipo-prueba-select').value,
                 nivel_prueba: document.getElementById('jira-tests-nivel-prueba-select').value,
                 tipo_ejecucion: document.getElementById('jira-tests-tipo-ejecucion-select').value,
-                ambiente: document.getElementById('jira-tests-ambiente-select').value
+                ambiente: document.getElementById('jira-tests-ambiente-select').value,
+                ciclo: document.getElementById('jira-tests-ciclo-select').value
             };
 
             const loadingOverlay = document.getElementById('stories-loading-overlay'); // Reusar o usar uno específico si existe

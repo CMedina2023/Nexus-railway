@@ -15,6 +15,105 @@
 
 ---
 
+## 📏 LÍMITES ESTRICTOS DE TAMAÑO DE ARCHIVOS
+
+**REGLA CRÍTICA**: Ningún archivo debe exceder los límites establecidos. Si un archivo alcanza el 80% del límite, DEBE refactorizarse INMEDIATAMENTE antes de agregar más código.
+
+### Límites por Tipo de Archivo
+
+| Tipo | Límite Máximo | Límite Recomendado | Acción al 80% |
+|------|---------------|-------------------|---------------|
+| **Python (.py)** | 400 líneas | 300 líneas | Dividir en módulos |
+| **JavaScript (.js)** | 400 líneas | 300 líneas | Dividir en módulos |
+| **CSS (.css)** | 200 líneas | 150 líneas | Modularizar componentes |
+| **HTML (.html)** | 300 líneas | 200 líneas | Extraer partials |
+| **JSON (.json)** | 500 líneas | 300 líneas | Dividir configuración |
+| **Markdown (.md)** | 800 líneas | 600 líneas | Dividir en secciones |
+
+### Límites por Función/Método
+
+- **Máximo absoluto**: 80 líneas
+- **Recomendado**: 25-30 líneas
+- **Ideal**: 15-20 líneas
+- **Complejidad ciclomática**: Máximo 10
+
+### Acciones Obligatorias al Detectar Violaciones
+
+**Si encuentras un archivo que excede el límite:**
+1. ✅ **DETENER** inmediatamente cualquier adición de código
+2. ✅ **INFORMAR** al usuario sobre la violación
+3. ✅ **PROPONER** un plan de refactorización antes de continuar
+4. ✅ **NO AGREGAR** más código hasta que se refactorice
+
+**Si necesitas agregar código a un archivo cercano al límite (>80%):**
+1. ✅ Primero refactoriza el archivo existente
+2. ✅ Divide en módulos especializados
+3. ✅ Luego agrega el nuevo código al módulo apropiado
+
+---
+
+## 🚫 NOMBRES GENÉRICOS PROHIBIDOS
+
+**REGLA ABSOLUTA**: Los siguientes nombres de archivo están PROHIBIDOS porque atraen código sin estructura y violan SRP:
+
+### Archivos Python Prohibidos
+- ❌ `helpers.py` → Usar nombres específicos: `text_normalizer.py`, `date_formatter.py`
+- ❌ `utils.py` → Usar nombres específicos: `string_utils.py`, `validation_utils.py`
+- ❌ `common.py` → Usar nombres específicos según responsabilidad
+- ❌ `misc.py` → Usar nombres específicos según responsabilidad
+- ❌ `tools.py` → Usar nombres específicos según responsabilidad
+- ❌ `functions.py` → Usar nombres específicos según responsabilidad
+- ❌ `manager.py` → Usar nombres específicos: `user_manager.py`, `session_manager.py`
+
+### Archivos JavaScript Prohibidos
+- ❌ `helpers.js` → Usar nombres específicos: `formatters.js`, `validators.js`
+- ❌ `utils.js` → Usar nombres específicos: `dom-utils.js`, `api-utils.js`
+- ❌ `common.js` → Usar nombres específicos según responsabilidad
+- ❌ `misc.js` → Usar nombres específicos según responsabilidad
+- ❌ `tools.js` → Usar nombres específicos según responsabilidad
+- ❌ `functions.js` → Usar nombres específicos según responsabilidad
+
+### Nombres de Funciones Prohibidos
+- ❌ `process_data()` → Usar nombres específicos: `parse_csv_data()`, `validate_user_input()`
+- ❌ `handle_request()` → Usar nombres específicos: `create_user_account()`, `update_profile()`
+- ❌ `do_something()` → Usar nombres específicos según la acción real
+- ❌ `manage_stuff()` → Usar nombres específicos según la responsabilidad
+
+### Alternativas Correctas
+
+**En lugar de `helpers.py`:**
+```python
+# ✅ CORRECTO: Nombres específicos por responsabilidad
+text_normalizer.py      # Normalización de texto
+date_formatter.py       # Formateo de fechas
+email_validator.py      # Validación de emails
+currency_converter.py   # Conversión de monedas
+```
+
+**En lugar de `utils.js`:**
+```javascript
+// ✅ CORRECTO: Nombres específicos por responsabilidad
+dom-manipulator.js      // Manipulación del DOM
+api-client.js          // Cliente HTTP
+form-validator.js      // Validación de formularios
+date-formatter.js      // Formateo de fechas
+```
+
+### Regla de Nomenclatura
+
+**Formato obligatorio para nombres de archivo:**
+- Debe describir **QUÉ hace** o **QUÉ contiene**
+- Debe ser **específico** y **descriptivo**
+- Debe seguir el patrón: `[sustantivo]_[verbo/acción].extensión`
+- Ejemplos: `user_authenticator.py`, `invoice_generator.js`, `email_sender.py`
+
+**Si no puedes pensar en un nombre específico:**
+- ❌ NO uses un nombre genérico
+- ✅ Pregunta al usuario o revisa la responsabilidad del código
+- ✅ Si el código hace múltiples cosas, divídelo primero
+
+---
+
 ## 1. 📐 ARQUITECTURA DETALLADA (SOLID & PATTERNS)
 
 ### Principios de Implementación de Código
