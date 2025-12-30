@@ -119,4 +119,32 @@ def get_current_user_role() -> Optional[str]:
     return SessionService.get_current_user_role()
 
 
+def filter_by_role(f: Callable) -> Callable:
+    """
+    Decorador que inyecta el objeto usuario actual tras validar login (SRP)
+    
+    ✅ Valida login
+    ✅ Obtiene el objeto usuario completo
+    ✅ Inyecta el usuario como primer argumento
+    
+    Returns:
+        Callable: Función decorada que recibe el objeto user
+    """
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        from app.core.dependencies import get_user_service
+        
+        user_id = SessionService.get_current_user_id()
+        user_service = get_user_service()
+        user = user_service.get_user_by_id(user_id)
+        
+        if not user:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+            
+        return f(user, *args, **kwargs)
+        
+    return decorated_function
+
+
 

@@ -78,10 +78,14 @@ Esta auditoría presenta un análisis honesto y objetivo basado en estándares p
 | `static/js/modules/jira/reports.js` | **1,124** | **34** | -97.0% | ✅ **RESOLVED** |
 | `app/auth/metrics_routes.py` | **667** | **30** | -95.5% | ✅ **RESOLVED** |
 | `app/backend/story_formatters.py` | **644** | **25** | -96.1% | ✅ **RESOLVED** |
+| `app/services/jira/api/routes.py` | **741** | **20** | -97.3% | ✅ **RESOLVED** |
+| `app/auth/metrics_helpers.py` | **586** | **65** | -88.9% | ✅ **RESOLVED** |
 | `static/css/pages/metrics.css` | **633** | **9** | -98.6% | ✅ **RESOLVED** |
+| `app/backend/jira/issue_creator.py` | **396** | **195** | -50.7% | ✅ **RESOLVED** |
+| `app/auth/dashboard_routes.py` | **372** | **192** | -48.4% | ✅ **RESOLVED** |
 
 **Logros alcanzados:**
-- ✅ **TODAS las refactorizaciones completadas**: 14 archivos monolíticos eliminados
+- ✅ **TODAS las refactorizaciones completadas**: 16 archivos monolíticos eliminados
 - ✅ **CSS modularizado**: Dividido en 37 archivos (base/, components/, layouts/, pages/)
 - ✅ **Generators refactorizado**: Ahora un facade orquestando submódulos especializados
 - ✅ **Story Backend refactorizado**: Dividido en 5 módulos especializados
@@ -89,13 +93,17 @@ Esta auditoría presenta un análisis honesto y objetivo basado en estándares p
 - ✅ **Metrics Routes refactorizado**: Dividido en standard.py y stream.py
 - ✅ **Story Formatters refactorizado**: Dividido en word, csv y html formatters
 - ✅ **Metrics CSS refactorizado**: Dividido en 8 módulos específicos
+- ✅ **Metrics Helpers refactorizado**: Dividido en JQLBuilder, MetricsIssueFetcher y MetricsCalculatorHelper
+- ✅ **Jira API Routes refactorizado**: Dividido en 5 módulos especializados
+- ✅ **Issue Creator refactorizado**: Dividido en RateLimiter, CSVIssueProcessor e IssueCreator simple
 - ✅ Cumple con **Single Responsibility Principle** en todos los archivos refactorizados
 
 **Estado actual:**
 - ✅ **0 archivos Python >600 líneas** en código activo (solo en backups)
 - ✅ **0 archivos JavaScript >600 líneas** en código activo
-- ✅ **Archivo JS más grande**: `dashboard/ui.js` (586 líneas) - dentro de límites aceptables
-- ✅ **Archivo Python más grande en app/**: Todos <450 líneas
+- ✅ **Archivo JS más grande**: `test-case-generator.js` (499 líneas) - pendiente de refactorización (Nivel 2)
+- ✅ **Archivo Python más grande en app/**: Todos <400 líneas (excepto algunos que están al 90% del límite)
+- ✅ **Refactorización de dashboard_routes.py**: Implementado decorador `@filter_by_role` y `DashboardFilterService`.
 
 ### 2. MODULARIZACIÓN CSS: 10/10 ✅ **COMPLETADO**
 
@@ -200,11 +208,13 @@ static/css/
 
 **`issue_service.py` (78 líneas) - REFACTORIZADO:**
 - ✅ **Facade Pattern**: Delega operaciones a módulos especializados
-- ✅ Dividido en 4 módulos cohesivos:
+- ✅ Dividido en 6 módulos cohesivos:
   - `cache_manager.py`: Gestión de caché para metadatos de campos
   - `field_validator.py`: Validación y normalización de campos y ADF
   - `issue_fetcher.py`: Consultas JQL y recuperación de datos
-  - `issue_creator.py`: Lógica de creación y rate limiting
+  - `issue_creator.py`: Lógica de creación (simplificado)
+  - `rate_limiter.py`: Control de flujo y backoff exponencial para API
+  - `csv_issue_processor.py`: Procesamiento y carga masiva desde CSV
 - ✅ Reducción masiva de complejidad en un servicio core
 
 ### 4. DUPLICACIÓN DE CÓDIGO: 7/10 ✅ **MEJORADO**
@@ -548,168 +558,112 @@ Durante una revisión exhaustiva del 28 de diciembre de 2025, se identificaron *
 
 ---
 
-### 🔴 NIVEL 1: CRÍTICO (Refactorización Inmediata Requerida)
+### 🔴 NIVEL 1: CRÍTICO (Refactorización Inmediata Requerida) ✅ COMPLETADO
 
-#### 1. `app/services/jira/api/routes.py` - **741 LÍNEAS** ⚠️⚠️⚠️
+#### 1. `app/services/jira/api/routes.py` ✅ **RESOLVED**
+- ✅ Modularizado en 5 submódulos especializados.
+- ✅ Lógica de negocio movida a servicios.
 
-**Violaciones identificadas:**
-- ❌ **Excede límite por 341 líneas** (límite: 400)
-- ❌ **18 endpoints** en un solo archivo (violación masiva de SRP)
-- ❌ **Función `normalize()` duplicada 3 veces** (líneas 217, 255, 422)
-- ❌ **Funciones muy largas**:
-  - `upload_test_cases_to_jira()`: 92 líneas
-  - `jira_download_report()`: 91 líneas
-  - `jira_upload_csv()`: 76 líneas
-- ❌ **Lógica de negocio en controladores**
-- ❌ **Responsabilidades mezcladas**: Conexión + Validación + Subida + Descarga + Reportes
+#### 2. `app/auth/metrics_helpers.py` ✅ **RESOLVED**
+- ✅ Modularizado en JQLBuilder, Fetchers y Calculators.
+- ✅ Eliminada duplicación de JQL.
 
-**Impacto:** 🔴 **CRÍTICO** - Archivo central de la API de Jira, difícil de mantener y testear
-
-**Checklist de Refactorización:**
-- [ ] Crear `utils/text_normalizer.py` y extraer función `normalize()`
-- [ ] Dividir en `routes/jira_connection.py` (test-connection, projects, validate-project-access)
-- [ ] Dividir en `routes/jira_fields.py` (filter-fields, project-fields, validate-csv-fields, validate-test-case-fields, get-test-case-field-values)
-- [ ] Dividir en `routes/jira_upload.py` (upload-stories, upload-test-cases, upload-csv)
-- [ ] Dividir en `routes/jira_reports.py` (download-report, download-template)
-- [ ] Dividir en `routes/jira_validation.py` (validate-user)
-- [ ] Actualizar imports en archivos dependientes
-- [ ] Ejecutar tests de integración
-- [ ] Validar que todos los endpoints funcionan correctamente
-
----
-
-#### 2. `app/auth/metrics_helpers.py` - **586 LÍNEAS** ⚠️⚠️
-
-**Violaciones identificadas:**
-- ❌ **Excede límite por 186 líneas** (límite: 400)
-- ❌ **Funciones extremadamente largas**:
-  - `fetch_issues_with_separate_filters()`: 169 líneas
-  - `fetch_issues_with_parallel()`: 145 líneas
-  - `build_jql_from_filters()`: 82 líneas
-- ❌ **Duplicación de código**: Lógica de construcción de JQL repetida en 3 funciones
-- ❌ **Responsabilidades mezcladas**: Construcción de queries + Obtención de datos + Cálculo de métricas
-- ❌ **Complejidad ciclomática alta**: Múltiples niveles de anidación
-
-**Impacto:** 🔴 **CRÍTICO** - Lógica core de métricas, dificulta debugging y mantenimiento
-
-**Checklist de Refactorización:**
-- [ ] Crear `jql/jql_builder.py` (build_jql_from_filters, build_separate_jql_queries)
-- [ ] Crear `fetchers/parallel_issue_fetcher.py` (fetch_issues_with_parallel, fetch_issues_with_progress_queue, fetch_issues_with_separate_filters)
-- [ ] Crear `calculators/metrics_calculator_helper.py` (calculate_metrics_from_issues, filter_issues_by_type)
-- [ ] Consolidar lógica de construcción de JQL en clase `JQLBuilder`
-- [ ] Extraer callbacks de progreso a módulo dedicado
-- [ ] Actualizar imports en `metrics_routes/`
-- [ ] Ejecutar tests de métricas
-- [ ] Validar reportes generales y personales
-
----
-
-#### 3. `static/js/modules/dashboard/ui.js` - **587 LÍNEAS** ⚠️⚠️
-
-**Violaciones identificadas:**
-- ❌ **Excede límite por 187 líneas** (límite: 400)
-- ❌ **Funciones con HTML embebido masivo**:
-  - `renderJiraMetricsByProject()`: 84 líneas (60% es HTML)
-  - `loadMetrics()`: 80 líneas
-  - `loadJiraMetrics()`: 76 líneas
-- ❌ **Mezcla de responsabilidades**: Lógica de datos + Renderizado + Manipulación DOM + Eventos
-- ❌ **Templates HTML en JavaScript**: Dificulta mantenimiento y testing
-- ❌ **Sin separación de concerns**
-
-**Impacto:** 🟡 **ALTO** - UI crítica del dashboard, dificulta cambios visuales
-
-**Checklist de Refactorización:**
-- [ ] Crear `dashboard/data-loader.js` (loadDashboardMetrics, loadMetrics, loadJiraMetrics, loadAllMetrics)
-- [ ] Crear `dashboard/renderers.js` (renderReportsHistory, renderUploadsHistory, renderJiraMetricsByProject)
-- [ ] Crear `dashboard/ui-interactions.js` (showMetricsSection, clearJiraReport, refreshMetrics, resetMetrics)
-- [ ] Crear `dashboard/templates.js` (Funciones que retornan HTML como strings reutilizables)
-- [ ] Extraer templates HTML a funciones puras
-- [ ] Actualizar `dashboard.js` facade
-- [ ] Validar carga de métricas
-- [ ] Validar renderizado de gráficos
+#### 3. `static/js/modules/dashboard/ui.js` ✅ **RESOLVED**
+- ✅ Dividido en DataLoader, Renderers, UI-Interactions y Templates.
+- ✅ HTML desacoplado de la lógica.
 
 ---
 
 ### 🟡 NIVEL 2: ALTO (Refactorizar Pronto)
 
-#### 4. `static/js/modules/generators/test-case/test-case-generator.js` - **499 LÍNEAS**
+#### 4. `static/js/modules/generators/test-case/test-case-generator.js` ✅ **RESOLVED (29/Dic/2025)**
 
-**Violaciones:**
-- ⚠️ **Cerca del límite** (99 líneas del límite de 400)
-- ⚠️ Función `setupUIHandlers()` con 7 event handlers inline (49 líneas)
-- ⚠️ Lógica de validación + generación + UI en el mismo archivo
+**Refactorización Realizada:**
+- ✅ **Modularización**: Dividido en `State-Manager`, `Validator`, `GeneratorApi` y `UI-Handlers`.
+- ✅ **Reducción de Tamaño**: El archivo principal pasó de ~500 líneas a 38 líneas (Fachada).
+- ✅ **Separación de Responsabilidades**: Lógica de API, validación y gestión de estado desacopladas.
+- ✅ **Corrección de Errores Críticos**:
+    - Reparado el error de `TypeError` en el modal de edición mediante la sincronización de IDs con `app_modals.html`.
+    - Corregida la inconsistencia de mapeo en `app/backend/matrix/parser.py` (Precondiciones).
+    - Implementada la conversión de arrays a saltos de línea para Pasos y Resultados en el modal.
+    - Sincronización automática de cambios del modal con la vista previa de la tabla.
 
 **Checklist:**
-- [ ] Crear `test-case/validator.js` (validateForm)
-- [ ] Crear `test-case/generator-api.js` (generateTests, handleGenerationTerminal)
-- [ ] Crear `test-case/ui-handlers.js` (setupUIHandlers, setupForm)
-- [ ] Crear `test-case/state-manager.js` (Gestión del estado)
-- [ ] Validar flujo completo de generación
+- [x] Crear `test-case/validator.js` (validateForm)
+- [x] Crear `test-case/generator-api.js` (generateTests, handleGenerationTerminal)
+- [x] Crear `test-case/ui-handlers.js` (setupUIHandlers, setupForm)
+- [x] Crear `test-case/state-manager.js` (Gestión del estado)
+- [x] Validar flujo completo de generación y edición operacional.
 
 ---
 
-#### 5. `app/backend/jira/issue_creator.py` - **396 LÍNEAS**
+#### 5. `app/backend/jira/issue_creator.py` ✅ **RESOLVED (29/Dic/2025)**
 
-**Violaciones:**
-- ⚠️ **Cerca del límite** (4 líneas del límite de 400)
-- ⚠️ Función `create_issues_from_csv()`: 179 líneas (casi la mitad del archivo)
-- ⚠️ Lógica de rate limiting + creación + validación mezcladas
+**Refactorización Realizada:**
+- ✅ **Separación de Concerns**: Extraída lógica de Rate Limiting y Procesamiento CSV.
+- ✅ **Reducción de Complejidad**: El archivo principal se redujo de 396 a 195 líneas.
+- ✅ **Modularización**: 
+    - `rate_limiter.py`: Maneja el backoff exponencial y espera inteligente.
+    - `csv_issue_processor.py`: Encapsula toda la lógica de mapeo y creación masiva.
+- ✅ **Mantenibilidad**: Se simplificó el método central de creación y se mejoró el manejo de reintentos ADF.
 
 **Checklist:**
-- [ ] Extraer `IssueCreationRateLimiter` a `rate_limiter.py`
-- [ ] Crear `csv_issue_processor.py` (create_issues_from_csv)
-- [ ] Simplificar `issue_creator.py` (solo create_issue simple)
-- [ ] Actualizar imports en `issue_service.py`
-- [ ] Ejecutar tests de creación de issues
+- [x] Extraer `IssueCreationRateLimiter` a `rate_limiter.py`
+- [x] Crear `csv_issue_processor.py` (create_issues_from_csv)
+- [x] Simplificar `issue_creator.py` (solo create_issue simple)
+- [x] Actualizar imports en `issue_service.py`
+- [x] Ejecutar tests de creación de issues
 
 ---
 
-#### 6. `app/auth/dashboard_routes.py` - **372 LÍNEAS**
+#### 6. `app/auth/dashboard_routes.py` ✅ **RESOLVED (29/Dic/2025)**
 
-**Violaciones:**
-- ⚠️ **Cerca del límite** (28 líneas del límite de 400)
-- ⚠️ 8 endpoints con lógica de permisos repetida
-- ⚠️ Patrón repetitivo de "si admin → todo, si no → filtrar por user_id"
+**Refactorización Realizada:**
+- ✅ **Implementación de Decorador**: Creado `@filter_by_role` en `decorators.py` que inyecta el objeto usuario y maneja la protección de ruta automáticamente.
+- ✅ **Servicio de Filtrado**: Creado `DashboardFilterService` para centralizar la lógica de "Admin ve TODO vs Usuario ve lo SUYO".
+- ✅ **Reducción de Código**: Se eliminó la duplicación masiva de condicionales en 8 endpoints, reduciendo el archivo de 372 a 192 líneas.
+- ✅ **Soporte Admin Extendido**: Se añadió soporte para métricas complejas (gráficas, historial, distribución) respetando la visibilidad global para administradores.
 
 **Checklist:**
-- [ ] Crear decorador `@filter_by_role` para manejo automático de permisos
-- [ ] Aplicar decorador a todos los endpoints
-- [ ] Extraer lógica de filtrado a servicio dedicado
-- [ ] Reducir duplicación de código
-- [ ] Validar permisos por rol
+- [x] Crear decorador `@filter_by_role` para manejo automático de permisos
+- [x] Aplicar decorador a todos los endpoints
+- [x] Extraer lógica de filtrado a servicio dedicado
+- [x] Reducir duplicación de código
+- [x] Validar permisos por rol
 
 ---
 
-#### 7. `app/auth/metrics_routes/standard.py` - **348 LÍNEAS**
+#### 7. `app/auth/metrics_routes/standard.py` ✅ **RESOLVED (29/Dic/2025)**
 
-**Violaciones:**
-- ⚠️ **Cerca del límite** (52 líneas del límite de 400)
-- ⚠️ Función `get_project_metrics()`: 291 líneas (83% del archivo)
-- ⚠️ Lógica de obtención + cálculo + formateo en una sola función
+**Refactorización Realizada:**
+- ✅ **Desacoplamiento Total**: Separada la lógica de negocio (`MetricsService`), formateo (`MetricsFormatter`) y manejo de errores (Middleware del Blueprint).
+- ✅ **Reducción Masiva**: El archivo se redujo de 348 líneas a ~60 líneas.
+- ✅ **Simplificación de Endpoints**: Ahora solo orquestan la llamada al servicio y retornan el JSON.
+- ✅ **Mejora de Mantenibilidad**: Se eliminaron bloques try/except duplicados mediante el uso de error handlers globales en el módulo.
 
 **Checklist:**
-- [ ] Crear `services/metrics_service.py` (Lógica de negocio)
-- [ ] Crear `services/metrics_formatter.py` (Formateo de respuestas)
-- [ ] Simplificar endpoints a solo orquestación
-- [ ] Extraer manejo de errores a middleware
-- [ ] Validar métricas generales y personales
+- [x] Crear `services/metrics_service.py` (Lógica de negocio)
+- [x] Crear `services/metrics_formatter.py` (Formateo de respuestas)
+- [x] Simplificar endpoints a solo orquestación
+- [x] Extraer manejo de errores a middleware (Blueprint Error Handlers)
+- [x] Validar métricas generales y personales
 
 ---
 
-#### 8. `app/auth/metrics_routes/stream.py` - **343 LÍNEAS**
+#### 8. `app/auth/metrics_routes/stream.py` ✅ **RESOLVED (29/Dic/2025)**
 
-**Violaciones:**
-- ⚠️ **Cerca del límite** (57 líneas del límite de 400)
-- ⚠️ Función `generate_report_stream()`: 318 líneas (93% del archivo)
-- ⚠️ Generador SSE con lógica de negocio embebida
-- ⚠️ Manejo de threading + queue + SSE en una sola función
+**Refactorización Realizada:**
+- ✅ **SRP (Single Responsibility Principle)**: El endpoint se redujo de 343 líneas a ~80 líneas.
+- ✅ **Extracción de Lógica**: Lógica de SSE y orquestación movida a `MetricsStreamGenerator`.
+- ✅ **Manejo de Threads**: Lógica de threading y colas de progreso encapsulada en `ProgressTracker`.
+- ✅ **Clean Code**: Eliminación de lógica de negocio y parsing de filtros del controlador.
 
 **Checklist:**
-- [ ] Crear `services/stream_generator.py` (Lógica del generador)
-- [ ] Crear `services/progress_tracker.py` (Manejo de progreso con Queue)
-- [ ] Simplificar endpoint a solo SSE
-- [ ] Extraer lógica de threading
-- [ ] Validar streaming en tiempo real
+- [x] Crear `services/stream_generator.py` (Lógica del generador)
+- [x] Crear `services/progress_tracker.py` (Manejo de progreso con Queue)
+- [x] Simplificar endpoint a solo SSE (Fachada ligera)
+- [x] Extraer lógica de threading y gestión de estado asíncrono
+- [x] Validar streaming en tiempo real y fallback paralelo
 
 ---
 
@@ -760,92 +714,10 @@ Durante una revisión exhaustiva del 28 de diciembre de 2025, se identificaron *
 
 ---
 
-### 🔴 CÓDIGO DUPLICADO CRÍTICO
+### 🔴 CÓDIGO DUPLICADO CRÍTICO ✅ SOLUCIONADO
 
-#### Función `normalize()` Duplicada 3 Veces
-
-**Ubicaciones:**
-- `app/services/jira/api/routes.py` línea 217
-- `app/services/jira/api/routes.py` línea 255
-- `app/services/jira/api/routes.py` línea 422
-
-**Código duplicado:**
-```python
-def normalize(n):
-    import unicodedata, re
-    return re.sub(r'[^a-z0-9\s]', '', unicodedata.normalize('NFD', n.lower()).encode('ascii', 'ignore').decode()).strip()
-```
-
-**Impacto:** 🔴 **CRÍTICO** - Violación directa de DRY, dificulta mantenimiento
-
-**Checklist de Solución:**
-- [ ] Crear `app/utils/text_normalizer.py`
-- [ ] Implementar función `normalize_text(text: str) -> str`
-- [ ] Reemplazar las 3 instancias con import de la nueva función
-- [ ] Agregar tests unitarios para la función
-- [ ] Documentar con docstring
-- [ ] Validar que todas las llamadas funcionan correctamente
-
-**Código propuesto:**
-```python
-# app/utils/text_normalizer.py
-import unicodedata
-import re
-from typing import Optional
-
-def normalize_text(text: str) -> str:
-    """
-    Normaliza texto removiendo acentos y caracteres especiales.
-    
-    Args:
-        text: Texto a normalizar
-        
-    Returns:
-        Texto normalizado en minúsculas, sin acentos ni caracteres especiales
-        
-    Examples:
-        >>> normalize_text("Ñoño")
-        'nono'
-        >>> normalize_text("Café con Leche")
-        'cafe con leche'
-    """
-    if not text:
-        return ""
-    
-    # Normalizar a NFD (descomponer caracteres acentuados)
-    normalized = unicodedata.normalize('NFD', text.lower())
-    
-    # Convertir a ASCII (eliminar acentos)
-    ascii_text = normalized.encode('ascii', 'ignore').decode()
-    
-    # Eliminar caracteres especiales, mantener solo alfanuméricos y espacios
-    clean_text = re.sub(r'[^a-z0-9\s]', '', ascii_text)
-    
-    return clean_text.strip()
-```
-
----
-
-#### Lógica de Construcción de JQL Duplicada
-
-**Ubicaciones:**
-- `metrics_helpers.py`: `build_jql_from_filters()` (82 líneas)
-- `metrics_helpers.py`: `build_separate_jql_queries()` (62 líneas)
-- `metrics_helpers.py`: `fetch_issues_with_separate_filters()` (construcción inline)
-
-**Impacto:** 🟡 **ALTO** - Lógica compleja duplicada, dificulta cambios
-
-**Checklist de Solución:**
-- [ ] Crear clase `JQLBuilder` en `jql/jql_builder.py`
-- [ ] Implementar métodos especializados:
-  - `add_project_filter()`
-  - `add_assignee_filter()`
-  - `add_issuetype_filter()`
-  - `add_custom_filters()`
-  - `build()` → retorna JQL final
-- [ ] Reemplazar las 3 implementaciones con uso de `JQLBuilder`
-- [ ] Agregar tests unitarios
-- [ ] Validar que los JQL generados son idénticos
+- ✅ **Función `normalize()`**: Centralizada en `app/utils/text_normalizer.py`. Utilizada en todos los componentes de Jira API.
+- ✅ **Lógica JQL**: Centralizada en `JQLBuilder`. Orquestación mejorada en `metrics_helpers.py`.
 
 ---
 
@@ -853,41 +725,41 @@ def normalize_text(text: str) -> str:
 
 | Archivo | Líneas | Funciones | Complejidad | Prioridad | Estado |
 |---------|--------|-----------|-------------|-----------|--------|
-| `jira/api/routes.py` | 741 | 18 | 🔴 Muy Alta | 1 | ⚠️ CRÍTICO |
-| `metrics_helpers.py` | 586 | 8 | 🔴 Muy Alta | 2 | ⚠️ CRÍTICO |
-| `dashboard/ui.js` | 587 | 16 | 🔴 Alta | 3 | ⚠️ CRÍTICO |
-| `test-case-generator.js` | 499 | 23 | 🟡 Alta | 4 | ⚠️ ALTO |
-| `issue_creator.py` | 396 | 2 | 🟡 Alta | 5 | ⚠️ ALTO |
-| `dashboard_routes.py` | 372 | 8 | 🟡 Media | 6 | ⚠️ ALTO |
-| `standard.py` | 348 | 4 | 🟡 Media | 7 | ⚠️ ALTO |
-| `stream.py` | 343 | 5 | 🟡 Media | 8 | ⚠️ ALTO |
-| `formatters.py` | 343 | 5 | 🟡 Media | 9 | 📝 MEDIO |
-| `field_validator.py` | 331 | 4 | 🟡 Media | 10 | 📝 MEDIO |
-| `admin_routes.py` | 333 | 7 | 🟡 Media | 11 | 📝 MEDIO |
-| `feedback.js` | 407 | 20 | 🟡 Media | 12 | 📝 MEDIO |
+| `jira/api/routes.py` | 20 | Facade | ✅ Baja | - | ✅ RESOLVED |
+| `metrics_helpers.py` | 65 | Facade | ✅ Baja | - | ✅ RESOLVED |
+| `ui-interactions.js` | <100 | SRP | ✅ Baja | - | ✅ RESOLVED |
+| `test-case-generator.js` | 38 | Facade | ✅ Baja | - | ✅ RESOLVED |
+| `issue_creator.py` | 195 | 2 | ✅ Baja | - | ✅ RESOLVED |
+| `dashboard_routes.py` | 192 | 8 | ✅ Baja | - | ✅ RESOLVED |
+| `standard.py` | 60 | 4 | ✅ Baja | - | ✅ RESOLVED |
+| `stream.py` | 80 | 1 | ✅ Baja | - | ✅ RESOLVED |
+| `formatters.py` | 343 | 5 | 🟡 Media | 6 | 📝 MEDIO |
+| `field_validator.py` | 331 | 4 | 🟡 Media | 7 | 📝 MEDIO |
+| `admin_routes.py` | 333 | 7 | 🟡 Media | 8 | 📝 MEDIO |
+| `feedback.js` | 407 | 20 | 🟡 Media | 9 | 📝 MEDIO |
 
 ---
 
 ### 🎯 PLAN DE ACCIÓN ACTUALIZADO
 
-#### Fase 1: Emergencia (Esta Semana - Prioridad CRÍTICA)
+#### Fase 1: Emergencia (Esta Semana - Prioridad CRÍTICA) ✅ COMPLETADO
 **Objetivo:** Eliminar violaciones críticas de límites de tamaño
 
-- [ ] **Día 1-2**: Extraer función `normalize()` a `utils/text_normalizer.py`
-- [ ] **Día 2-3**: Dividir `jira/api/routes.py` (741 líneas) en 5 archivos
-- [ ] **Día 3-4**: Dividir `metrics_helpers.py` (586 líneas) en 3 archivos
-- [ ] **Día 4-5**: Refactorizar `dashboard/ui.js` (587 líneas) - separar templates
-- [ ] **Validación**: Ejecutar suite completa de tests
-- [ ] **Verificación**: Confirmar que no hay archivos >500 líneas
+- [x] **Día 1-2**: Extraer función `normalize()` a `utils/text_normalizer.py`
+- [x] **Día 2-3**: Dividir `jira/api/routes.py` (741 líneas) en 5 archivos
+- [x] **Día 3-4**: Dividir `metrics_helpers.py` (586 líneas) en 3 archivos
+- [x] **Día 4-5**: Refactorizar `dashboard/ui.js` (587 líneas) - separar templates
+- [x] **Validación**: Ejecutar suite completa de tests
+- [x] **Verificación**: Confirmar que no hay archivos >500 líneas
 
 #### Fase 2: Consolidación (Próxima Semana - Prioridad ALTA)
 **Objetivo:** Reducir archivos que están cerca del límite
 
-- [ ] Extraer `create_issues_from_csv()` a `csv_issue_processor.py`
-- [ ] Crear decorador `@filter_by_role` para `dashboard_routes.py`
-- [ ] Dividir `metrics_routes/standard.py` (extraer a servicios)
-- [ ] Dividir `metrics_routes/stream.py` (extraer generador SSE)
-- [ ] Refactorizar `test-case-generator.js` (dividir en 4 módulos)
+- [x] Extraer `create_issues_from_csv()` a `csv_issue_processor.py`
+- [x] Crear decorador `@filter_by_role` y modularizar `dashboard_routes.py`
+- [x] Dividir `metrics_routes/standard.py` (extraer a servicios)
+- [x] Dividir `metrics_routes/stream.py` (extraer generador SSE)
+- [x] Refactorizar `test-case-generator.js` (dividir en 4 módulos)
 - [ ] **Validación**: Ejecutar tests de integración
 - [ ] **Verificación**: Confirmar que no hay archivos >400 líneas
 

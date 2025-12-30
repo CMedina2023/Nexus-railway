@@ -217,7 +217,7 @@ def parse_test_cases_to_dict(test_cases: List[dict]) -> List[dict]:
                 'priority': data.get('priority', 'Medium'),
                 'tipo_prueba': data.get('tipo_prueba', 'Funcional'),
                 'categoria': data.get('categoria', ''),
-                'preconditions': data.get('preconditions', ''),
+                'preconditions': data.get('precondiciones', ''),
                 'steps': data.get('pasos', []),
                 'expected_result': data.get('resultado_esperado', []),
                 'raw_data': test_case

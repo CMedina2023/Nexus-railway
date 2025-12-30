@@ -163,11 +163,28 @@
             const testCase = state.currentData[index];
             state.editingIndex = index;
 
-            document.getElementById('edit-test-summary').value = testCase.summary || '';
-            document.getElementById('edit-test-preconditions').value = testCase.preconditions || '';
-            document.getElementById('edit-test-steps').value = testCase.steps || '';
-            document.getElementById('edit-test-expected').value = testCase.expected_result || '';
-            document.getElementById('edit-test-priority').value = testCase.priority || 'Medium';
+            // Mapeo a los IDs reales en partials/app_modals.html
+            const summaryEl = document.getElementById('edit-test-summary');
+            const preconditionsEl = document.getElementById('edit-test-preconditions');
+            const stepsEl = document.getElementById('edit-test-steps');
+            const expectedEl = document.getElementById('edit-test-expected');
+            const priorityEl = document.getElementById('edit-test-priority');
+            const categoriaEl = document.getElementById('edit-test-categoria');
+
+            if (summaryEl) summaryEl.value = testCase.summary || '';
+            if (preconditionsEl) preconditionsEl.value = testCase.preconditions || '';
+
+            if (stepsEl) {
+                const steps = testCase.steps;
+                stepsEl.value = Array.isArray(steps) ? steps.join('\n') : (steps || '');
+            }
+
+            if (expectedEl) {
+                const expected = testCase.expected_result;
+                expectedEl.value = Array.isArray(expected) ? expected.join('\n') : (expected || '');
+            }
+            if (priorityEl) priorityEl.value = testCase.priority || 'Medium';
+            if (categoriaEl) categoriaEl.value = testCase.categoria || '';
 
             const modal = document.getElementById('edit-test-modal');
             if (modal) modal.style.display = 'flex';
@@ -188,22 +205,38 @@
         saveEditChanges(state) {
             if (state.editingIndex === null) return;
 
-            const summary = document.getElementById('edit-test-summary').value.trim();
-            const preconditions = document.getElementById('edit-test-preconditions').value.trim();
-            const steps = document.getElementById('edit-test-steps').value.trim();
-            const expected = document.getElementById('edit-test-expected').value.trim();
-            const priority = document.getElementById('edit-test-priority').value;
+            const summaryEl = document.getElementById('edit-test-summary');
+            const preconditionsEl = document.getElementById('edit-test-preconditions');
+            const stepsEl = document.getElementById('edit-test-steps');
+            const expectedEl = document.getElementById('edit-test-expected');
+            const priorityEl = document.getElementById('edit-test-priority');
+            const categoriaEl = document.getElementById('edit-test-categoria');
+
+            const summary = summaryEl ? summaryEl.value.trim() : '';
+            const preconditions = preconditionsEl ? preconditionsEl.value.trim() : '';
+            const steps = stepsEl ? stepsEl.value.trim() : '';
+            const expected = expectedEl ? expectedEl.value.trim() : '';
+            const priority = priorityEl ? priorityEl.value : 'Medium';
+            const categoria = categoriaEl ? categoriaEl.value.trim() : '';
 
             if (!summary || !steps || !expected) {
-                window.showDownloadNotification('Por favor completa los campos requeridos', 'error');
+                window.showDownloadNotification('Por favor completa los campos requeridos (*)', 'error');
                 return;
             }
 
-            state.currentData[state.editingIndex].summary = summary;
-            state.currentData[state.editingIndex].preconditions = preconditions;
-            state.currentData[state.editingIndex].steps = steps;
-            state.currentData[state.editingIndex].expected_result = expected;
-            state.currentData[state.editingIndex].priority = priority;
+            // Actualizar objeto de datos
+            const updatedItem = state.currentData[state.editingIndex];
+            updatedItem.summary = summary;
+            updatedItem.preconditions = preconditions;
+            updatedItem.steps = steps;
+            updatedItem.expected_result = expected;
+            updatedItem.priority = priority;
+            updatedItem.categoria = categoria;
+
+            // Actualizar descripción en raw_data para que se vea coherentemente en la tabla si es necesario
+            // En la tabla mostramos raw_data.Descripcion. Vamos a sincronizarla con los pasos para que sea util.
+            if (!updatedItem.raw_data) updatedItem.raw_data = {};
+            updatedItem.raw_data.Descripcion = steps;
 
             this.displayPreview({ test_cases: state.currentData, test_cases_count: state.currentData.length }, state);
             this.closeEditModal(state);

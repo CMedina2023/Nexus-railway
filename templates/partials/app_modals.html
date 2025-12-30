@@ -473,13 +473,28 @@
 
             <div style="margin-bottom: 1.5rem;">
                 <label
-                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Descripción
-                    *</label>
-                <textarea id="edit-test-description" rows="6"
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Precondiciones</label>
+                <textarea id="edit-test-preconditions" rows="3"
                     style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.6;"
-                    placeholder="Describe el caso de prueba en detalle..."></textarea>
-                <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">Incluye los pasos
-                    a seguir y el resultado esperado</div>
+                    placeholder="Describe las precondiciones..."></textarea>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Pasos
+                    *</label>
+                <textarea id="edit-test-steps" rows="6"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.6;"
+                    placeholder="Describe los pasos a seguir..."></textarea>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); font-size: 0.95rem;">Resultado
+                    Esperado *</label>
+                <textarea id="edit-test-expected" rows="3"
+                    style="width: 100%; padding: 0.75rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-family: inherit; font-size: 0.95rem; resize: vertical; line-height: 1.6;"
+                    placeholder="Describe el resultado esperado..."></textarea>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">

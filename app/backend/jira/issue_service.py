@@ -12,7 +12,9 @@ from typing import Dict, List, Optional
 from app.backend.jira.connection import JiraConnection
 from app.backend.jira.project_service import ProjectService
 from app.backend.jira.issue_fetcher import IssueFetcher, build_issuetype_jql, TEST_CASE_VARIATIONS, BUG_VARIATIONS, STORY_VARIATIONS
-from app.backend.jira.issue_creator import IssueCreator, IssueCreationRateLimiter
+from app.backend.jira.issue_creator import IssueCreator
+from app.backend.jira.rate_limiter import IssueCreationRateLimiter
+from app.backend.jira.csv_issue_processor import CSVIssueProcessor
 from app.backend.jira.field_validator import FieldValidator
 from app.backend.jira.cache_manager import FieldMetadataCache
 
@@ -47,6 +49,9 @@ class IssueService:
         # Creator usa el fetcher para validaciones
         self._creator = IssueCreator(connection, project_service, self._fetcher)
         
+        # Processor para carga masiva (delegación)
+        self._csv_processor = CSVIssueProcessor(connection, project_service, self._fetcher, self._creator)
+        
         # Exponer componentes internos si es necesario (preferiblemente no usar directamente)
         self._field_metadata_cache = self._fetcher._field_metadata_cache 
         self._rate_limiter = self._creator._rate_limiter
@@ -80,7 +85,7 @@ class IssueService:
                                field_mappings: Dict = None, default_values: Dict = None,
                                filter_issue_types: bool = True) -> Dict:
         """Crea múltiples issues en Jira desde datos CSV"""
-        return self._creator.create_issues_from_csv(
+        return self._csv_processor.create_issues_from_csv(
             csv_data, project_key, field_mappings, default_values, filter_issue_types
         )
         

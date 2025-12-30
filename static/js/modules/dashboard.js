@@ -1,7 +1,7 @@
 /**
  * Nexus AI - Dashboard & Metrics Module
  * Entry point that exposes functionality from sub-modules.
- * NOW MODULARIZED: Logic is in dashboard/data.js, dashboard/charts.js, dashboard/ui.js
+ * NOW MODULARIZED: Logic is in dashboard/data.js, dashboard/charts.js, dashboard/templates.js, dashboard/renderers.js, dashboard/ui-interactions.js, dashboard/data-loader.js
  */
 
 (function (window) {

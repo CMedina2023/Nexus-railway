@@ -25,7 +25,7 @@ from app.utils.decorators import validate_file_upload, handle_errors
 from app.auth.routes import auth_bp, init_rate_limiter
 from app.auth.decorators import login_required
 from app.services.jira.api.routes import jira_bp
-from app.services.dashboard.api.routes import dashboard_bp
+from app.auth.dashboard_routes import dashboard_bp
 from app.services.feedback.api.routes import feedback_bp
 from app.database import init_db
 
