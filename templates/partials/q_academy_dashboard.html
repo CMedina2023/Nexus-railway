@@ -1,0 +1,125 @@
+<section id="q-academy" class="content-section">
+    <div class="q-academy-dashboard">
+        
+        <!-- Header / Stats -->
+        <div class="qa-header-stats">
+            <div class="qa-user-info">
+                <div class="qa-avatar">
+                    {{ user_info.email[0].upper() if user_info else 'Q' }}
+                </div>
+                <div class="qa-user-details">
+                    <h2>Hola, {{ user_info.email.split('@')[0] if user_info else 'QA Engineer' }}</h2>
+                    <div class="qa-stats">
+                        <span>Total XP: 1250</span>
+                        <span>Lecciones Completadas: 5/12</span>
+                    </div>
+                </div>
+            </div>
+            <div class="qa-progress-container">
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Progreso del nivel</span>
+                    <span>41%</span>
+                </div>
+                <div class="qa-progress-bar">
+                    <div class="qa-progress-fill" style="width: 41%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="qa-hero-section">
+            <div class="qa-hero-content">
+                <span class="qa-hero-label">CONTINUAR APRENDIENDO</span>
+                <h1 class="qa-hero-title">Intro to Selenium</h1>
+                <p class="qa-hero-desc">
+                    Aprende los fundamentos de la automatización web con Selenium WebDriver. 
+                    Configura tu entorno y escribe tu primer script de prueba.
+                </p>
+                <button class="btn btn-primary">
+                    <i class="fas fa-play mr-2"></i> Continuar Lección
+                </button>
+            </div>
+        </div>
+
+        <!-- Tracks Grid -->
+        <h2 class="text-xl font-semibold text-gray-200 mt-4">Tracks Disponibles</h2>
+        <div class="qa-tracks-grid">
+            
+            <!-- Track: Automatización -->
+            <div class="qa-track-column track-auto">
+                <h3>
+                    <div class="qa-track-indicator"></div>
+                    <i class="fas fa-robot text-green-500"></i>
+                    Automatización
+                </h3>
+                
+                <div class="qa-lesson-card">
+                    <div class="qa-card-header">
+                        <span class="qa-badge badge-beginner">Principiante</span>
+                        <span class="qa-xp">150 XP</span>
+                    </div>
+                    <h4 class="qa-card-title">Consultas Básicas SQL</h4>
+                    <p class="qa-card-desc">Domina SELECT, WHERE y JOIN para verificar integridad de datos en tus pruebas.</p>
+                    <div class="qa-card-action">
+                        Comenzar lección <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="qa-lesson-card">
+                    <div class="qa-card-header">
+                        <span class="qa-badge badge-intermediate">Intermedio</span>
+                        <span class="qa-xp">200 XP</span>
+                    </div>
+                    <h4 class="qa-card-title">Python para Testers</h4>
+                    <p class="qa-card-desc">Scripts básicos en Python para automatizar tareas repetitivas.</p>
+                    <div class="qa-card-action">
+                        Comenzar lección <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Track: Pruebas Manuales -->
+            <div class="qa-track-column track-manual">
+                <h3>
+                    <div class="qa-track-indicator"></div>
+                    <i class="fas fa-hand-paper text-blue-500"></i>
+                    Pruebas Manuales
+                </h3>
+                
+                <div class="qa-lesson-card">
+                    <div class="qa-card-header">
+                        <span class="qa-badge badge-beginner">Principiante</span>
+                        <span class="qa-xp">100 XP</span>
+                    </div>
+                    <h4 class="qa-card-title">Ciclo de Vida de un Defecto</h4>
+                    <p class="qa-card-desc">Aprende los estados por los que pasa un error desde que se encuentra hasta el cierre.</p>
+                    <div class="qa-card-action">
+                        Comenzar lección <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Track: Performance -->
+            <div class="qa-track-column track-perf">
+                <h3>
+                    <div class="qa-track-indicator"></div>
+                    <i class="fas fa-tachometer-alt text-yellow-500"></i>
+                    Performance
+                </h3>
+                
+                <div class="qa-lesson-card">
+                    <div class="qa-card-header">
+                        <span class="qa-badge badge-beginner">Principiante</span>
+                        <span class="qa-xp">120 XP</span>
+                    </div>
+                    <h4 class="qa-card-title">Introducción a JMeter</h4>
+                    <p class="qa-card-desc">Conceptos básicos de pruebas de carga y estrés usando Apache JMeter.</p>
+                    <div class="qa-card-action">
+                        Comenzar lección <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>

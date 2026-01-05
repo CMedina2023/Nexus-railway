@@ -36,6 +36,11 @@
         <!-- Jira - Reportes Section -->
         {% include 'partials/jira_reportes.html' %}
 
+        <!-- Q-Academy Section -->
+        {% if user_info and user_info.role in ['admin', 'analista_qa', 'Analista QA'] %}
+        {% include 'partials/q_academy_dashboard.html' %}
+        {% endif %}
+
         <!-- Admin Panel Section -->
         {% if user_info and user_info.role == 'admin' %}
         {% include 'partials/admin.html' %}

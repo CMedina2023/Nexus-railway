@@ -78,10 +78,12 @@
             }
         }
 
-        // Initialize charts if navigating to infografia
-        if (sectionId === 'infografia' && window.initializeCharts) {
+        // Initialize roadmap if navigating to roadmap
+        if (sectionId === 'roadmap') {
             setTimeout(() => {
-                window.initializeCharts();
+                if (window.NexusModules?.Infographic?.init) {
+                    window.NexusModules.Infographic.init();
+                }
             }, 100);
         }
 

@@ -29,6 +29,7 @@
 @import 'pages/jira-upload.css';
 @import 'pages/admin.css';
 @import 'pages/feedback.css';
+@import 'pages/q_academy.css';
 
 /* Global Animations */
 @keyframes fadeIn {
