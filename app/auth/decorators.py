@@ -148,3 +148,13 @@ def filter_by_role(f: Callable) -> Callable:
 
 
 
+
+def admin_only(f: Callable) -> Callable:
+    """
+    Decorador específico para rutas de administrador (Shortcut)
+    
+    ✅ Simplifica la sintaxis
+    ✅ Asegura que solo admins accedan
+    ✅ Incluye validación de login
+    """
+    return role_required('admin')(f)

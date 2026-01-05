@@ -6,9 +6,10 @@ import logging
 from flask import Blueprint, request, jsonify, render_template, Response
 from typing import Optional, List, Tuple
 
-from app.auth.decorators import login_required, role_required, get_current_user_id
+from app.auth.decorators import login_required, admin_only, get_current_user_id
 from app.auth.user_service import UserService
 from app.database.repositories.user_repository import UserRepository
+from app.services.admin_stats_service import AdminStatsService
 from app.utils.exceptions import ValidationError
 from app.core.dependencies import get_user_service
 
@@ -18,9 +19,14 @@ logger = logging.getLogger(__name__)
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
+def _validate_not_self(target_id: str, current_id: str, message: str):
+    """Valida que la acción no sea sobre el mismo usuario actual"""
+    if target_id == current_id:
+        raise ValidationError(message)
+
+
 @admin_bp.route('/')
-@login_required
-@role_required('admin')
+@admin_only
 def admin_dashboard():
     """
     Panel de administración (solo para admins)
@@ -40,8 +46,7 @@ def admin_dashboard():
 
 
 @admin_bp.route('/users', methods=['GET'])
-@login_required
-@role_required('admin')
+@admin_only
 def list_users() -> Tuple[Response, int]:
     """
     Lista todos los usuarios (solo admin)
@@ -89,27 +94,15 @@ def list_users() -> Tuple[Response, int]:
         users_data = [user.to_dict(include_sensitive=False) for user in users]
         logger.info(f"[DEBUG] list_users() - Usuarios convertidos a dict: {len(users_data)}")
         
-        # Calcular estadísticas
-        total_users = len(users_data)
-        active_users = len([u for u in users_data if u.get('active', True)])
-        inactive_users = total_users - active_users
+        # Calcular estadísticas usando servicio
+        stats = AdminStatsService.calculate_basic_stats(users)
         
-        role_counts = {}
-        for user in users_data:
-            role = user.get('role', 'usuario')
-            role_counts[role] = role_counts.get(role, 0) + 1
-        
-        logger.info(f"[DEBUG] list_users() - Estadísticas: total={total_users}, active={active_users}, inactive={inactive_users}, roles={role_counts}")
+        logger.info(f"[DEBUG] list_users() - Estadísticas calculadas: {stats}")
         
         response_data = {
             "success": True,
             "users": users_data,
-            "statistics": {
-                "total": total_users,
-                "active": active_users,
-                "inactive": inactive_users,
-                "by_role": role_counts
-            }
+            "statistics": stats
         }
         
         logger.info("[DEBUG] list_users() - Respuesta preparada exitosamente")
@@ -124,8 +117,7 @@ def list_users() -> Tuple[Response, int]:
 
 
 @admin_bp.route('/users/<user_id>/role', methods=['PUT'])
-@login_required
-@role_required('admin')
+@admin_only
 def update_user_role(user_id: str) -> Tuple[Response, int]:
     """
     Actualiza el rol de un usuario (solo admin)
@@ -154,8 +146,7 @@ def update_user_role(user_id: str) -> Tuple[Response, int]:
         current_user_id = get_current_user_id()
         
         # No permitir cambiar su propio rol (seguridad)
-        if user_id == current_user_id:
-            return jsonify({"error": "No puedes cambiar tu propio rol"}), 400
+        _validate_not_self(user_id, current_user_id, "No puedes cambiar tu propio rol")
         
         # Actualizar rol
         user_service.update_user_role(user_id, new_role, updated_by=current_user_id)
@@ -178,8 +169,7 @@ def update_user_role(user_id: str) -> Tuple[Response, int]:
 
 
 @admin_bp.route('/users/<user_id>/status', methods=['PUT'])
-@login_required
-@role_required('admin')
+@admin_only
 def update_user_status(user_id: str) -> Tuple[Response, int]:
     """
     Activa o desactiva un usuario (solo admin)
@@ -208,8 +198,8 @@ def update_user_status(user_id: str) -> Tuple[Response, int]:
         current_user_id = get_current_user_id()
         
         # No permitir desactivarse a sí mismo
-        if user_id == current_user_id and not active:
-            return jsonify({"error": "No puedes desactivar tu propia cuenta"}), 400
+        if not active:
+            _validate_not_self(user_id, current_user_id, "No puedes desactivar tu propia cuenta")
         
         # Usar servicio para ambas operaciones (SRP: lógica unificada)
         if active:
@@ -237,8 +227,7 @@ def update_user_status(user_id: str) -> Tuple[Response, int]:
 
 
 @admin_bp.route('/users/<user_id>', methods=['DELETE'])
-@login_required
-@role_required('admin')
+@admin_only
 def delete_user(user_id: str) -> Tuple[Response, int]:
     """
     Elimina un usuario (solo admin)
@@ -251,8 +240,7 @@ def delete_user(user_id: str) -> Tuple[Response, int]:
         current_user_id = get_current_user_id()
         
         # No permitir eliminarse a sí mismo
-        if user_id == current_user_id:
-            return jsonify({"error": "No puedes eliminar tu propia cuenta"}), 400
+        _validate_not_self(user_id, current_user_id, "No puedes eliminar tu propia cuenta")
         
         user_service = get_user_service()
         user_repo = UserRepository()
@@ -283,8 +271,7 @@ def delete_user(user_id: str) -> Tuple[Response, int]:
 
 
 @admin_bp.route('/statistics', methods=['GET'])
-@login_required
-@role_required('admin')
+@admin_only
 def get_statistics() -> Tuple[Response, int]:
     """
     Obtiene estadísticas generales del sistema (solo admin)
@@ -296,37 +283,16 @@ def get_statistics() -> Tuple[Response, int]:
         user_repo = UserRepository()
         users = user_repo.get_all(active_only=False)
         
-        # Calcular estadísticas
-        total_users = len(users)
-        active_users = len([u for u in users if u.active])
-        inactive_users = total_users - active_users
-        
-        role_counts = {}
-        for user in users:
-            role = user.role
-            role_counts[role] = role_counts.get(role, 0) + 1
-        
-        # Usuarios con intentos fallidos
-        users_with_failed_attempts = len([u for u in users if u.failed_login_attempts > 0])
-        
-        # Usuarios bloqueados
-        locked_users = len([u for u in users if u.is_locked()])
+        # Calcular estadísticas extendidas usando servicio
+        stats = AdminStatsService.calculate_extended_stats(users)
         
         return jsonify({
             "success": True,
             "statistics": {
-                "users": {
-                    "total": total_users,
-                    "active": active_users,
-                    "inactive": inactive_users,
-                    "by_role": role_counts,
-                    "with_failed_attempts": users_with_failed_attempts,
-                    "locked": locked_users
-                }
+                "users": stats
             }
         }), 200
     
     except Exception as e:
         logger.error(f"Error al obtener estadísticas: {e}", exc_info=True)
         return jsonify({"error": "Error al obtener estadísticas"}), 500
-

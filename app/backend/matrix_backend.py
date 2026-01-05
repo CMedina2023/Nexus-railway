@@ -14,9 +14,7 @@ from app.backend.matrix import (
     extract_stories_from_text,
     parse_test_case_data,
     parse_test_cases_to_dict,
-    format_test_case_for_html,
-    generate_test_cases_html_document,
-    get_basic_html_template
+    generate_test_cases_html_document
 )
 
 # Re-exportar módulos si es necesario, aunque se recomienda usar las funciones directamente

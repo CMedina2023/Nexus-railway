@@ -1,6 +1,11 @@
 import logging
-import json
 from typing import Dict, List, Optional, Tuple, Any
+from app.backend.jira.adf_converter import AdfConverter
+from app.backend.jira.field_strategies.string_strategy import StringFieldStrategy
+from app.backend.jira.field_strategies.option_strategy import OptionFieldStrategy
+from app.backend.jira.field_strategies.array_strategy import ArrayFieldStrategy
+from app.backend.jira.field_strategies.issue_strategy import IssueFieldStrategy
+from app.backend.jira.field_strategies.heuristic_strategy import HeuristicFieldStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -28,221 +33,35 @@ class FieldValidator:
         
         field_value = field_value.strip()
         
-        # Si no hay schema, intentar detectar por el nombre del campo
+        # Si no hay schema, intentar detectar por el nombre del campo (heurística)
         if not field_schema:
-            # Campos conocidos que requieren formato de objeto
-            if field_id == 'parent' or field_id.lower() in ['parent', 'epic link', 'epiclink']:
-                # Formato para parent: {"key": "NA-25"}
-                return {"key": field_value}
-            # Campo environment siempre requiere ADF
-            if field_id.lower() == 'environment':
-                return FieldValidator.format_description_to_adf(field_value)
-            return field_value
+            return HeuristicFieldStrategy().format(field_id, field_value, {}, allowed_values)
         
         schema_type = field_schema.get('type', 'string')
-        schema_items = field_schema.get('items', {})
-        schema_custom = field_schema.get('custom', '')
         
-        # Campo de tipo "string" con schema custom que requiere ADF
-        if schema_type == 'string' and schema_custom:
-            if len(field_value) > 50 or '\n' in field_value or '\t' in field_value:
-                has_newlines = '\n' in field_value
-                logger.debug(f"Campo '{field_id}' detectado como requeridor de ADF (longitud: {len(field_value)}, tiene saltos de línea: {has_newlines})")
-                return FieldValidator.format_description_to_adf(field_value)
-        
-        # Campo de tipo "option" (select/dropdown)
-        if schema_type == 'option':
-            default_values_map = {
-                'tipo de prueba': 'Funcional',
-                'tipo_prueba': 'Funcional',
-                'test type': 'Funcional',
-                'nivel de prueba': 'UAT',
-                'nivel_prueba': 'UAT',
-                'test level': 'UAT',
-                'environment': 'QA',
-                'ambiente': 'QA',
-                'entorno': 'QA'
-            }
+        # Seleccionar estrategia según el tipo
+        strategy = None
+        if schema_type == 'string':
+            strategy = StringFieldStrategy()
+        elif schema_type == 'option':
+            strategy = OptionFieldStrategy()
+        elif schema_type == 'array':
+            strategy = ArrayFieldStrategy()
+        elif schema_type in ['issue', 'issuelink']:
+            strategy = IssueFieldStrategy()
             
-            if allowed_values:
-                # Primero intentar con el valor original
-                for av in allowed_values:
-                    if isinstance(av, dict):
-                        av_name = av.get('value', av.get('name', ''))
-                        av_id = av.get('id')
-                        if av_name and av_name.lower() == field_value.lower():
-                            if av_id:
-                                return {"id": str(av_id)}
-                            return {"name": av_name}
-                    elif isinstance(av, str):
-                        if av.lower() == field_value.lower():
-                            return {"name": av}
-                
-                # Intentar con valores por defecto
-                field_id_lower = field_id.lower()
-                default_value = None
-                for key, default in default_values_map.items():
-                    if key in field_id_lower:
-                        default_value = default
-                        break
-                
-                if default_value:
-                    logger.info(f"Valor '{field_value}' no encontrado para campo '{field_id}', intentando con valor por defecto '{default_value}'")
-                    for av in allowed_values:
-                        if isinstance(av, dict):
-                            av_name = av.get('value', av.get('name', ''))
-                            av_id = av.get('id')
-                            if av_name and av_name.lower() == default_value.lower():
-                                if av_id:
-                                    return {"id": str(av_id)}
-                                return {"name": av_name}
-                        elif isinstance(av, str):
-                            if av.lower() == default_value.lower():
-                                return {"name": av}
-                
-                logger.warning(f"Valor '{field_value}' y valor por defecto '{default_value}' no encontrados en allowedValues para campo '{field_id}'.")
-                return None
+        if strategy:
+            return strategy.format(field_id, field_value, field_schema, allowed_values)
             
-            return {"name": field_value}
-        
-        # Array de options
-        if schema_type == 'array' and schema_items.get('type') == 'option':
-            if ',' in field_value:
-                values = [v.strip() for v in field_value.split(',')]
-                formatted_values = []
-                for val in values:
-                    if val:
-                        found = False
-                        if allowed_values:
-                            for av in allowed_values:
-                                if isinstance(av, dict):
-                                    av_name = av.get('value', av.get('name', ''))
-                                    av_id = av.get('id')
-                                    if av_name and av_name.lower() == val.lower():
-                                        if av_id:
-                                            formatted_values.append({"id": str(av_id)})
-                                        else:
-                                            formatted_values.append({"name": av_name})
-                                        found = True
-                                        break
-                                elif isinstance(av, str):
-                                    if av.lower() == val.lower():
-                                        formatted_values.append({"name": av})
-                                        found = True
-                                        break
-                        if not found:
-                            formatted_values.append({"name": val})
-                return formatted_values
-            else:
-                if allowed_values:
-                    for av in allowed_values:
-                        if isinstance(av, dict):
-                            av_name = av.get('value', av.get('name', ''))
-                            av_id = av.get('id')
-                            if av_name and av_name.lower() == field_value.lower():
-                                if av_id:
-                                    return [{"id": str(av_id)}]
-                                return [{"name": av_name}]
-                        elif isinstance(av, str):
-                            if av.lower() == field_value.lower():
-                                return [{"name": av}]
-                return [{"name": field_value}]
-        
-        # Campo de tipo "issue"
-        if schema_type == 'issue':
-            return {"key": field_value}
-        
-        # Campo de tipo "issuelink"
-        if schema_type == 'issuelink':
-            return {"key": field_value}
-        
-        # Array de issues
-        if schema_type == 'array' and schema_items.get('type') == 'issue':
-            if ',' in field_value:
-                keys = [k.strip() for k in field_value.split(',')]
-                return [{"key": key} for key in keys if key]
-            else:
-                return [{"key": field_value}]
-        
-        # Array de issuelinks
-        if schema_type == 'array' and schema_items.get('type') == 'issuelink':
-            if ',' in field_value:
-                keys = [k.strip() for k in field_value.split(',')]
-                return [{"key": key} for key in keys if key]
-            else:
-                return [{"key": field_value}]
-        
         return field_value
 
     @staticmethod
     def format_description_to_adf(description: str) -> Dict:
         """
         Convierte una descripción con formato markdown simple a formato ADF de Jira.
+        Delegates to AdfConverter.
         """
-        if not description:
-            return {
-                "type": "doc",
-                "version": 1,
-                "content": []
-            }
-        
-        lines = description.split('\n')
-        adf_content = []
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                adf_content.append({
-                    "type": "paragraph",
-                    "content": []
-                })
-                continue
-            
-            if line.startswith('* '):
-                text = line[2:].strip()
-                if ':' in text:
-                    parts = text.split(':', 1)
-                    if len(parts) == 2:
-                        label = parts[0].strip()
-                        value = parts[1].strip()
-                        adf_content.append({
-                            "type": "paragraph",
-                            "content": [
-                                {"type": "text", "text": "* ", "marks": []},
-                                {"type": "text", "text": f"{label}:", "marks": [{"type": "strong"}]},
-                                {"type": "text", "text": f" {value}", "marks": []}
-                            ]
-                        })
-                    else:
-                        adf_content.append({
-                            "type": "paragraph",
-                            "content": [{"type": "text", "text": f"* {text}", "marks": []}]
-                        })
-                else:
-                    adf_content.append({
-                        "type": "paragraph",
-                        "content": [{"type": "text", "text": f"* {text}", "marks": []}]
-                    })
-            elif line.startswith('  • ') or line.startswith('• '):
-                text = line.replace('•', '').strip()
-                adf_content.append({
-                    "type": "paragraph",
-                    "content": [
-                        {"type": "text", "text": "  • ", "marks": []},
-                        {"type": "text", "text": text, "marks": []}
-                    ]
-                })
-            else:
-                adf_content.append({
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": line, "marks": []}]
-                })
-        
-        return {
-            "type": "doc",
-            "version": 1,
-            "content": adf_content
-        }
+        return AdfConverter.convert(description)
 
     @staticmethod
     def validate_and_filter_custom_fields(

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casos de Prueba</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #ffffff;
+            --border: #e5e7eb;
+            --text: #0f172a;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --accent-soft: #dbeafe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px;
+            background: var(--bg);
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto 48px auto;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .page {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+            padding: 36px 42px;
+            min-height: 980px;
+            position: relative;
+        }
+
+        .page-header,
+        .page-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+
+        .page-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .page-footer {
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+            margin-top: 36px;
+        }
+
+        .page-number {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .cover-page {
+            min-height: 70vh;
+            border-radius: 16px;
+            background: radial-gradient(circle at 20% 20%, #3b82f6 0%, rgba(37, 99, 235, 0.08) 35%),
+                        radial-gradient(circle at 80% 0%, #a855f7 0%, rgba(168, 85, 247, 0.08) 30%),
+                        #0b1224;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e5edff;
+            text-align: center;
+            padding: 48px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .cover-title {
+            font-size: 34px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .index-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: var(--text);
+        }
+
+        .index-item {
+            display: grid;
+            grid-template-columns: 40px 1fr 80px;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .index-number {
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .index-text {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .index-page {
+            text-align: right;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .story-container {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #f9fafb;
+            padding: 20px 22px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        }
+
+        .story-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 14px;
+            letter-spacing: 0.01em;
+        }
+
+        .story-item {
+            display: grid;
+            grid-template-columns: 20px 140px 1fr;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-top: 1px dashed var(--border);
+        }
+
+        .story-item:first-of-type {
+            border-top: none;
+        }
+
+        .bullet {
+            color: var(--accent);
+            font-weight: 800;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .story-item-label {
+            font-weight: 700;
+            color: var(--text);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+        }
+
+        .story-item-content {
+            color: #111827;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .story-sublist {
+            grid-column: 2 / span 2;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: 30px;
+        }
+
+        .story-sublist-item {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            color: #111827;
+            line-height: 1.55;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+            .page {
+                box-shadow: none;
+                border: none;
+                border-radius: 0;
+                min-height: auto;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <!-- PÁGINA 1: PORTADA -->
+            <div class="page">
+                <div class="cover-page">
+                    <div class="cover-title">CASOS DE PRUEBA GENERADOS CON AI</div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 2: ÍNDICE -->
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Casos de Prueba</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="index-title">ÍNDICE</div>
+                    {% for case in test_cases %}
+                        <div class="index-item">
+                            <span class="index-number">{{ loop.index }}.</span>
+                            <span class="index-text">{{ case.titulo | truncate(80) }}</span>
+                            <span class="index-page">{{ loop.index + 2 }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página 2</div>
+                    <div>© {{ current_year }}</div>
+                </div>
+            </div>
+
+            <!-- CASOS DE PRUEBA -->
+            {% for case in test_cases %}
+            <div class="page">
+                <div class="page-header">
+                    <div>Documento de Casos de Prueba</div>
+                    <div>Versión 1.0</div>
+                </div>
+                <div style="padding-top: 20px;">
+                    <div class="story-container">
+                        <div class="story-title">CASO DE PRUEBA #{{ loop.index }}: {{ case.titulo }}</div>
+                        
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">ID:</span>
+                            <span class="story-item-content">{{ case.id }}</span>
+                        </div>
+                        
+                        {% if case.descripcion %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Descripción:</span>
+                            <span class="story-item-content">{{ case.descripcion | truncate(500) }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if case.precondiciones %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Precondiciones:</span>
+                            <span class="story-item-content">{{ case.precondiciones | truncate(500) }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Tipo de Prueba:</span>
+                            <span class="story-item-content">{{ case.tipo_prueba }}</span>
+                        </div>
+                        
+                        {% if case.categoria %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Categoría:</span>
+                            <span class="story-item-content">{{ case.categoria }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if case.pasos %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Pasos:</span>
+                            <div class="story-sublist">
+                                {% for paso in case.pasos %}
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Paso {{ loop.index }}:</strong> {{ paso | truncate(300) }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if case.resultado_esperado %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Resultado Esperado:</span>
+                            <div class="story-sublist">
+                                {% for resultado in case.resultado_esperado %}
+                                <div class="story-sublist-item">
+                                    <span class="bullet">*</span>
+                                    <strong>Resultado {{ loop.index }}:</strong> {{ resultado | truncate(300) }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Prioridad:</span>
+                            <span class="story-item-content">{{ case.prioridad }}</span>
+                        </div>
+                        
+                        {% if case.historia %}
+                        <div class="story-item">
+                            <span class="bullet">*</span>
+                            <span class="story-item-label">Historia de Usuario:</span>
+                            <span class="story-item-content">{{ case.historia | truncate(200) }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="page-footer">
+                    <div>Confidencial</div>
+                    <div class="page-number">Página {{ loop.index + 2 }}</div>
+                    <div>© {{ current_year }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

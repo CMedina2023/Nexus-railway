@@ -13,7 +13,5 @@ from .parser import (
     parse_test_cases_to_dict
 )
 from .formatters import (
-    format_test_case_for_html,
-    generate_test_cases_html_document,
-    get_basic_html_template
+    generate_test_cases_html_document
 )
