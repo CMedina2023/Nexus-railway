@@ -39,9 +39,159 @@
     /**
      * Download report as PDF
      */
-    async function downloadPDF() {
-        // We use window properties to access state from other modules
+    /**
+     * Gather all report data (charts, tables, etc.) for saving or downloading
+     */
+    function gatherReportData() {
+        // Obtenemos el projectKey del selector o variable global
         const projectKey = document.getElementById('project-selector')?.value || window.currentProjectKey || '';
+
+        // Convertir gráficos Chart.js a imágenes base64
+        const chartImages = {};
+
+        // Gráfico de Test Cases
+        const testCasesCanvas = document.getElementById('gr-test-cases-chart');
+        if (testCasesCanvas && window.grTestCasesChart) {
+            chartImages['test_cases'] = testCasesCanvas.toDataURL('image/png');
+        }
+
+        // Gráfico de Bugs
+        const bugsCanvas = document.getElementById('gr-bugs-severity-chart');
+        if (bugsCanvas && window.grBugsSeverityChart) {
+            chartImages['bugs_severity'] = bugsCanvas.toDataURL('image/png');
+        }
+
+        // Capturar gráficos de widgets personalizados
+        const widgetChartImages = {};
+        const activeWidgets = window.activeWidgets || [];
+        const availableWidgets = window.AVAILABLE_WIDGETS || [];
+
+        activeWidgets.forEach(widgetId => {
+            const widget = availableWidgets.find(w => w.id === widgetId);
+            if (widget && widget.type === 'chart') {
+                const canvas = document.getElementById(`widget-chart-${widgetId}`);
+                if (canvas && window[`widgetChart_${widgetId}`]) {
+                    widgetChartImages[widgetId] = canvas.toDataURL('image/png');
+                }
+            }
+        });
+
+        // Obtener datos de widgets personalizados
+        const widgetData = {};
+        const widgetDataCache = window.widgetDataCache || {};
+
+        for (const widgetId of activeWidgets) {
+            const widget = availableWidgets.find(w => w.id === widgetId);
+            if (!widget) continue;
+
+            if (widget.type === 'table') {
+                const data = widgetDataCache[widgetId];
+                if (data && data.rows) {
+                    widgetData[widgetId] = {
+                        type: 'table',
+                        title: widget.title,
+                        columns: widget.columns,
+                        rows: data.rows
+                    };
+                }
+            } else if (widget.type === 'kpi') {
+                const data = widgetDataCache[widgetId];
+                if (data) {
+                    widgetData[widgetId] = {
+                        type: 'kpi',
+                        title: widget.title,
+                        icon: widget.icon,
+                        value: data.value || widget.defaultValue
+                    };
+                }
+            } else if (widget.type === 'chart') {
+                widgetData[widgetId] = {
+                    type: 'chart',
+                    title: widget.title,
+                    chartType: widget.chartType
+                };
+            }
+        }
+
+        // Filtros activos
+        // En reports.js/state.js deberíamos tener los filtros activos.
+        // Simulamos obtenerlos del State global si existe
+        const FiltersState = window.NexusModules.Jira.Reports.State;
+        const activeFilters = {
+            testCases: FiltersState ? FiltersState.reportActiveFiltersTestCases : [],
+            bugs: FiltersState ? FiltersState.reportActiveFiltersBugs : []
+        };
+
+        // Obtener datos de tablas
+        const tableData = {
+            test_cases_by_person: [],
+            defects_by_person: []
+        };
+
+        if (window.testCasesPagination && window.testCasesPagination.data) {
+            tableData.test_cases_by_person = window.testCasesPagination.data.map(({ person, stats }) => ({
+                person: person,
+                exitoso: stats.exitoso || 0,
+                en_progreso: stats.en_progreso || 0,
+                fallado: stats.fallado || 0,
+                total: stats.total || 0
+            }));
+        }
+
+        if (window.defectsPagination && window.defectsPagination.data) {
+            tableData.defects_by_person = window.defectsPagination.data.map(defect => ({
+                key: defect.key || '-',
+                assignee: defect.assignee || 'Sin asignar',
+                status: defect.status || '-',
+                summary: defect.summary || '-',
+                severity: defect.severity || '-'
+            }));
+        }
+
+        // Obtener datos crudos reportados (si disponibles) para reconstruir gráficos dinámicamente
+        const State = window.NexusModules.Jira.Reports.State;
+        // La estructura real de metrics en displayMetrics es { test_cases: {}, bugs: {}, general_report: {} }
+        // Sin embargo, gatherReportData se usa para PDF que necesita `general_report` y `table_data` y `chart_images`.
+        // Para "Guardar y Ver Web", necesitamos los datos crudos de test_cases y bugs.
+        // Simulamos obtenerlos del caché si existen, o del reporte general si tiene adjuntos.
+        // Pero lo más limpio es confiar en que `currentGeneralReport` ya tiene lo necesario para KPIs y tablas.
+        // Para los gráficos, necesitamos los contadores.
+        // `general_report` suele tener `test_cases_by_person`, `bugs_by_severity_open`, etc.
+
+        // Vamos a guardar una copia de lo que sea que tengamos en metadatos para futura reconstrucción
+        const rawMetrics = {
+            test_cases: {
+                by_status: (window.currentGeneralReport && window.currentGeneralReport.test_cases_by_status) || {},
+                // Si tuviéramos más detalle, aquí iría.
+            },
+            bugs: {
+                // El gráfico de bugs usa `general_report.bugs_by_severity_open`
+            }
+        };
+
+        return {
+            project_key: projectKey,
+            chart_images: chartImages,
+            widget_chart_images: widgetChartImages, // For PDF
+            widget_data: widgetData,
+            active_widgets: activeWidgets,
+            filters: activeFilters,
+            table_data: tableData, // For PDF tables
+            general_report: window.currentGeneralReport || {},
+            // NUEVO: Datos crudos para re-renderizado WEB
+            raw_data: {
+                test_cases_by_status: (window.currentGeneralReport && window.currentGeneralReport.test_cases_by_status) || {},
+                bugs_by_severity_open: (window.currentGeneralReport && window.currentGeneralReport.bugs_by_severity_open) || {}
+            }
+        };
+    }
+
+    /**
+     * Download report as PDF
+     */
+    async function downloadPDF() {
+        const reportData = gatherReportData();
+        const projectKey = reportData.project_key;
 
         if (!projectKey) {
             alert('Por favor, selecciona un proyecto primero');
@@ -53,127 +203,29 @@
             dropdown.classList.remove('active');
         }
 
-        // Mostrar notificación de inicio inmediatamente
+        // Mostrar notificación de inicio
         if (typeof window.showDownloadNotification === 'function') {
             window.showDownloadNotification('Procesando archivo...', 'loading');
-        } else {
-            console.log('Procesando archivo...');
         }
 
         try {
-            // Convertir gráficos Chart.js a imágenes base64
-            const chartImages = {};
-
-            // Gráfico de Test Cases
-            const testCasesCanvas = document.getElementById('gr-test-cases-chart');
-            if (testCasesCanvas && window.grTestCasesChart) {
-                chartImages['test_cases'] = testCasesCanvas.toDataURL('image/png');
-            }
-
-            // Gráfico de Bugs
-            const bugsCanvas = document.getElementById('gr-bugs-severity-chart');
-            if (bugsCanvas && window.grBugsSeverityChart) {
-                chartImages['bugs_severity'] = bugsCanvas.toDataURL('image/png');
-            }
-
-            // Capturar gráficos de widgets personalizados
-            const widgetChartImages = {};
-            const activeWidgets = window.activeWidgets || [];
-            const availableWidgets = window.AVAILABLE_WIDGETS || [];
-
-            activeWidgets.forEach(widgetId => {
-                const widget = availableWidgets.find(w => w.id === widgetId);
-                if (widget && widget.type === 'chart') {
-                    const canvas = document.getElementById(`widget-chart-${widgetId}`);
-                    if (canvas && window[`widgetChart_${widgetId}`]) {
-                        widgetChartImages[widgetId] = canvas.toDataURL('image/png');
-                    }
-                }
-            });
-
-            // Obtener datos de widgets personalizados
-            const widgetData = {};
-            const widgetDataCache = window.widgetDataCache || {};
-
-            for (const widgetId of activeWidgets) {
-                const widget = availableWidgets.find(w => w.id === widgetId);
-                if (!widget) continue;
-
-                if (widget.type === 'table') {
-                    const data = widgetDataCache[widgetId];
-                    if (data && data.rows) {
-                        widgetData[widgetId] = {
-                            type: 'table',
-                            title: widget.title,
-                            columns: widget.columns,
-                            rows: data.rows
-                        };
-                    }
-                } else if (widget.type === 'kpi') {
-                    const data = widgetDataCache[widgetId];
-                    if (data) {
-                        widgetData[widgetId] = {
-                            type: 'kpi',
-                            title: widget.title,
-                            icon: widget.icon,
-                            value: data.value || widget.defaultValue
-                        };
-                    }
-                } else if (widget.type === 'chart') {
-                    widgetData[widgetId] = {
-                        type: 'chart',
-                        title: widget.title,
-                        chartType: widget.chartType
-                    };
-                }
-            }
-
-            // Filtros activos (del módulo Reports)
-            const filters = {}; // El backend ya filtra, pero se mantiene la estructura
-
-            // Obtener datos de tablas desde paginación global
-            const tableData = {
-                test_cases_by_person: [],
-                defects_by_person: []
-            };
-
-            if (window.testCasesPagination && window.testCasesPagination.data) {
-                tableData.test_cases_by_person = window.testCasesPagination.data.map(({ person, stats }) => ({
-                    person: person,
-                    exitoso: stats.exitoso || 0,
-                    en_progreso: stats.en_progreso || 0,
-                    fallado: stats.fallado || 0,
-                    total: stats.total || 0
-                }));
-            }
-
-            if (window.defectsPagination && window.defectsPagination.data) {
-                tableData.defects_by_person = window.defectsPagination.data.map(defect => ({
-                    key: defect.key || '-',
-                    assignee: defect.assignee || 'Sin asignar',
-                    status: defect.status || '-',
-                    summary: defect.summary || '-',
-                    severity: defect.severity || '-'
-                }));
-            }
-
             // Llamar al backend
             const response = await fetch('/api/jira/download-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': window.getCsrfToken()
+                    'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : ''
                 },
                 body: JSON.stringify({
                     project_key: projectKey,
                     format: 'pdf',
-                    filters: filters,
-                    chart_images: chartImages,
-                    table_data: tableData,
-                    general_report: window.currentGeneralReport || {},
-                    active_widgets: activeWidgets,
-                    widget_chart_images: widgetChartImages,
-                    widget_data: widgetData
+                    filters: reportData.filters,
+                    chart_images: reportData.chart_images,
+                    table_data: reportData.table_data,
+                    general_report: reportData.general_report,
+                    active_widgets: reportData.active_widgets,
+                    widget_chart_images: reportData.widget_chart_images,
+                    widget_data: reportData.widget_data
                 })
             });
 
@@ -197,11 +249,6 @@
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
 
-            // Incrementar métricas
-            if (window.NexusModules && window.NexusModules.Dashboard && window.NexusModules.Dashboard.refreshMetrics) {
-                await window.NexusModules.Dashboard.refreshMetrics();
-            }
-
             if (typeof window.showDownloadNotification === 'function') {
                 window.showDownloadNotification('Reporte PDF descargado exitosamente', 'success');
             }
@@ -216,11 +263,13 @@
     // Public API
     window.NexusModules.Jira.Downloads = {
         toggleDropdown: toggleDownloadDropdown,
-        downloadPDF
+        downloadPDF,
+        gatherReportData
     };
 
     // Global Exposure
     window.toggleDownloadDropdown = toggleDownloadDropdown;
     window.downloadPDF = downloadPDF;
+    window.gatherReportData = gatherReportData;
 
 })(window);

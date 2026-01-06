@@ -65,6 +65,7 @@ desktop.ini
 .pytest_cache/
 .coverage
 htmlcov/
+*.pyc
 
 # Documentos de prueba
 *.docx

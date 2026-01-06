@@ -50,7 +50,7 @@
         }
     }
 
-    async function loadProjectMetrics(projectKey, projectName, filters = null) {
+    async function loadProjectMetrics(projectKey, projectName, filters = null, forceRefresh = false) {
         State.currentProjectKey = projectKey;
 
         // Reset widgets cache from dashboard if available
@@ -83,6 +83,10 @@
             const viewType = userRole === 'admin' ? 'general' : 'personal';
             let url = `/api/jira/metrics/${projectKey}?view_type=${viewType}`;
 
+            if (forceRefresh) {
+                url += '&force_refresh=true';
+            }
+
             if (filters) {
                 if (filters.testCases || filters.bugs) {
                     if (filters.testCases) {
@@ -112,17 +116,17 @@
                 if (metricsLoading) metricsLoading.style.display = 'none';
                 if (metricsContent) metricsContent.style.display = 'block';
             } else {
-                await loadProjectMetricsWithSSE(projectKey, viewType, filters);
+                await loadProjectMetricsWithSSE(projectKey, viewType, filters, forceRefresh);
             }
         } catch (error) {
             console.error('Error en loadProjectMetrics, intentando con SSE:', error);
             const userRole = window.USER_ROLE || "";
             const viewType = userRole === 'admin' ? 'general' : 'personal';
-            await loadProjectMetricsWithSSE(projectKey, viewType, filters);
+            await loadProjectMetricsWithSSE(projectKey, viewType, filters, forceRefresh);
         }
     }
 
-    async function loadProjectMetricsWithSSE(projectKey, viewType, filters = null) {
+    async function loadProjectMetricsWithSSE(projectKey, viewType, filters = null, forceRefresh = false) {
         const metricsContent = document.getElementById('metrics-content');
         const metricsLoading = document.getElementById('metrics-loading');
         const metricsError = document.getElementById('metrics-error');
@@ -141,6 +145,11 @@
 
         try {
             let url = `/api/jira/metrics/${projectKey}/stream?view_type=${viewType}`;
+
+            if (forceRefresh) {
+                url += '&force_refresh=true';
+            }
+
             if (filters) {
                 if (filters.testCases || filters.bugs) {
                     if (filters.testCases) {
@@ -224,8 +233,65 @@
         }
     }
 
+    async function saveReport(title, projectKey, content) {
+        const response = await fetch('/api/jira/reports/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : ''
+            },
+            body: JSON.stringify({
+                title: title,
+                project_key: projectKey,
+                report_content: content
+            })
+        });
+        return await response.json();
+    }
+
+    async function fetchMyReports(page = 1, perPage = 10) {
+        const response = await fetch(`/api/jira/reports/list?page=${page}&per_page=${perPage}&_t=${new Date().getTime()}`);
+        return await response.json();
+    }
+
+    async function getReportDetail(id) {
+        const response = await fetch(`/api/jira/reports/${id}?_t=${new Date().getTime()}`);
+        return await response.json();
+    }
+
+    async function deleteReport(id) {
+        const response = await fetch(`/api/jira/reports/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : ''
+            }
+        });
+        return await response.json();
+    }
+
+    async function updateReport(id, data) {
+        const response = await fetch(`/api/jira/reports/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': window.getCsrfToken ? window.getCsrfToken() : ''
+            },
+            body: JSON.stringify(data)
+        });
+        return await response.json();
+    }
+
     window.NexusModules.Jira.Reports.initJiraReports = initJiraReports;
     window.NexusModules.Jira.Reports.loadProjectMetrics = loadProjectMetrics;
     window.NexusModules.Jira.Reports.loadProjectMetricsWithSSE = loadProjectMetricsWithSSE;
+
+    // New Data API
+    window.NexusModules.Jira.Reports.Data = {
+        saveReport,
+        fetchMyReports,
+        getReportDetail,
+        deleteReport,
+        updateReport
+    };
 
 })(window);

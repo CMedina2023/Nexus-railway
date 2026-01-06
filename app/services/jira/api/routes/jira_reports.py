@@ -1,19 +1,159 @@
-from flask import Blueprint, jsonify, request, Response, render_template
 import logging
 import json
 from datetime import datetime
-from app.auth.decorators import login_required, get_current_user_id
+from app.auth.decorators import login_required, get_current_user_id, get_current_user_role
 from app.database.repositories.jira_report_repository import JiraReportRepository
 from app.models.jira_report import JiraReport
 from app.core.dependencies import get_pdf_service
 from app.core.dependencies import get_jira_client
 import io
 import csv
-from flask import send_file
+from flask import Blueprint, jsonify, request, Response, render_template, send_file
 
 logger = logging.getLogger(__name__)
 
 jira_reports_bp = Blueprint('jira_reports', __name__)
+
+@jira_reports_bp.route('/reports/save', methods=['POST'])
+@login_required
+def save_report():
+    """Guarda un reporte generado"""
+    try:
+        data = request.get_json()
+        user_id = get_current_user_id()
+        
+        if not data.get('project_key') or not data.get('report_content'):
+             return jsonify({'success': False, 'error': 'Faltan datos requeridos'}), 400
+
+        # Asegurar que content sea string JSON
+        content = data['report_content']
+        if not isinstance(content, str):
+            content = json.dumps(content)
+
+        report = JiraReport(
+            user_id=user_id,
+            project_key=data['project_key'],
+            report_type=data.get('report_type', 'web_report'),
+            report_title=data.get('title', 'Sin título'),
+            report_content=content,
+            jira_issue_key=data.get('jira_issue_key', 'LOCAL')
+        )
+        
+        repo = JiraReportRepository()
+        saved = repo.create(report)
+        
+        return jsonify({'success': True, 'report_id': saved.id})
+    except Exception as e:
+        logger.error(f"Error saving report: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@jira_reports_bp.route('/reports/list', methods=['GET'])
+@login_required
+def list_reports():
+    """Lista reportes con paginación y reglas de visibilidad"""
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        
+        # Validar límites
+        per_page = min(per_page, 50)
+        
+        user_id = get_current_user_id()
+        role = get_current_user_role()
+        
+        repo = JiraReportRepository()
+        
+        if role == 'admin':
+            result = repo.get_paginated_all(page, per_page)
+        else:
+            result = repo.get_paginated_by_user(user_id, page, per_page)
+            
+        # Convertir objetos a dicts
+        result['items'] = [item.to_dict() for item in result['items']]
+        
+        return jsonify({'success': True, 'data': result})
+    except Exception as e:
+        logger.error(f"Error listing reports: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@jira_reports_bp.route('/reports/<int:report_id>', methods=['GET'])
+@login_required
+def get_report_detail(report_id):
+    """Obtiene el detalle de un reporte"""
+    try:
+        repo = JiraReportRepository()
+        report = repo.get_by_id(report_id)
+        
+        if not report:
+            return jsonify({'success': False, 'error': 'Reporte no encontrado'}), 404
+            
+        # Validar acceso
+        user_id = get_current_user_id()
+        role = get_current_user_role()
+        
+        if role != 'admin' and report.user_id != user_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+            
+        return jsonify({'success': True, 'data': report.to_dict()})
+    except Exception as e:
+        logger.error(f"Error getting report detail: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@jira_reports_bp.route('/reports/<int:report_id>', methods=['PUT'])
+@login_required
+def update_report(report_id):
+    """Actualiza un reporte existente (ej. tras refrescar datos)"""
+    try:
+        data = request.get_json()
+        repo = JiraReportRepository()
+        report = repo.get_by_id(report_id)
+        
+        if not report:
+            return jsonify({'success': False, 'error': 'Reporte no encontrado'}), 404
+            
+        user_id = get_current_user_id()
+        role = get_current_user_role()
+        
+        if role != 'admin' and report.user_id != user_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+            
+        # Actualizar campos permitidos
+        if 'title' in data:
+            report.report_title = data['title']
+        if 'report_content' in data:
+            content = data['report_content']
+            report.report_content = json.dumps(content) if not isinstance(content, str) else content
+            
+        repo.update(report)
+        
+        return jsonify({'success': True, 'data': report.to_dict()})
+    except Exception as e:
+        logger.error(f"Error updating report: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@jira_reports_bp.route('/reports/<int:report_id>', methods=['DELETE'])
+@login_required
+def delete_report(report_id):
+    """Elimina un reporte"""
+    try:
+        repo = JiraReportRepository()
+        report = repo.get_by_id(report_id)
+        
+        if not report:
+            return jsonify({'success': False, 'error': 'Reporte no encontrado'}), 404
+            
+        user_id = get_current_user_id()
+        role = get_current_user_role()
+        
+        if role != 'admin' and report.user_id != user_id:
+            return jsonify({'success': False, 'error': 'No autorizado'}), 403
+            
+        repo.delete(report_id)
+        
+        return jsonify({'success': True, 'message': 'Reporte eliminado'})
+    except Exception as e:
+        logger.error(f"Error deleting report: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @jira_reports_bp.route('/download-report', methods=['POST'])
 @login_required

@@ -37,6 +37,7 @@ def get_project_metrics(project_key: str):
     filters_testcase = request.args.getlist('filter_testcase')
     filters_bug = request.args.getlist('filter_bug')
     filters_legacy = request.args.getlist('filter')
+    force_refresh = request.args.get('force_refresh', 'false').lower() == 'true'
     
     # Orquestar llamada al servicio
     result = metrics_service.get_project_metrics(
@@ -45,7 +46,8 @@ def get_project_metrics(project_key: str):
         requested_view_type=requested_view_type,
         filters_testcase=filters_testcase,
         filters_bug=filters_bug,
-        filters_legacy=filters_legacy
+        filters_legacy=filters_legacy,
+        force_refresh=force_refresh
     )
     
     return jsonify(result), 200

@@ -23,8 +23,8 @@
                     <div class="card-icon"><i class="fas fa-folder-open"></i></div>
                     <h3>Mis Reportes</h3>
                     <p>Accede al historial de reportes generados anteriormente y descárgalos de nuevo.</p>
-                    <div class="card-footer" style="opacity: 0.5;">
-                        Próximamente <i class="fas fa-lock"></i>
+                    <div class="card-footer">
+                        Ver historial <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
 
@@ -44,7 +44,7 @@
         <div id="report-generation-view" style="display: none; animation: slideUp 0.3s ease-out;">
             <!-- Barra de acciones responsiva -->
             <div class="report-actions-container">
-                <button class="btn-back-hub" onclick="resetReportsToHub()">
+                <button class="btn-back-hub" id="back-to-hub-btn" onclick="resetReportsToHub()">
                     <i class="fas fa-chevron-left"></i> Volver al Hub
                 </button>
 
@@ -61,6 +61,7 @@
                         <button class="download-button" id="download-button" onclick="toggleDownloadDropdown(event)">
                             <i class="fas fa-download"></i>
                             <span>Descargar</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.7em; margin-left: 0.25rem;"></i>
                         </button>
                         <div class="download-dropdown" id="download-dropdown">
                             <div class="download-option" onclick="downloadPDF()">
@@ -73,6 +74,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Botón Guardar -->
+                    <!-- Botón Guardar -->
+                    <button class="save-report-button" id="save-report-btn" onclick="openSaveReportModal()">
+                        <i class="fas fa-save"></i>
+                        <span>Guardar Reporte</span>
+                    </button>
                 </div>
             </div>
 
@@ -404,5 +412,83 @@
                 </div>
             </div>
         </div>
+
+        <!-- CONTENIDO: Mis Reportes -->
+        <div id="report-history-view" style="display: none; animation: slideUp 0.3s ease-out;">
+            <div class="report-actions-container">
+                <button class="btn-back-hub" onclick="resetReportsToHub()">
+                    <i class="fas fa-chevron-left"></i> Volver al Hub
+                </button>
+            </div>
+
+            <div class="guia-header">
+                <div>
+                    <h1>Mis Reportes Guardados</h1>
+                    <p class="subtitle">Gestiona y actualiza tus reportes generados anteriormente.</p>
+                </div>
+            </div>
+
+            <div class="guia-content">
+                <div id="history-loading" class="loading-message" style="display: none;">
+                    <span>⏳ Cargando reportes...</span>
+                </div>
+
+                <div id="history-list-container" style="display: none;">
+                    <div class="table-card" style="margin-bottom: 1rem;">
+                        <div class="table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Proyecto</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Última Actualización</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination" id="history-pagination">
+                            <!-- Pagination controls -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="history-empty" class="jira-welcome-card" style="display: none;">
+                    <div class="jira-welcome-icon">📂</div>
+                    <h2 class="jira-welcome-title">No hay reportes guardados</h2>
+                    <p class="jira-welcome-text">Genera un nuevo reporte y guárdalo para verlo aquí.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Guardar Reporte -->
+        <div class="widget-modal-overlay" id="save-report-modal"
+            style="display: none; align-items: center; justify-content: center;">
+            <div class="widget-modal-container" style="max-width: 400px;">
+                <div class="widget-modal-header">
+                    <div class="widget-modal-title">Guardar Reporte</div>
+                    <button class="widget-modal-close" onclick="closeSaveReportModal()">✕</button>
+                </div>
+                <div class="widget-modal-body" style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Nombre del
+                            Reporte</label>
+                        <input type="text" id="save-report-name" class="jira-selector-dropdown combobox-input"
+                            placeholder="Ej: Avance Sprint 3" style="width: 100%;">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                        <button onclick="closeSaveReportModal()"
+                            style="padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer;">Cancelar</button>
+                        <button onclick="confirmSaveReport()"
+                            style="padding: 0.5rem 1rem; border-radius: 4px; border: none; background: var(--accent-color); color: white; cursor: pointer;">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </section>

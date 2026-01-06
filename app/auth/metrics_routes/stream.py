@@ -50,6 +50,7 @@ def generate_report_stream(project_key: str):
     filters_testcase = request.args.getlist('filter_testcase')
     filters_bug = request.args.getlist('filter_bug')
     filters_legacy = request.args.getlist('filter')
+    force_refresh = request.args.get('force_refresh', 'false').lower() == 'true'
     
     # 3. Preparar filtros por tipo si existen
     filters_by_type = None
@@ -66,7 +67,8 @@ def generate_report_stream(project_key: str):
         project_key=project_key,
         requested_view_type=requested_view_type,
         filters_by_type=filters_by_type,
-        filters_legacy=filters_legacy
+        filters_legacy=filters_legacy,
+        force_refresh=force_refresh
     )
     
     # 5. Retornar respuesta de streaming

@@ -24,7 +24,7 @@ class JiraReport:
     
     def __init__(
         self,
-        user_id: int,
+        user_id: str,
         project_key: str,
         report_type: str,
         report_title: str,

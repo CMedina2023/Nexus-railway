@@ -42,7 +42,8 @@ class MetricsService:
         requested_view_type: str,
         filters_testcase: List[str] = None,
         filters_bug: List[str] = None,
-        filters_legacy: List[str] = None
+        filters_legacy: List[str] = None,
+        force_refresh: bool = False
     ) -> Dict[str, Any]:
         """
         Obtiene y calcula las métricas para un proyecto y usuario específicos.
@@ -67,18 +68,21 @@ class MetricsService:
             filters_testcase, filters_bug, filters_legacy
         )
 
-        # Verificar caché
-        cached_data = self.cache.get(
-            project_key,
-            view_type,
-            filters_for_cache,
-            user_id=cache_user_id
-        )
-        if cached_data:
-            logger.info(f"[CACHE] Métricas obtenidas desde caché para {project_key} ({view_type})")
-            cached_data["from_cache"] = True
-            cached_data["view_type"] = view_type
-            return cached_data
+        # Verificar caché (si no se fuerza refresco)
+        if not force_refresh:
+            cached_data = self.cache.get(
+                project_key,
+                view_type,
+                filters_for_cache,
+                user_id=cache_user_id
+            )
+            if cached_data:
+                logger.info(f"[CACHE] Métricas obtenidas desde caché para {project_key} ({view_type})")
+                cached_data["from_cache"] = True
+                cached_data["view_type"] = view_type
+                return cached_data
+        else:
+             logger.info(f"[CACHE] Forzando refresco para {project_key}")
 
         # Obtener configuración de Jira
         jira_config = self.token_manager.get_token_for_user(user, project_key)
@@ -116,8 +120,8 @@ class MetricsService:
             user_id=cache_user_id
         )
 
-        # Guardar en BD local
-        self._save_report_to_db(user.id, project_key, view_type, result)
+        # Auto-save removed to prevent pollution of "My Reports"
+        # self._save_report_to_db(user.id, project_key, view_type, result)
 
         logger.info(
             f"[PERFORMANCE] Reporte completo generado en {time.time() - start_time_total:.2f}s "

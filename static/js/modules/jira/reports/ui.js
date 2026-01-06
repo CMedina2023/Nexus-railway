@@ -16,12 +16,23 @@
     function switchReportOperation(type) {
         const hub = document.getElementById('report-hub');
         const generationView = document.getElementById('report-generation-view');
+        const historyView = document.getElementById('report-history-view');
 
         if (type === 'generation') {
             if (hub) hub.style.display = 'none';
+            if (historyView) historyView.style.display = 'none';
             if (generationView) generationView.style.display = 'block';
+        } else if (type === 'history') {
+            // My Reports View
+            if (hub) hub.style.display = 'none';
+            if (generationView) generationView.style.display = 'none';
+            if (historyView) historyView.style.display = 'block';
+
+            if (window.NexusModules.Jira.Reports.History) {
+                window.NexusModules.Jira.Reports.History.loadMyReports();
+            }
         } else {
-            const cardTitle = type === 'history' ? 'Mis Reportes' : 'Reporte Final de Pruebas';
+            const cardTitle = 'Reporte Final de Pruebas';
             alert(`ℹ️ El módulo "${cardTitle}" estará disponible en próximas actualizaciones.`);
         }
     }
@@ -29,9 +40,24 @@
     function resetReportsToHub() {
         const hub = document.getElementById('report-hub');
         const generationView = document.getElementById('report-generation-view');
+        const historyView = document.getElementById('report-history-view');
+
+        // Check if we are coming from "View Saved Report" mode
+        if (State.currentSavedReportId) {
+            State.currentSavedReportId = null;
+
+            // Ocultar reporte explícitamente para evitar superposición
+            const reportSection = document.getElementById('jira-report-section');
+            if (reportSection) reportSection.style.display = 'none';
+
+            // Go back to history instead of hub
+            switchReportOperation('history');
+            return;
+        }
 
         if (hub) hub.style.display = 'block';
         if (generationView) generationView.style.display = 'none';
+        if (historyView) historyView.style.display = 'none';
 
         // Reiniciar completamente la sección de proyectos y filtros
         if (typeof Reports.showProjectsSection === 'function') {
@@ -70,6 +96,17 @@
         const generalReportSection = document.getElementById('general-report-section');
         if (!generalReportSection) return;
 
+        // CRITICAL FIX: Inject the raw chart data into generalReport before saving to State.
+        // This ensures 'gatherReportData' can find it when saving.
+        if (testMetrics && testMetrics.by_status) {
+            generalReport.test_cases_by_status = testMetrics.by_status;
+        }
+        if (generalReport.bugs_by_severity_open) {
+            // Already there usually, but ensure consistency
+        } else if (bugMetrics) {
+            generalReport.bugs_by_severity_open = bugMetrics; // Fallback structure
+        }
+
         State.currentGeneralReport = generalReport;
         generalReportSection.style.display = 'block';
 
@@ -81,6 +118,21 @@
 
         const customizeButton = document.getElementById('customize-button');
         if (customizeButton) customizeButton.style.display = 'inline-flex';
+
+        const saveButton = document.getElementById('save-report-btn');
+        if (saveButton) {
+            saveButton.classList.add('visible');
+
+            // Check if we are in "Update" mode
+            if (State.currentSavedReportId) {
+                saveButton.setAttribute('data-update-id', State.currentSavedReportId);
+                saveButton.querySelector('span').textContent = 'Guardar Actualización';
+            } else {
+                // Default handling (New Report)
+                saveButton.removeAttribute('data-update-id');
+                saveButton.querySelector('span').textContent = 'Guardar Reporte';
+            }
+        }
 
         // KPIs
         const kpiIds = {
@@ -137,6 +189,19 @@
         }
     }
 
+    function updateBackButtonState() {
+        const btn = document.getElementById('back-to-hub-btn');
+        if (!btn) return;
+
+        // If we are in "Saved Report" mode (viewing or updating), show "Mis Reportes"
+        if (State.currentSavedReportId) {
+            btn.innerHTML = '<i class="fas fa-chevron-left"></i> Mis Reportes';
+        } else {
+            // Otherwise default to "Volver al Hub"
+            btn.innerHTML = '<i class="fas fa-chevron-left"></i> Volver al Hub';
+        }
+    }
+
     function showProjectsSection() {
         const projectsSec = document.getElementById('jira-projects-section');
         const reportSec = document.getElementById('jira-report-section');
@@ -152,6 +217,9 @@
         if (projectsSec) projectsSec.style.display = 'block';
         if (downloadBtn) downloadBtn.classList.remove('visible');
         if (customizeBtn) customizeBtn.style.display = 'none';
+
+        const saveButton = document.getElementById('save-report-btn');
+        if (saveButton) saveButton.classList.remove('visible');
 
         if (typeof window.activeWidgets !== 'undefined') {
             window.activeWidgets = [];
@@ -202,12 +270,80 @@
 
         if (State.grTestCasesChart) { State.grTestCasesChart.destroy(); State.grTestCasesChart = null; }
         if (State.grBugsSeverityChart) { State.grBugsSeverityChart.destroy(); State.grBugsSeverityChart = null; }
+
+        // RESET BUTTON TEXT
+        updateBackButtonState();
     }
+
+    function openSaveReportModal() {
+        const modal = document.getElementById('save-report-modal');
+        if (modal) modal.style.display = 'flex';
+        const input = document.getElementById('save-report-name');
+        if (input) {
+            input.value = `Reporte ${State.currentProjectKey || ''} - ${new Date().toLocaleDateString()}`;
+            input.focus();
+        }
+    }
+
+    function closeSaveReportModal() {
+        const modal = document.getElementById('save-report-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function confirmSaveReport() {
+        const input = document.getElementById('save-report-name');
+        const title = input ? input.value : 'Sin título';
+        const Data = window.NexusModules.Jira.Reports.Data;
+
+        if (!Data) {
+            alert('Error: Módulo de datos no cargado');
+            return;
+        }
+
+        const saveBtn = document.getElementById('save-report-btn');
+        const updateId = saveBtn ? saveBtn.getAttribute('data-update-id') : null;
+
+        // Gather Data
+        const reportData = window.NexusModules.Jira.Downloads.gatherReportData();
+
+        try {
+            if (updateId) {
+                // UPDATE
+                const res = await Data.updateReport(updateId, {
+                    title: title,
+                    report_content: reportData
+                });
+                if (res.success) {
+                    alert('Reporte actualizado correctamente');
+                    closeSaveReportModal();
+                } else {
+                    alert('Error al actualizar: ' + res.error);
+                }
+            } else {
+                // CREATE
+                const res = await Data.saveReport(title, reportData.project_key, reportData);
+                if (res.success) {
+                    alert('Reporte guardado correctamente');
+                    closeSaveReportModal();
+                } else {
+                    alert('Error al guardar: ' + res.error);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error de conexión');
+        }
+    }
+
+    window.openSaveReportModal = openSaveReportModal;
+    window.closeSaveReportModal = closeSaveReportModal;
+    window.confirmSaveReport = confirmSaveReport;
 
     window.NexusModules.Jira.Reports.switchReportOperation = switchReportOperation;
     window.NexusModules.Jira.Reports.resetReportsToHub = resetReportsToHub;
     window.NexusModules.Jira.Reports.displayMetrics = displayMetrics;
     window.NexusModules.Jira.Reports.displayGeneralReport = displayGeneralReport;
     window.NexusModules.Jira.Reports.showProjectsSection = showProjectsSection;
+    window.NexusModules.Jira.Reports.updateBackButtonState = updateBackButtonState;
 
 })(window);

@@ -246,7 +246,7 @@
             window.NexusModules.Jira.Reports.loadProjectMetrics(projectKey, projectName, {
                 testCases: State.reportActiveFiltersTestCases,
                 bugs: State.reportActiveFiltersBugs
-            });
+            }, true);
         }
     }
 

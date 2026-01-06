@@ -16,7 +16,8 @@
 
 /* Base style for the buttons in reports */
 .customize-button,
-.download-button {
+.download-button,
+.save-report-button {
     display: none;
     background: var(--secondary-bg);
     border: 1px solid var(--border);
@@ -32,11 +33,16 @@
 }
 
 .customize-button:hover,
-.download-button:hover {
+.download-button:hover,
+.save-report-button:hover {
     border-color: var(--accent);
     color: var(--accent);
     background: rgba(59, 130, 246, 0.05);
     transform: translateY(-1px);
+}
+
+.save-report-button.visible {
+    display: flex !important;
 }
 
 .report-actions-container .btn-back-hub {
