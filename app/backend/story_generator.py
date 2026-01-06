@@ -48,6 +48,12 @@ def generate_story_from_chunk(
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(Config.GEMINI_MODEL)
 
+        # Detectar si hay contexto de proyecto inyectado
+        project_context = None
+        # business_context viene como string plano, pero intentamos extraer el dict estructurado si fue inyectado en una capa superior
+        # Nota: En este punto, 'business_context' ya contiene una fusión de strings hecha por el orquestador.
+        # La lógica de 'create_advanced_prompt' debería ser capaz de manejar esto.
+        
         # Crear prompt avanzado y detectar si necesita procesamiento especial
         prompt = create_advanced_prompt(chunk, role, story_type, business_context)
 

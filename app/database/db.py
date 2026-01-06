@@ -317,6 +317,77 @@ class Database:
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_user ON bulk_uploads(user_id)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_project ON bulk_uploads(project_key)'))
                 
+                # Tabla de contextos de proyecto (Brain)
+                if self.is_sqlite:
+                    project_contexts_sql = '''
+                        CREATE TABLE IF NOT EXISTS project_contexts (
+                            id TEXT PRIMARY KEY,
+                            project_key TEXT NOT NULL,
+                            summary TEXT,
+                            glossary TEXT,
+                            business_rules TEXT,
+                            tech_constraints TEXT,
+                            version INTEGER DEFAULT 1,
+                            created_at TEXT NOT NULL,
+                            updated_at TEXT NOT NULL
+                        )
+                    '''
+                else:  # PostgreSQL
+                    project_contexts_sql = '''
+                        CREATE TABLE IF NOT EXISTS project_contexts (
+                            id TEXT PRIMARY KEY,
+                            project_key TEXT NOT NULL,
+                            summary TEXT,
+                            glossary JSONB,
+                            business_rules JSONB,
+                            tech_constraints JSONB,
+                            version INTEGER DEFAULT 1,
+                            created_at TIMESTAMP NOT NULL,
+                            updated_at TIMESTAMP NOT NULL
+                        )
+                    '''
+                conn.execute(text(project_contexts_sql))
+
+                # Tabla de documentos de proyecto
+                if self.is_sqlite:
+                    project_documents_sql = '''
+                        CREATE TABLE IF NOT EXISTS project_documents (
+                            id TEXT PRIMARY KEY,
+                            project_key TEXT NOT NULL,
+                            filename TEXT NOT NULL,
+                            file_path TEXT NOT NULL,
+                            file_type TEXT,
+                            status TEXT DEFAULT 'pending',
+                            content_hash TEXT,
+                            extracted_summary TEXT,
+                            error_message TEXT,
+                            upload_date TEXT NOT NULL,
+                            processed_at TEXT
+                        )
+                    '''
+                else:  # PostgreSQL
+                    project_documents_sql = '''
+                        CREATE TABLE IF NOT EXISTS project_documents (
+                            id TEXT PRIMARY KEY,
+                            project_key TEXT NOT NULL,
+                            filename TEXT NOT NULL,
+                            file_path TEXT NOT NULL,
+                            file_type TEXT,
+                            status TEXT DEFAULT 'pending',
+                            content_hash TEXT,
+                            extracted_summary TEXT,
+                            error_message TEXT,
+                            upload_date TIMESTAMP NOT NULL,
+                            processed_at TIMESTAMP
+                        )
+                    '''
+                conn.execute(text(project_documents_sql))
+
+                # Índices para Knowledge Base
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_contexts_key ON project_contexts(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_documents_key ON project_documents(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_documents_hash ON project_documents(content_hash)'))
+
                 conn.commit()
                 
             logger.info(f"Esquema de base de datos inicializado correctamente")

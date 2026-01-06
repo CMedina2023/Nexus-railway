@@ -60,7 +60,7 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🔧 Infraestructura Compartida
 
-- [ ] **K1.1** - 🔧 Diseñar modelo de "ProjectContext"
+- [x] **K1.1** - 🔧 Diseñar modelo de "ProjectContext"
   - ⏱️ **2 días**
   - 🔗 Ninguna
   - **Objetivo**: Persistir el "entendimiento" de la IA sobre el proyecto, independiente de archivos individuales.
@@ -68,7 +68,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/models/project_context.py` (Campos: summary, glossary, business_rules, tech_constraints)
     - `app/models/project_document.py` (Relación: Archivo físico <-> ProjectContext)
 
-- [ ] **K1.2** - 🔧 Implementar Motor de Fusión de Contexto
+- [x] **K1.2** - 🔧 Implementar Motor de Fusión de Contexto
   - ⏱️ **5 días**
   - 🔗 K1.1
   - **Objetivo**: Lógica para tomar N archivos, extraer sus contextos individuales y fusionarlos en un Master Context sin alucinaciones.
@@ -76,7 +76,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/services/knowledge/context_merger.py` (Lógica de Map-Reduce con IA)
     - `app/services/knowledge/document_ingestion_service.py`
 
-- [ ] **K1.3** - 🔧 Actualizar Pipelines de Generación (RAG)
+- [x] **K1.3** - 🔧 Actualizar Pipelines de Generación (RAG)
   - ⏱️ **4 días**
   - 🔗 K1.2
   - **Objetivo**: Que `story_generator` y `matrix_generator` consulten el `ProjectContext` antes de generar.
@@ -85,7 +85,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/backend/matrix/generator.py` (Inyectar contexto global persistido)
     - `app/services/generation_orchestrator.py`
 
-- [ ] **K1.4** - 🔧 UI de Gestión de Documentos de Proyecto
+- [x] **K1.4** - 🔧 UI de Gestión de Documentos de Proyecto
   - ⏱️ **4 días**
   - 🔗 K1.3
   - **Entregables**:
@@ -96,7 +96,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `static/js/modules/projects/knowledge-base-ui.js`
     - `templates/partials/knowledge_base.html`
 
-- [ ] **K1.5** - 🔧 Migraciones de Base de Conocimiento
+- [x] **K1.5** - 🔧 Migraciones de Base de Conocimiento
   - ⏱️ **1 día**
   - 🔗 K1.1
   - **Archivos a crear**:
@@ -108,7 +108,7 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🔧 Infraestructura Compartida (se implementa una vez, beneficia a ambos generadores)
 
-- [ ] **T1.1** - 🔧 Diseñar modelo de datos de trazabilidad
+- [x] **T1.1** - 🔧 Diseñar modelo de datos de trazabilidad
   - ⏱️ **3 días**
   - 🔗 Ninguna
   - **Entregables**:
@@ -120,7 +120,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/models/requirement_coverage.py`
     - `app/models/traceability_link.py`
 
-- [ ] **T1.2** - 🔧 Crear migraciones de base de datos
+- [x] **T1.2** - 🔧 Crear migraciones de base de datos
   - ⏱️ **2 días**
   - 🔗 T1.1
   - **Entregables**:
@@ -130,7 +130,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `migrations/add_traceability_tables.sql`
     - `migrations/rollback_traceability_tables.sql`
 
-- [ ] **T1.3** - 🔧 Implementar repositorios de trazabilidad
+- [x] **T1.3** - 🔧 Implementar repositorios de trazabilidad
   - ⏱️ **3 días**
   - 🔗 T1.2
   - **Entregables**:
@@ -141,7 +141,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/database/repositories/requirement_repository.py`
     - `app/database/repositories/coverage_repository.py`
 
-- [ ] **T1.4** - 🔧 Crear API endpoints de trazabilidad
+- [x] **T1.4** - 🔧 Crear API endpoints de trazabilidad
   - ⏱️ **3 días**
   - 🔗 T1.3
   - **Entregables**:

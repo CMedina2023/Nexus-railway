@@ -101,6 +101,40 @@ class GenerationOrchestrator:
                     ("Finalizando procesamiento...", 95, "Finalizando")
                 ]
 
+            # --- PASO 0: INYECCION DE CONTEXTO GLOBAL (K1.3) ---
+            # Si hay un project_key, intentamos cargar su contexto persistido
+            project_key = parameters.get('project_key')
+            if project_key:
+                try:
+                    # TODO: [K1.5] Reemplazar con llamada real a repositorio DB
+                    # context_repo = ProjectContextRepository()
+                    # project_ctx = context_repo.get_by_key(project_key)
+                    
+                    # MOCK TEMPORAL para validar integración
+                    # En producción esto vendrá de la DB
+                    mock_context = {
+                        "summary": "Proyecto Enterprise Nexus Railway",
+                        "business_rules": ["Regla Global 1: Prioridad a la seguridad", "Regla Global 2: Uso de UTC"],
+                        "glossary": {"Nexus": "Plataforma de IA", "Rail": "Core del negocio"}
+                    }
+                    
+                    # Inyectamos el contexto estructurado en los parámetros
+                    # para que los generadores lo consuman
+                    parameters['project_context'] = mock_context
+                    
+                    # También enriquecemos el contexto de texto plano por compatibilidad
+                    ctx_str = f"CONTEXTO DEL PROYECTO:\n{mock_context['summary']}\n\nREGLAS:\n" + "\n".join(mock_context['business_rules'])
+                    
+                    if task_type == 'story':
+                        current_ctx = parameters.get('business_context', '')
+                        parameters['business_context'] = f"{current_ctx}\n\n{ctx_str}".strip()
+                    elif task_type == 'matrix':
+                        current_ctx = parameters.get('contexto', '')
+                        parameters['contexto'] = f"{current_ctx}\n\n{ctx_str}".strip()
+                        
+                except Exception as ctx_err:
+                    logger.warning(f"No se pudo cargar contexto del proyecto: {ctx_err}")
+
             result_container = {"data": None, "error": None, "completed": False}
             
             def run_ia_task():

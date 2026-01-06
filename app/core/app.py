@@ -138,7 +138,11 @@ app.register_blueprint(profile_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(jira_bp)
 app.register_blueprint(feedback_bp)
-logger.info("Blueprints de autenticación registrados")
+from app.services.knowledge.api.routes import knowledge_bp
+app.register_blueprint(knowledge_bp)
+from app.routes.traceability_routes import traceability_bp
+app.register_blueprint(traceability_bp)
+logger.info("Blueprints registrados: Auth, Knowledge Base, Traceability")
 
 
 # ============================================================================

@@ -9,6 +9,11 @@ from app.models.user_story import UserStory
 from app.models.test_case import TestCase
 from app.models.jira_report import JiraReport
 from app.models.bulk_upload import BulkUpload
+from app.models.project_context import ProjectContext
+from app.models.project_document import ProjectDocument
+from app.models.requirement import Requirement
+from app.models.requirement_coverage import RequirementCoverage
+from app.models.traceability_link import TraceabilityLink
 
 __all__ = [
     'User',
@@ -17,8 +22,10 @@ __all__ = [
     'UserStory',
     'TestCase',
     'JiraReport',
-    'BulkUpload'
+    'BulkUpload',
+    'ProjectContext',
+    'ProjectDocument',
+    'Requirement',
+    'RequirementCoverage',
+    'TraceabilityLink'
 ]
-
-
-
