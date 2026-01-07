@@ -181,14 +181,14 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 📖 Historias de Usuario
 
-- [ ] **US-T1.1** - 📖 Agregar campos de jerarquía a UserStory
+- [x] **US-T1.1** - 📖 Agregar campos de jerarquía a UserStory
   - ⏱️ **1 día**
   - 🔗 T1.2
   - **Archivos a modificar**:
     - `app/models/user_story.py` (agregar: requirement_id, epic_id, feature_id, parent_story_id, dependencies)
     - `app/database/repositories/user_story_repository.py` (actualizar queries)
 
-- [ ] **US-T1.2** - 📖 Crear modelos Epic y Feature
+- [x] **US-T1.2** - 📖 Crear modelos Epic y Feature
   - ⏱️ **2 días**
   - 🔗 US-T1.1
   - **Archivos a crear**:
@@ -197,14 +197,14 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/database/repositories/epic_repository.py`
     - `app/database/repositories/feature_repository.py`
 
-- [ ] **US-T1.3** - 📖 Actualizar generador para capturar requirement_id
+- [x] **US-T1.3** - 📖 Actualizar generador para capturar requirement_id
   - ⏱️ **2 días**
   - 🔗 US-T1.1
   - **Archivos a modificar**:
     - `app/backend/story_generator.py` (agregar parámetro requirement_id)
     - `static/js/modules/generators/story/story-generator.js`
 
-- [ ] **US-T1.4** - 📖 Integrar trazabilidad en UI de historias
+- [x] **US-T1.4** - 📖 Integrar trazabilidad en UI de historias
   - ⏱️ **3 días**
   - 🔗 T1.4, US-T1.3
   - **Entregables**:

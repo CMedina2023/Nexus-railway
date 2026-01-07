@@ -50,8 +50,9 @@ class UserStoryRepository:
             cursor.execute(f'''
                 INSERT INTO user_stories (
                     user_id, project_key, area, story_title, story_content,
-                    jira_issue_key, created_at, updated_at
-                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                    jira_issue_key, created_at, updated_at,
+                    requirement_id, epic_id, feature_id, parent_story_id, dependencies
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 story.user_id,
                 story.project_key,
@@ -60,7 +61,12 @@ class UserStoryRepository:
                 story.story_content,
                 story.jira_issue_key,
                 story.created_at,
-                story.updated_at
+                story.updated_at,
+                story.requirement_id,
+                story.epic_id,
+                story.feature_id,
+                story.parent_story_id,
+                story.dependencies
             ))
             
             story.id = cursor.lastrowid
@@ -87,7 +93,8 @@ class UserStoryRepository:
             
             cursor.execute(f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, created_at, updated_at,
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
                 FROM user_stories
                 WHERE id = {placeholder}
             ''', (story_id,))
@@ -120,7 +127,8 @@ class UserStoryRepository:
             
             query = f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, created_at, updated_at,
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
                 FROM user_stories
                 WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
@@ -153,7 +161,8 @@ class UserStoryRepository:
         try:
             query = '''
                 SELECT id, user_id, project_key, area, story_title, story_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, created_at, updated_at,
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
                 FROM user_stories
                 ORDER BY created_at DESC
             '''
@@ -233,13 +242,20 @@ class UserStoryRepository:
             cursor.execute(f'''
                 UPDATE user_stories
                 SET story_title = {placeholder}, story_content = {placeholder}, jira_issue_key = {placeholder},
-                    updated_at = {placeholder}
+                    updated_at = {placeholder},
+                    requirement_id = {placeholder}, epic_id = {placeholder}, feature_id = {placeholder},
+                    parent_story_id = {placeholder}, dependencies = {placeholder}
                 WHERE id = {placeholder}
             ''', (
                 story.story_title,
                 story.story_content,
                 story.jira_issue_key,
                 story.updated_at,
+                story.requirement_id,
+                story.epic_id,
+                story.feature_id,
+                story.parent_story_id,
+                story.dependencies,
                 story.id
             ))
             
@@ -302,6 +318,21 @@ class UserStoryRepository:
     
     def _row_to_story(self, row: tuple) -> UserStory:
         """Convierte una fila de BD a objeto UserStory"""
+        # Manejo de compatibilidad hacia atrás si faltan columnas en el resultado
+        try:
+            requirement_id = row[9] if len(row) > 9 else None
+            epic_id = row[10] if len(row) > 10 else None
+            feature_id = row[11] if len(row) > 11 else None
+            parent_story_id = row[12] if len(row) > 12 else None
+            dependencies = row[13] if len(row) > 13 else None
+        except (IndexError, KeyError):
+            # Si row no soporta índice numérico o está fuera de rango
+            requirement_id = None
+            epic_id = None
+            feature_id = None
+            parent_story_id = None
+            dependencies = None
+
         return UserStory(
             id=row[0],
             user_id=row[1],
@@ -311,7 +342,12 @@ class UserStoryRepository:
             story_content=row[5],
             jira_issue_key=row[6],
             created_at=parse_datetime_field(row[7]),
-            updated_at=parse_datetime_field(row[8])
+            updated_at=parse_datetime_field(row[8]),
+            requirement_id=requirement_id,
+            epic_id=epic_id,
+            feature_id=feature_id,
+            parent_story_id=parent_story_id,
+            dependencies=dependencies
         )
 
 

@@ -3,7 +3,7 @@ Repositorio para Reportes de Jira
 Responsabilidad única: Acceso a datos de reportes creados en Jira (SRP)
 """
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from app.models.jira_report import JiraReport
@@ -26,7 +26,84 @@ class JiraReportRepository:
         - count_all: Cuenta todos los reportes
         - update: Actualiza un reporte
         - delete: Elimina un reporte
+        - get_paginated_all: Obtiene todos los reportes paginados
+        - get_paginated_by_user: Obtiene reportes de un usuario paginados
     """
+    
+    def get_paginated_all(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
+        """Obtiene todos los reportes paginados"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            # Count total
+            cursor.execute('SELECT COUNT(*) FROM jira_reports')
+            total = cursor.fetchone()[0]
+            
+            # Get items
+            offset = (page - 1) * per_page
+            query = f'''
+                SELECT id, user_id, project_key, report_type, report_title, report_content,
+                       jira_issue_key, created_at, updated_at
+                FROM jira_reports
+                ORDER BY created_at DESC
+                LIMIT {placeholder} OFFSET {placeholder}
+            '''
+            
+            cursor.execute(query, (per_page, offset))
+            rows = cursor.fetchall()
+            items = [self._row_to_report(row) for row in rows]
+            
+            return {
+                'items': items,
+                'total': total,
+                'page': page,
+                'per_page': per_page,
+                'total_pages': (total + per_page - 1) // per_page
+            }
+        finally:
+            conn.close()
+
+    def get_paginated_by_user(self, user_id: int, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
+        """Obtiene reportes paginados de un usuario"""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            db = get_db()
+            placeholder = '%s' if db.is_postgres else '?'
+            
+            # Count total
+            cursor.execute(f'SELECT COUNT(*) FROM jira_reports WHERE user_id = {placeholder}', (user_id,))
+            total = cursor.fetchone()[0]
+            
+            # Get items
+            offset = (page - 1) * per_page
+            query = f'''
+                SELECT id, user_id, project_key, report_type, report_title, report_content,
+                       jira_issue_key, created_at, updated_at
+                FROM jira_reports
+                WHERE user_id = {placeholder}
+                ORDER BY created_at DESC
+                LIMIT {placeholder} OFFSET {placeholder}
+            '''
+            
+            cursor.execute(query, (user_id, per_page, offset))
+            rows = cursor.fetchall()
+            items = [self._row_to_report(row) for row in rows]
+            
+            return {
+                'items': items,
+                'total': total,
+                'page': page,
+                'per_page': per_page,
+                'total_pages': (total + per_page - 1) // per_page
+            }
+        finally:
+            conn.close()
     
     def create(self, report: JiraReport) -> JiraReport:
         """
@@ -99,7 +176,7 @@ class JiraReportRepository:
         finally:
             conn.close()
     
-    def get_by_user_id(self, user_id: str, limit: Optional[int] = None) -> List[JiraReport]:
+    def get_by_user_id(self, user_id: int, limit: Optional[int] = None) -> List[JiraReport]:
         """
         Obtiene todos los reportes de un usuario
         
@@ -168,7 +245,7 @@ class JiraReportRepository:
         finally:
             conn.close()
     
-    def count_by_user(self, user_id: str, report_type: Optional[str] = None) -> int:
+    def count_by_user(self, user_id: int, report_type: Optional[str] = None) -> int:
         """
         Cuenta los reportes de un usuario
         
@@ -189,102 +266,9 @@ class JiraReportRepository:
             else:
                 cursor.execute(f'SELECT COUNT(*) FROM jira_reports WHERE user_id = {placeholder}', (user_id,))
             return cursor.fetchone()[0]
-            return cursor.fetchone()[0]
         finally:
             conn.close()
-
-    def get_paginated_all(self, page: int = 1, per_page: int = 10) -> dict:
-        """
-        Obtiene todos los reportes paginados
-        
-        Args:
-            page: Número de página (1-based)
-            per_page: Items por página
-            
-        Returns:
-            Dict con items y metadatos de paginación
-        """
-        offset = (page - 1) * per_page
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            db = get_db()
-            placeholder = '%s' if db.is_postgres else '?'
-            
-            # Obtener total
-            total = self.count_all()
-            
-            # Obtener items
-            query = f'''
-                SELECT id, user_id, project_key, report_type, report_title, report_content,
-                       jira_issue_key, created_at, updated_at
-                FROM jira_reports
-                ORDER BY created_at DESC
-                LIMIT {per_page} OFFSET {offset}
-            '''
-            
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            items = [self._row_to_report(row) for row in rows]
-            
-            return {
-                'items': items,
-                'total': total,
-                'page': page,
-                'per_page': per_page,
-                'total_pages': (total + per_page - 1) // per_page
-            }
-        finally:
-            conn.close()
-
-    def get_paginated_by_user(self, user_id: str, page: int = 1, per_page: int = 10) -> dict:
-        """
-        Obtiene reportes paginados de un usuario
-        
-        Args:
-            user_id: ID del usuario
-            page: Número de página (1-based)
-            per_page: Items por página
-            
-        Returns:
-            Dict con items y metadatos de paginación
-        """
-        offset = (page - 1) * per_page
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            db = get_db()
-            placeholder = '%s' if db.is_postgres else '?'
-            
-            # Obtener total
-            total = self.count_by_user(user_id)
-            
-            # Obtener items
-            query = f'''
-                SELECT id, user_id, project_key, report_type, report_title, report_content,
-                       jira_issue_key, created_at, updated_at
-                FROM jira_reports
-                WHERE user_id = {placeholder}
-                ORDER BY created_at DESC
-                LIMIT {per_page} OFFSET {offset}
-            '''
-            
-            cursor.execute(query, (user_id,))
-            rows = cursor.fetchall()
-            items = [self._row_to_report(row) for row in rows]
-            
-            return {
-                'items': items,
-                'total': total,
-                'page': page,
-                'per_page': per_page,
-                'total_pages': (total + per_page - 1) // per_page
-            }
-        finally:
-            conn.close()
-
+    
     def count_all(self, report_type: Optional[str] = None) -> int:
         """
         Cuenta todos los reportes

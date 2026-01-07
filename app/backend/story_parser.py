@@ -81,7 +81,8 @@ def parse_story_data(story_text: str) -> Dict:
         'summary': '',
         'description': '',
         'priority': 'Medium',
-        'complexity': ''
+        'complexity': '',
+        'requirement_id': None
     }
     
     # Extraer título (Summary)
@@ -128,6 +129,10 @@ def parse_story_data(story_text: str) -> Dict:
     complejidad_match = re.search(r'(?:\*\s*)?\*\*Complejidad:\*\*\s*([^\n]+)', story_text, re.IGNORECASE)
     if not complejidad_match:
         complejidad_match = re.search(r'COMPLEJIDAD:\s*([^\n]+)', story_text, re.IGNORECASE)
+        
+    requerimiento_match = re.search(r'(?:\*\s*)?\*\*Requerimiento:\*\*\s*([^\n]+)', story_text, re.IGNORECASE)
+    if not requerimiento_match:
+        requerimiento_match = re.search(r'REQUERIMIENTO:\s*([^\n]+)', story_text, re.IGNORECASE)
     
     # Construir descripción
     description_parts = []
@@ -274,6 +279,15 @@ def parse_story_data(story_text: str) -> Dict:
                 if item_clean:
                     description_parts.append(f"  • {item_clean}")
     
+    # 8. Requerimiento ID
+    if requerimiento_match:
+        req_text = requerimiento_match.group(1).strip()
+        req_text = re.sub(r'CONTINÚA\s+EN\s+EL\s+SIGUIENTE\s+LOTE.*$', '', req_text, flags=re.IGNORECASE)
+        req_clean = re.sub(r'\*\*([^*]+)\*\*', r'\1', req_text)
+        req_clean = re.sub(r'\s+', ' ', req_clean).strip()
+        if req_clean and req_clean.lower() not in ['n/a', 'none', 'no aplica']:
+            data['requirement_id'] = req_clean[:50]  # Limit length
+
     data['description'] = '\n'.join(description_parts)
     
     return data
@@ -298,6 +312,7 @@ def parse_stories_to_dict(stories: List[str]) -> List[Dict]:
             'description': data.get('description', ''),
             'issuetype': 'Story',
             'priority': data.get('priority', 'Medium'),
+            'requirement_id': data.get('requirement_id'),
             'raw_text': story_text
         })
     return parsed_stories

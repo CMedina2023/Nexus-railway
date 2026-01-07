@@ -174,6 +174,7 @@ REGLAS DE NEGOCIO:
 • [Regla específica 1]
 • [Regla específica 2]
 
+REQUERIMIENTO: [ID asociado en el documento o N/A]
 PRIORIDAD: [Alta/Media/Baja]
 COMPLEJIDAD: [Simple/Moderada/Compleja]
 
@@ -274,6 +275,7 @@ REGLAS DE NEGOCIO:
 • [Regla 1]
 • [Regla 2]
 
+REQUERIMIENTO: [ID asociado en el documento o N/A]
 PRIORIDAD: [Alta/Media/Baja]
 COMPLEJIDAD: [Simple/Moderada/Compleja]
 

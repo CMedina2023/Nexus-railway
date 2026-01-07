@@ -33,14 +33,21 @@
             // Limpiar tabla
             previewTbody.innerHTML = '';
 
+
             // Agregar historias a la tabla
             data.stories.forEach((story, index) => {
                 const row = document.createElement('tr');
+                const reqId = story.requirement_id || '-';
+
                 row.innerHTML = `
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <input type="checkbox" class="story-checkbox" data-index="${index}" checked style="width: 18px; height: 18px; cursor: pointer;">
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--accent); text-align: center;">${story.index}</td>
+                    <!-- Columna ID Requerimiento -->
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        <input type="text" class="story-req-id-input" data-index="${index}" value="${Utils.escapeHtml(reqId)}" style="width: 100%; max-width: 100px; padding: 0.5rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.85rem;" placeholder="REQ-000">
+                    </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <input type="text" class="story-summary-input" data-index="${index}" value="${Utils.escapeHtml(story.summary)}" style="width: 100%; max-width: 300px; padding: 0.5rem; background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
                     </td>
@@ -95,7 +102,7 @@
             });
 
             // Inputs de edición rápida
-            document.querySelectorAll('.story-summary-input, .story-description-input, .story-priority-select').forEach(input => {
+            document.querySelectorAll('.story-summary-input, .story-description-input, .story-priority-select, .story-req-id-input').forEach(input => {
                 input.onchange = (e) => {
                     const index = parseInt(e.target.dataset.index);
                     if (state.currentData && state.currentData[index]) {
@@ -103,6 +110,7 @@
                         if (e.target.classList.contains('story-summary-input')) state.currentData[index].summary = val;
                         else if (e.target.classList.contains('story-description-input')) state.currentData[index].description = val;
                         else if (e.target.classList.contains('story-priority-select')) state.currentData[index].priority = val;
+                        else if (e.target.classList.contains('story-req-id-input')) state.currentData[index].requirement_id = val === '-' ? null : val;
                     }
                 };
             });
@@ -148,6 +156,8 @@
             document.getElementById('edit-story-description').value = story.description || '';
             document.getElementById('edit-story-issuetype').value = story.issuetype || 'Story';
             document.getElementById('edit-story-priority').value = story.priority || 'Medium';
+            const reqInput = document.getElementById('edit-story-requirement');
+            if (reqInput) reqInput.value = story.requirement_id || '';
 
             const modal = document.getElementById('edit-story-modal');
             if (modal) modal.style.display = 'flex';
@@ -172,6 +182,8 @@
             const description = document.getElementById('edit-story-description').value.trim();
             const issuetype = document.getElementById('edit-story-issuetype').value;
             const priority = document.getElementById('edit-story-priority').value;
+            const reqInput = document.getElementById('edit-story-requirement');
+            const reqId = reqInput ? reqInput.value.trim() : null;
 
             if (!summary || !description) {
                 window.showDownloadNotification('Por favor completa todos los campos requeridos', 'error');
@@ -182,6 +194,7 @@
             state.currentData[state.editingIndex].description = description;
             state.currentData[state.editingIndex].issuetype = issuetype;
             state.currentData[state.editingIndex].priority = priority;
+            if (reqId !== null) state.currentData[state.editingIndex].requirement_id = reqId;
 
             this.displayPreview({ stories: state.currentData, stories_count: state.currentData.length }, state);
             this.closeEditModal(state);

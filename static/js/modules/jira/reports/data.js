@@ -16,10 +16,21 @@
     // But since they are siblings, they will be attached to NexusModules.Jira.Reports
 
     async function initJiraReports() {
-        const hub = document.getElementById('report-hub');
-        const generationView = document.getElementById('report-generation-view');
-        if (hub) hub.style.display = 'block';
-        if (generationView) generationView.style.display = 'none';
+        // Ensure clean UI state when initializing/returning to the module
+        if (window.NexusModules.Jira.Reports.resetReportsToHub) {
+            window.NexusModules.Jira.Reports.resetReportsToHub();
+        } else {
+            // Fallback manual reset corresponding to UI logic
+            const hub = document.getElementById('report-hub');
+            const generationView = document.getElementById('report-generation-view');
+            const historyView = document.getElementById('report-history-view');
+            const reportSection = document.getElementById('jira-report-section');
+
+            if (hub) hub.style.display = 'block';
+            if (generationView) generationView.style.display = 'none';
+            if (historyView) historyView.style.display = 'none';
+            if (reportSection) reportSection.style.display = 'none';
+        }
 
         const statusCard = document.getElementById('jira-connection-status');
         const statusIcon = document.getElementById('connection-icon');

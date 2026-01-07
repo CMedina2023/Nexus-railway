@@ -178,7 +178,13 @@ class Database:
                             jira_issue_key TEXT,
                             created_at TEXT NOT NULL,
                             updated_at TEXT NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                            requirement_id TEXT,
+                            epic_id TEXT,
+                            feature_id TEXT,
+                            parent_story_id INTEGER,
+                            dependencies TEXT,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                            FOREIGN KEY (parent_story_id) REFERENCES user_stories(id)
                         )
                     '''
                 else:  # PostgreSQL
@@ -193,7 +199,13 @@ class Database:
                             jira_issue_key TEXT,
                             created_at TIMESTAMP NOT NULL,
                             updated_at TIMESTAMP NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                            requirement_id TEXT,
+                            epic_id TEXT,
+                            feature_id TEXT,
+                            parent_story_id INTEGER,
+                            dependencies TEXT,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                            FOREIGN KEY (parent_story_id) REFERENCES user_stories(id)
                         )
                     '''
                 
@@ -303,6 +315,34 @@ class Database:
                 
                 conn.execute(text(bulk_uploads_sql))
                 
+                # Tabla de Epics
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS epics (
+                        id VARCHAR(36) PRIMARY KEY,
+                        project_key VARCHAR(50) NOT NULL,
+                        title VARCHAR(200) NOT NULL,
+                        description TEXT,
+                        status VARCHAR(20) DEFAULT 'DRAFT',
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                # Tabla de Features
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS features (
+                        id VARCHAR(36) PRIMARY KEY,
+                        project_key VARCHAR(50) NOT NULL,
+                        epic_id VARCHAR(36),
+                        title VARCHAR(200) NOT NULL,
+                        description TEXT,
+                        status VARCHAR(20) DEFAULT 'DRAFT',
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL,
+                        FOREIGN KEY (epic_id) REFERENCES epics(id) ON DELETE SET NULL
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
                 # Índices para mejorar rendimiento
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)'))
@@ -316,78 +356,10 @@ class Database:
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_jira_reports_project ON jira_reports(project_key)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_user ON bulk_uploads(user_id)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_bulk_uploads_project ON bulk_uploads(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_epics_project ON epics(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_features_project ON features(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_features_epic ON features(epic_id)'))
                 
-                # Tabla de contextos de proyecto (Brain)
-                if self.is_sqlite:
-                    project_contexts_sql = '''
-                        CREATE TABLE IF NOT EXISTS project_contexts (
-                            id TEXT PRIMARY KEY,
-                            project_key TEXT NOT NULL,
-                            summary TEXT,
-                            glossary TEXT,
-                            business_rules TEXT,
-                            tech_constraints TEXT,
-                            version INTEGER DEFAULT 1,
-                            created_at TEXT NOT NULL,
-                            updated_at TEXT NOT NULL
-                        )
-                    '''
-                else:  # PostgreSQL
-                    project_contexts_sql = '''
-                        CREATE TABLE IF NOT EXISTS project_contexts (
-                            id TEXT PRIMARY KEY,
-                            project_key TEXT NOT NULL,
-                            summary TEXT,
-                            glossary JSONB,
-                            business_rules JSONB,
-                            tech_constraints JSONB,
-                            version INTEGER DEFAULT 1,
-                            created_at TIMESTAMP NOT NULL,
-                            updated_at TIMESTAMP NOT NULL
-                        )
-                    '''
-                conn.execute(text(project_contexts_sql))
-
-                # Tabla de documentos de proyecto
-                if self.is_sqlite:
-                    project_documents_sql = '''
-                        CREATE TABLE IF NOT EXISTS project_documents (
-                            id TEXT PRIMARY KEY,
-                            project_key TEXT NOT NULL,
-                            filename TEXT NOT NULL,
-                            file_path TEXT NOT NULL,
-                            file_type TEXT,
-                            status TEXT DEFAULT 'pending',
-                            content_hash TEXT,
-                            extracted_summary TEXT,
-                            error_message TEXT,
-                            upload_date TEXT NOT NULL,
-                            processed_at TEXT
-                        )
-                    '''
-                else:  # PostgreSQL
-                    project_documents_sql = '''
-                        CREATE TABLE IF NOT EXISTS project_documents (
-                            id TEXT PRIMARY KEY,
-                            project_key TEXT NOT NULL,
-                            filename TEXT NOT NULL,
-                            file_path TEXT NOT NULL,
-                            file_type TEXT,
-                            status TEXT DEFAULT 'pending',
-                            content_hash TEXT,
-                            extracted_summary TEXT,
-                            error_message TEXT,
-                            upload_date TIMESTAMP NOT NULL,
-                            processed_at TIMESTAMP
-                        )
-                    '''
-                conn.execute(text(project_documents_sql))
-
-                # Índices para Knowledge Base
-                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_contexts_key ON project_contexts(project_key)'))
-                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_documents_key ON project_documents(project_key)'))
-                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_documents_hash ON project_documents(content_hash)'))
-
                 conn.commit()
                 
             logger.info(f"Esquema de base de datos inicializado correctamente")
