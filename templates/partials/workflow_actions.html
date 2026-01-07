@@ -1,0 +1,64 @@
+<!-- Workflow Actions Container -->
+<div class="card mb-3 border-light shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="fas fa-tasks me-2"></i>Estado de Aprobación</h6>
+        <span id="workflow-status-badge" class="badge bg-secondary">DRAFT</span>
+    </div>
+    <div class="card-body">
+        <div id="workflow-actions-container" class="d-flex align-items-center justify-content-end gap-2">
+            <!-- Buttons will be injected here by workflow-manager.js -->
+            <small class="text-muted">Cargando estado...</small>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Acciones (Aprobar/Rechazar) -->
+<div class="modal fade" id="workflowActionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="workflowModalTitle">Confirmar Acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="workflowModalComment" class="form-label">Comentarios</label>
+                    <textarea class="form-control" id="workflowModalComment" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="workflowModalConfirm" onclick="workflowManager.handleModalConfirm()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Historial -->
+<div class="modal fade" id="workflowHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Historial de Aprobaciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                                <th>Usuario</th>
+                                <th>Comentarios</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workflowHistoryBody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

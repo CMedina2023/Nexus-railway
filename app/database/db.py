@@ -224,6 +224,9 @@ class Database:
                             jira_issue_key TEXT,
                             created_at TEXT NOT NULL,
                             updated_at TEXT NOT NULL,
+                            requirement_id TEXT,
+                            requirement_version TEXT,
+                            coverage_status TEXT,
                             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                         )
                     '''
@@ -239,11 +242,15 @@ class Database:
                             jira_issue_key TEXT,
                             created_at TIMESTAMP NOT NULL,
                             updated_at TIMESTAMP NOT NULL,
+                            requirement_id TEXT,
+                            requirement_version TEXT,
+                            coverage_status TEXT,
                             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                         )
                     '''
                 
                 conn.execute(text(test_cases_sql))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_test_cases_requirement ON test_cases(requirement_id)'))
                 
                 # Tabla de reportes creados en Jira
                 if self.is_sqlite:
@@ -343,7 +350,159 @@ class Database:
                     )
                 '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
 
-                # Índices para mejorar rendimiento
+                # ==========================================
+                # NUEVAS TABLAS (Integración Completa)
+                # ==========================================
+
+                # 1. Traceability & Requirements
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS requirements (
+                        id VARCHAR(36) PRIMARY KEY,
+                        project_id VARCHAR(50) NOT NULL,
+                        code VARCHAR(50) NOT NULL,
+                        title VARCHAR(200) NOT NULL,
+                        description TEXT,
+                        type VARCHAR(50) NOT NULL,
+                        priority VARCHAR(20) NOT NULL,
+                        status VARCHAR(20) DEFAULT 'DRAFT',
+                        source_document_id VARCHAR(36),
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS traceability_links (
+                        id VARCHAR(36) PRIMARY KEY,
+                        source_id VARCHAR(36) NOT NULL,
+                        source_type VARCHAR(50) NOT NULL,
+                        target_id VARCHAR(36) NOT NULL,
+                        target_type VARCHAR(50) NOT NULL,
+                        link_type VARCHAR(50) NOT NULL,
+                        created_by INTEGER,
+                        meta TEXT,
+                        created_at {} NOT NULL
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS requirement_coverages (
+                        id VARCHAR(36) PRIMARY KEY,
+                        requirement_id VARCHAR(36) NOT NULL,
+                        test_count INTEGER DEFAULT 0,
+                        story_count INTEGER DEFAULT 0,
+                        coverage_score FLOAT DEFAULT 0.0,
+                        status VARCHAR(20) DEFAULT 'UNCOVERED',
+                        last_updated {} NOT NULL,
+                        FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                # 2. Knowledge Base (Context & Documents)
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS project_contexts (
+                        id VARCHAR(36) PRIMARY KEY,
+                        project_key VARCHAR(50) NOT NULL,
+                        summary TEXT,
+                        glossary TEXT,
+                        business_rules TEXT,
+                        tech_constraints TEXT,
+                        version INTEGER DEFAULT 1,
+                        created_at {} NOT NULL,
+                        updated_at {} NOT NULL
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS project_documents (
+                        id VARCHAR(36) PRIMARY KEY,
+                        project_key VARCHAR(50) NOT NULL,
+                        filename VARCHAR(255) NOT NULL,
+                        file_path VARCHAR(512) NOT NULL,
+                        file_type VARCHAR(20),
+                        status VARCHAR(20) DEFAULT 'pending',
+                        content_hash VARCHAR(64),
+                        extracted_summary TEXT,
+                        error_message TEXT,
+                        upload_date {} NOT NULL,
+                        processed_at {}
+                    )
+                '''.format('TEXT' if self.is_sqlite else 'TIMESTAMP', 'TEXT' if self.is_sqlite else 'TIMESTAMP')))
+
+                # 3. Workflows
+                if self.is_sqlite:
+                    approval_workflows_sql = '''
+                        CREATE TABLE IF NOT EXISTS approval_workflows (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            artifact_type VARCHAR(50) NOT NULL,
+                            artifact_id INTEGER NOT NULL,
+                            current_status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+                            requester_id TEXT NOT NULL,
+                            reviewer_id TEXT,
+                            created_at TEXT,
+                            updated_at TEXT,
+                            UNIQUE(artifact_type, artifact_id),
+                            FOREIGN KEY (requester_id) REFERENCES users(id),
+                            FOREIGN KEY (reviewer_id) REFERENCES users(id)
+                        )
+                    '''
+                    approval_history_sql = '''
+                        CREATE TABLE IF NOT EXISTS approval_history (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            workflow_id INTEGER NOT NULL,
+                            previous_status VARCHAR(50) NOT NULL,
+                            new_status VARCHAR(50) NOT NULL,
+                            actor_id TEXT NOT NULL,
+                            action VARCHAR(50) NOT NULL,
+                            comments TEXT,
+                            detailed_snapshot TEXT,
+                            created_at TEXT,
+                            FOREIGN KEY (workflow_id) REFERENCES approval_workflows(id) ON DELETE CASCADE,
+                            FOREIGN KEY (actor_id) REFERENCES users(id)
+                        )
+                    '''
+                else: # PostgreSQL
+                    approval_workflows_sql = '''
+                        CREATE TABLE IF NOT EXISTS approval_workflows (
+                            id SERIAL PRIMARY KEY,
+                            artifact_type VARCHAR(50) NOT NULL,
+                            artifact_id INTEGER NOT NULL,
+                            current_status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+                            requester_id TEXT NOT NULL,
+                            reviewer_id TEXT,
+                            created_at TIMESTAMP,
+                            updated_at TIMESTAMP,
+                            UNIQUE(artifact_type, artifact_id),
+                            FOREIGN KEY (requester_id) REFERENCES users(id),
+                            FOREIGN KEY (reviewer_id) REFERENCES users(id)
+                        )
+                    '''
+                    approval_history_sql = '''
+                        CREATE TABLE IF NOT EXISTS approval_history (
+                            id SERIAL PRIMARY KEY,
+                            workflow_id INTEGER NOT NULL,
+                            previous_status VARCHAR(50) NOT NULL,
+                            new_status VARCHAR(50) NOT NULL,
+                            actor_id TEXT NOT NULL,
+                            action VARCHAR(50) NOT NULL,
+                            comments TEXT,
+                            detailed_snapshot JSONB,
+                            created_at TIMESTAMP,
+                            FOREIGN KEY (workflow_id) REFERENCES approval_workflows(id) ON DELETE CASCADE,
+                            FOREIGN KEY (actor_id) REFERENCES users(id)
+                        )
+                    '''
+
+                conn.execute(text(approval_workflows_sql))
+                conn.execute(text(approval_history_sql))
+
+                # CREATE INDEXES for new tables
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_requirements_project ON requirements(project_id)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_requirements_code ON requirements(code)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_traceability_source ON traceability_links(source_id, source_type)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_contexts_key ON project_contexts(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_documents_key ON project_documents(project_key)'))
+                conn.execute(text('CREATE INDEX IF NOT EXISTS idx_workflow_status ON approval_workflows(current_status)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)'))
                 conn.execute(text('CREATE INDEX IF NOT EXISTS idx_project_configs_key ON project_configs(project_key)'))

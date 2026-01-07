@@ -221,7 +221,7 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🔧 Infraestructura Compartida
 
-- [ ] **W1.1** - 🔧 Diseñar estados y transiciones de workflow
+- [x] **W1.1** - 🔧 Diseñar estados y transiciones de workflow
   - ⏱️ **2 días**
   - 🔗 Ninguna
   - **Entregables**:
@@ -231,7 +231,7 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Documento a crear**:
     - `docs/WORKFLOW_APPROVAL_DESIGN.md`
 
-- [ ] **W1.2** - 🔧 Crear modelos de workflow
+- [x] **W1.2** - 🔧 Crear modelos de workflow
   - ⏱️ **3 días**
   - 🔗 W1.1
   - **Archivos a crear**:
@@ -240,21 +240,21 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `app/models/approval.py`
     - `app/models/workflow_comment.py`
 
-- [ ] **W1.3** - 🔧 Crear migraciones de workflow
+- [x] **W1.3** - 🔧 Crear migraciones de workflow
   - ⏱️ **2 días**
   - 🔗 W1.2
   - **Archivos a crear**:
     - `migrations/add_workflow_tables.sql`
     - `migrations/rollback_workflow_tables.sql`
 
-- [ ] **W1.4** - 🔧 Implementar repositorios de workflow
+- [x] **W1.4** - 🔧 Implementar repositorios de workflow
   - ⏱️ **3 días**
   - 🔗 W1.3
   - **Archivos a crear**:
     - `app/database/repositories/workflow_repository.py`
     - `app/database/repositories/approval_repository.py`
 
-- [ ] **W1.5** - 🔧 Crear servicio de workflow
+- [x] **W1.5** - 🔧 Crear servicio de workflow
   - ⏱️ **4 días**
   - 🔗 W1.4
   - **Entregables**:
@@ -264,7 +264,7 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Archivos a crear**:
     - `app/services/workflow_service.py`
 
-- [ ] **W1.6** - 🔧 Crear API endpoints de workflow
+- [x] **W1.6** - 🔧 Crear API endpoints de workflow
   - ⏱️ **3 días**
   - 🔗 W1.5
   - **Entregables**:
@@ -276,7 +276,7 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Archivos a crear**:
     - `app/routes/workflow_routes.py`
 
-- [ ] **W1.7** - 🔧 Implementar UI de workflow
+- [x] **W1.7** - 🔧 Implementar UI de workflow
   - ⏱️ **5 días**
   - 🔗 W1.6
   - **Entregables**:
@@ -288,7 +288,7 @@ Proveer una **lista accionable de tareas** organizadas por:
     - `static/js/modules/workflow/workflow-manager.js`
     - `templates/partials/workflow_actions.html`
 
-- [ ] **W1.8** - 🔧 Implementar sistema de notificaciones
+- [x] **W1.8** - 🔧 Implementar sistema de notificaciones
   - ⏱️ **3 días**
   - 🔗 W1.7
   - **Entregables**:
