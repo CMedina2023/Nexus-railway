@@ -74,7 +74,7 @@ def split_document_into_chunks(text, max_chunk_size=None):
     return chunker.split_document_into_chunks(text, max_chunk_size)
 
 
-def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional'], skip_healing=False):
+def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba=['funcional', 'no_funcional'], requirement_id=None, skip_healing=False):
     try:
         api_key = Config.GOOGLE_API_KEY
         if not api_key:
@@ -234,6 +234,8 @@ FLUJO ESPECÍFICO:
 {flujo or 'Flujos generales del sistema'}
 HISTORIA DE USUARIO:
 {historia_chunk}
+REQUERIMIENTO ESPECÍFICO (ID):
+{requirement_id or 'N/A'}
 FRAGMENTO DEL DOCUMENTO A ANALIZAR ({i + 1}/{total_chunks}):
 {chunk}
 INSTRUCCIONES:

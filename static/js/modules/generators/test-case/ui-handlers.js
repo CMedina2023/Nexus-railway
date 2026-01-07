@@ -29,6 +29,10 @@
                 this.setupForm(testsForm);
             }
             this.setupUIHandlers();
+            // Cargar requerimientos al iniciar
+            if (TestUI.loadRequirements) {
+                TestUI.loadRequirements();
+            }
 
             // Setup DropZone
             Utils.setupDropZone('tests-drop-zone', 'tests-file', (file) => {

@@ -154,21 +154,21 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🧪 Casos de Prueba
 
-- [ ] **TC-T1.1** - 🧪 Agregar campo requirement_id a TestCase
+- [x] **TC-T1.1** - 🧪 Agregar campo requirement_id a TestCase
   - ⏱️ **1 día**
   - 🔗 T1.2
   - **Archivos a modificar**:
     - `app/models/test_case.py` (agregar campos: requirement_id, requirement_version, coverage_status)
     - `app/database/repositories/test_case_repository.py` (actualizar queries)
 
-- [ ] **TC-T1.2** - 🧪 Actualizar generador para capturar requirement_id
+- [x] **TC-T1.2** - 🧪 Actualizar generador para capturar requirement_id
   - ⏱️ **2 días**
   - 🔗 TC-T1.1
   - **Archivos a modificar**:
     - `app/backend/matrix/generator.py` (agregar parámetro requirement_id)
     - `static/js/modules/generators/test-case/test-case-generator.js`
 
-- [ ] **TC-T1.3** - 🧪 Integrar trazabilidad en UI de casos de prueba
+- [x] **TC-T1.3** - 🧪 Integrar trazabilidad en UI de casos de prueba
   - ⏱️ **3 días**
   - 🔗 T1.4, TC-T1.2
   - **Entregables**:

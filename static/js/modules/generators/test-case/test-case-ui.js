@@ -61,6 +61,9 @@
                         <span style="font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap;">${Utils.escapeHtml(testCase.categoria || '-')}</span>
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        ${this.renderCoverageStatus(testCase)}
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <select class="test-priority-select" data-index="${index}" style="padding: 0.5rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
                             <option value="High" ${testCase.priority === 'High' ? 'selected' : ''}>High</option>
                             <option value="Medium" ${testCase.priority === 'Medium' ? 'selected' : ''}>Medium</option>
@@ -261,18 +264,62 @@
             modal.style.display = 'flex';
         },
 
-        /**
-         * Cierra el modal de revisión
-         */
-        closeReviewModal() {
-            const modal = document.getElementById('tests-review-modal');
-            const iframe = document.getElementById('tests-html-viewer');
 
-            if (iframe && iframe.src) {
-                URL.revokeObjectURL(iframe.src);
-                iframe.src = '';
+
+        /**
+         * Carga los requerimientos disponibles en el selector
+         * @param {string} projectId - ID del proyecto actual
+         */
+        async loadRequirements(projectId = 'default') {
+            const select = document.getElementById('tests-requirement');
+            if (!select) return;
+
+            try {
+                // TODO: Obtener el project_id real del contexto
+                const response = await fetch(`/api/traceability/matrix/${projectId}`);
+                if (!response.ok) throw new Error('Error cargando requerimientos');
+
+                const data = await response.json();
+                const matrix = data.matrix || [];
+
+                // Limpiar opciones manteniendo la default
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+
+                matrix.forEach(item => {
+                    const req = item.requirement;
+                    const option = document.createElement('option');
+                    option.value = req.id;
+                    option.textContent = `${req.code} - ${req.title}`;
+                    select.appendChild(option);
+                });
+
+                // Si hay un requirement_id pre-seleccionado (por URL/hidden input), seleccionarlo
+                const hiddenInput = document.querySelector('input[name="requirement_id"]');
+                if (hiddenInput && hiddenInput.value) {
+                    select.value = hiddenInput.value;
+                    // Sincronizar el hidden input con el select si cambia
+                    select.onchange = () => { hiddenInput.value = select.value; };
+                }
+
+            } catch (error) {
+                console.warn('No se pudieron cargar los requerimientos:', error);
             }
-            if (modal) modal.style.display = 'none';
+        },
+
+        /**
+         * Renderiza el estado de cobertura en la tabla
+         */
+        renderCoverageStatus(testCase) {
+            if (testCase.requirement_id) {
+                return `<span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; background: rgba(59, 130, 246, 0.1); color: #3b82f6;" title="Vinculado al req: ${testCase.requirement_id}">
+                            <i class="fas fa-link"></i> Linked
+                        </span>`;
+            }
+            return `<span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; background: rgba(107, 114, 128, 0.1); color: var(--text-muted);" title="Sin traza">
+                        <i class="fas fa-unlink"></i> Unlinked
+                    </span>`;
         }
     };
 

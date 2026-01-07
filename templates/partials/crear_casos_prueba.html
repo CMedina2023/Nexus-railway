@@ -43,6 +43,24 @@
                     </div>
                 </div>
 
+                <!-- Requerimiento Asociado -->
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="tests-requirement"
+                        style="display: block; font-size: 0.95rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Requerimiento Asociado
+                        <span
+                            style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400; background: rgba(107, 114, 128, 0.1); padding: 0.15rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">Opcional</span>
+                    </label>
+                    <select id="tests-requirement" name="requirement_id" class="form-select"
+                        style="width: 100%; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.25rem; color: var(--text-primary); font-size: 0.95rem; transition: all 0.3s ease; font-family: inherit;">
+                        <option value="">-- Generar sin asociar requerimiento --</option>
+                        <!-- Se poblará dinámicamente -->
+                    </select>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">
+                        <i class="fas fa-link"></i> Vincula estos casos a un requerimiento específico para trazabilidad.
+                    </div>
+                </div>
+
                 <!-- Área -->
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label class="form-label" for="tests-area"
@@ -236,6 +254,9 @@
                             <th
                                 style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 130px;">
                                 Categoría</th>
+                            <th
+                                style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 100px;">
+                                Trazabilidad</th>
                             <th
                                 style="padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border); width: 120px;">
                                 Prioridad</th>

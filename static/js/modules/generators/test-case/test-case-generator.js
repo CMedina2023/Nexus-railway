@@ -19,10 +19,34 @@
      * Inicializa el generador de casos de prueba
      */
     TestCase.init = function () {
+        this.captureRequirementId();
         if (this.UIHandlers && typeof this.UIHandlers.init === 'function') {
             this.UIHandlers.init();
         } else {
             console.error('Test Case UIHandlers not found or invalid');
+        }
+    };
+
+    /**
+     * Captura el requirement_id de la URL y lo agrega al formulario
+     */
+    TestCase.captureRequirementId = function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const requirementId = urlParams.get('requirement_id');
+
+        if (requirementId) {
+            console.log('Requirement ID capturado:', requirementId);
+            const form = document.getElementById('tests-form');
+            if (form) {
+                let hiddenInput = form.querySelector('input[name="requirement_id"]');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'requirement_id';
+                    form.appendChild(hiddenInput);
+                }
+                hiddenInput.value = requirementId;
+            }
         }
     };
 

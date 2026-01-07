@@ -18,6 +18,9 @@ class TestCase:
         test_case_title: Título del caso de prueba
         test_case_content: Contenido completo del caso (JSON)
         jira_issue_key: Clave del issue en Jira (si se subió)
+        requirement_id: ID del requerimiento asociado (trazabilidad)
+        requirement_version: Versión del requerimiento asociado
+        coverage_status: Estado de cobertura del requerimiento
         created_at: Fecha de creación
         updated_at: Fecha de última actualización
     """
@@ -30,6 +33,9 @@ class TestCase:
         test_case_content: str,
         area: Optional[str] = None,
         jira_issue_key: Optional[str] = None,
+        requirement_id: Optional[str] = None,
+        requirement_version: Optional[str] = None,
+        coverage_status: Optional[str] = None,
         id: Optional[int] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None
@@ -41,6 +47,9 @@ class TestCase:
         self.test_case_title = test_case_title
         self.test_case_content = test_case_content  # JSON string
         self.jira_issue_key = jira_issue_key
+        self.requirement_id = requirement_id
+        self.requirement_version = requirement_version
+        self.coverage_status = coverage_status
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
     
@@ -54,6 +63,9 @@ class TestCase:
             'test_case_title': self.test_case_title,
             'test_case_content': self.test_case_content,
             'jira_issue_key': self.jira_issue_key,
+            'requirement_id': self.requirement_id,
+            'requirement_version': self.requirement_version,
+            'coverage_status': self.coverage_status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -69,6 +81,9 @@ class TestCase:
             test_case_title=data['test_case_title'],
             test_case_content=data['test_case_content'],
             jira_issue_key=data.get('jira_issue_key'),
+            requirement_id=data.get('requirement_id'),
+            requirement_version=data.get('requirement_version'),
+            coverage_status=data.get('coverage_status'),
             created_at=data.get('created_at'),
             updated_at=data.get('updated_at')
         )
