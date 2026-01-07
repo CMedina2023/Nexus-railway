@@ -18,39 +18,17 @@ from app.utils.document_chunker import DocumentChunker, ChunkingStrategy
 from app.services.validator import Validator
 
 from app.backend.matrix.parser import clean_text, clean_json_response, extract_stories_from_text
+from app.backend.matrix.matrix_prompts import HEALING_PROMPT_BATCH, get_generation_prompt
+from app.backend.matrix.case_normalizer import normalize_test_case
 
 logger = logging.getLogger(__name__)
 
 validator = Validator()
 
+
 # ----------------------------
-# Prompts de Calidad
+# Prompts de Calidad: Importados de matrix_prompts.py
 # ----------------------------
-HEALING_PROMPT_BATCH = """
-Eres un experto en Quality Assurance Senior. Tu tarea es CORREGIR y MEJORAR un grupo de casos de prueba que no cumplen con los estándares de calidad.
-
-ERRORES DETECTADOS POR EL VALIDADOR PARA ESTE LOTE:
-{batch_issues}
-
-CASOS A CORREGIR:
-{batch_cases}
-
-CONTEXTO DE LA HISTORIA:
-{story_context}
-
-TIPOS DE PRUEBA PERMITIDOS EN ESTA SOLICITUD:
-{allowed_types}
-
-REGLAS DE ORO PARA LA CORRECCIÓN:
-1. VERBOS DE ACCIÓN: Cada paso DEBE iniciar con un verbo de acción (ej: "Hacer clic", "Ingresar", "Seleccionar", "Validar").
-2. RESULTADOS PRECISOS: Los resultados esperados NO pueden ser vagos. Describe exactamente qué debe ocurrir en la interfaz o sistema.
-3. ESTRUCTURA: Mantén exactamente el mismo formato JSON.
-4. INTEGRIDAD: Devuelve TODOS los casos proporcionados, pero en su versión corregida.
-5. TIPO DE PRUEBA: NO CAMBIES el campo 'Tipo_de_prueba' de cada caso. Debe permanecer EXACTAMENTE igual al original. Solo se permiten estos tipos: {allowed_types}
-6. CAMPOS INMUTABLES: Los siguientes campos NO deben cambiar: 'id_caso_prueba', 'Tipo_de_prueba', 'historia_de_usuario', 'Nivel_de_prueba', 'Tipo_de_ejecucion', 'Ambiente', 'Ciclo', 'issuetype'.
-
-Responde ÚNICAMENTE con un array JSON que contenga los casos corregidos:
-"""
 
 
 # ----------------------------
@@ -88,84 +66,12 @@ def generar_matriz_test(contexto, flujo, historia, texto_documento, tipos_prueba
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(Config.GEMINI_MODEL)
 
-        # Definir prompt_base
-        prompt_base = """
-Eres un experto en Testing y Quality Assurance. Tu tarea es analizar requerimientos y generar casos de prueba completos.
-
-RESPUESTA REQUERIDA: Devuelve ÚNICAMENTE un array JSON válido con objetos de casos de prueba. Cada objeto debe tener exactamente estas claves:
-
-{
-  "id_caso_prueba": "TC001",
-  "titulo_caso_prueba": "Título descriptivo del caso",
-  "Descripcion": "Descripción detallada del caso de prueba",
-  "Precondiciones": "Requisitos previos para ejecutar la prueba",
-  "Tipo_de_prueba": "Funcional" o "No Funcional",
-  "Nivel_de_prueba": "UAT",
-  "Tipo_de_ejecucion": "Manual",
-  "Pasos": ["Paso 1", "Paso 2", "Paso 3"],
-  "Resultado_esperado": ["Resultado esperado 1", "Resultado esperado 2"],
-  "Categoria": "Categoría según el tipo de prueba",
-  "Ambiente": "QA",
-  "Ciclo": "Ciclo 1",
-  "issuetype": "Test Case",
-  "Prioridad": "Alta/Media/Baja",
-  "historia_de_usuario": "Referencia a la historia de usuario"
-}
-
-CATEGORÍAS VÁLIDAS:
-- Funcional: "Flujo Principal", "Flujos Alternativos", "Casos Límite", "Casos de Error"
-- No Funcional: "Rendimiento", "Seguridad", "Usabilidad", "Compatibilidad", "Confiabilidad"
-
-REGLAS CRÍTICAS PARA EL TÍTULO (titulo_caso_prueba):
-⚠️ El título DEBE ser ESPECÍFICO y DESCRIPTIVO. Describe claramente QUÉ se está probando.
-⚠️ NUNCA uses textos genéricos como "Título descriptivo del caso", "Caso de prueba", "Por definir", etc.
-⚠️ El título debe tener entre 10 y 100 caracteres y resumir el objetivo del caso.
-⚠️ Ejemplos BUENOS: "Validar inicio de sesión con credenciales correctas", "Verificar mensaje de error con email inválido"
-⚠️ Ejemplos MALOS: "Caso de prueba 1", "Prueba", "Por definir"
-
-IMPORTANTE: Responde SOLO con el array JSON, sin texto adicional antes o después.
-        """
-
-        # Construir prompt específico según tipos seleccionados
-        incluir_funcionales = "funcional" in tipos_prueba
-        incluir_no_funcionales = "no_funcional" in tipos_prueba
-
-        if incluir_funcionales and incluir_no_funcionales:
-            prompt_tipos = """
-GENERA CASOS FUNCIONALES Y NO FUNCIONALES:
-
-FUNCIONALES (no tengas un limite de casos generados, siempre y cuando el documento se preste para hacerlo):
-- Flujos principales y alternativos
-- Validaciones de campos y datos
-- Casos límite y condiciones borde
-- Manejo de errores y excepciones
-
-NO FUNCIONALES (no tengas un limite de casos generados, siempre y cuando el documento se preste para hacerlo):
-- Rendimiento y carga
-- Seguridad y autorización
-- Usabilidad y experiencia de usuario
-- Compatibilidad entre sistemas
-- Confiabilidad y disponibilidad
-            """
-        elif incluir_funcionales:
-            prompt_tipos = """
-GENERA SOLO CASOS FUNCIONALES (no tengas un limite de casos generados, siempre y cuando el documento se preste para hacerlo):
-- Todos los flujos principales
-- Flujos alternativos y de excepción
-- Validación exhaustiva de datos
-- Casos límite y condiciones extremas
-- Manejo completo de errores
-- Estados del sistema y transiciones
-            """
-        else:
-            prompt_tipos = """
-GENERA SOLO CASOS NO FUNCIONALES (no tengas un limite de casos generados, siempre y cuando el documento se preste para hacerlo):
-- Rendimiento bajo diferentes cargas
-- Seguridad y vectores de ataque
-- Usabilidad en diferentes contextos
-- Compatibilidad con múltiples entornos
-- Confiabilidad y recuperación ante fallos
-            """
+        # Determinar tipo de prompt
+        prompt_type = "mixed"
+        if "funcional" in tipos_prueba and "no_funcional" not in tipos_prueba:
+            prompt_type = "funcional"
+        elif "no_funcional" in tipos_prueba and "funcional" not in tipos_prueba:
+            prompt_type = "no_funcional"
 
         # Extraer historias del documento
         historias = extract_stories_from_text(texto_documento)
@@ -226,26 +132,16 @@ GENERA SOLO CASOS NO FUNCIONALES (no tengas un limite de casos generados, siempr
             chunk = clean_text(chunk)
             logger.debug(f"Tamaño del chunk limpio: {len(chunk)} caracteres")
 
-            prompt_completo = f"""{prompt_base}
-{prompt_tipos}
-CONTEXTO DEL SISTEMA:
-{contexto or 'Sistema de software a ser probado'}
-FLUJO ESPECÍFICO:
-{flujo or 'Flujos generales del sistema'}
-HISTORIA DE USUARIO:
-{historia_chunk}
-REQUERIMIENTO ESPECÍFICO (ID):
-{requirement_id or 'N/A'}
-FRAGMENTO DEL DOCUMENTO A ANALIZAR ({i + 1}/{total_chunks}):
-{chunk}
-INSTRUCCIONES:
-1. Analiza este fragmento del documento
-2. Genera casos de prueba específicos para el contenido encontrado
-3. Asegúrate de que cada caso sea único y tenga valor específico
-4. Los pasos deben ser claros y ejecutables
-5. Los resultados esperados deben ser verificables
-6. Usa '{historia_chunk}' como valor para el campo 'historia_de_usuario' en cada caso
-Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
+            prompt_completo = get_generation_prompt(
+                prompt_type=prompt_type,
+                context=contexto,
+                flow=flujo,
+                story=historia_chunk,
+                requirement_id=requirement_id,
+                chunk=chunk,
+                i=i+1,
+                total=total_chunks
+            )
             logger.debug(f"Prompt enviado (primeros 500 caracteres): {prompt_completo[:500]}...")
 
             # Normalizar tipos_prueba ANTES de la función interna para que esté disponible en el scope del healing
@@ -292,54 +188,9 @@ Responde ÚNICAMENTE con el array JSON de casos de prueba:"""
                 if len(cases_chunk) == 0:
                     raise ValueError("No se generaron casos válidos después del filtrado")
                 
-                # Normalizar casos
+                # Normalizar casos usando el helper externo
                 for j, case in enumerate(cases_chunk):
-                    if not case.get('id_caso_prueba'):
-                        case['id_caso_prueba'] = f"TC{len(all_cases) + j + 1:03d}"
-                    case['historia_de_usuario'] = historia_chunk
-                    
-                    # Manejar cada campo con lógica específica
-                    # TÍTULO: Generar un título significativo basado en descripción o tipo
-                    titulo = case.get('titulo_caso_prueba', '')
-                    if not titulo or titulo.strip() == '' or 'por definir' in titulo.lower() or 'título descriptivo' in titulo.lower():
-                        # Intentar generar título desde descripción
-                        descripcion = case.get('Descripcion', '')
-                        if descripcion and descripcion.strip() and 'por definir' not in descripcion.lower():
-                            # Usar primeros 60 caracteres de la descripción como título
-                            titulo = descripcion[:60].strip()
-                            if len(descripcion) > 60:
-                                titulo += '...'
-                        else:
-                            # Generar título basado en tipo de prueba y categoría
-                            tipo_prueba = case.get('Tipo_de_prueba', 'Funcional')
-                            categoria = case.get('Categoria', '')
-                            if categoria:
-                                titulo = f"Validar {categoria} - {tipo_prueba}"
-                            else:
-                                titulo = f"Caso de prueba {tipo_prueba} - {case['id_caso_prueba']}"
-                        case['titulo_caso_prueba'] = titulo
-                    
-                    # OTROS CAMPOS: Usar placeholders solo si es necesario
-                    if not case.get('Descripcion') or not case['Descripcion']:
-                        case['Descripcion'] = f"Verificar funcionalidad según requerimientos"
-                    if not case.get('Precondiciones') or not case['Precondiciones']:
-                        case['Precondiciones'] = "Sistema configurado y usuario autenticado"
-                    if not case.get('Tipo_de_prueba') or not case['Tipo_de_prueba']:
-                        case['Tipo_de_prueba'] = "Funcional"
-                    
-                    # PASOS Y RESULTADOS: Asegurar formato de lista
-                    if not isinstance(case.get('Pasos'), list):
-                        pasos = case.get('Pasos', '')
-                        if pasos:
-                            case['Pasos'] = [str(pasos)]
-                        else:
-                            case['Pasos'] = ["Ejecutar la funcionalidad especificada"]
-                    if not isinstance(case.get('Resultado_esperado'), list):
-                        resultado = case.get('Resultado_esperado', '')
-                        if resultado:
-                            case['Resultado_esperado'] = [str(resultado)]
-                        else:
-                            case['Resultado_esperado'] = ["El sistema responde correctamente según especificación"]
+                    cases_chunk[j] = normalize_test_case(case, j, len(all_cases), historia_chunk)
                 
                 return cases_chunk
             

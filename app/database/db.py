@@ -227,6 +227,9 @@ class Database:
                             requirement_id TEXT,
                             requirement_version TEXT,
                             coverage_status TEXT,
+                            approval_status TEXT DEFAULT 'pending',
+                            approved_by INTEGER,
+                            approved_at TEXT,
                             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                         )
                     '''
@@ -245,6 +248,9 @@ class Database:
                             requirement_id TEXT,
                             requirement_version TEXT,
                             coverage_status TEXT,
+                            approval_status VARCHAR(20) DEFAULT 'pending',
+                            approved_by INTEGER,
+                            approved_at TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                         )
                     '''

@@ -300,26 +300,26 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🧪 Casos de Prueba
 
-- [ ] **TC-W1.1** - 🧪 Agregar campo approval_status a TestCase
+- [x] **TC-W1.1** - 🧪 Agregar campo approval_status a TestCase
   - ⏱️ **1 día**
   - 🔗 W1.3
   - **Archivos a modificar**:
     - `app/models/test_case.py` (agregar: approval_status, approved_by, approved_at)
     - `app/database/repositories/test_case_repository.py`
 
-- [ ] **TC-W1.2** - 🧪 Modificar generador para estado DRAFT inicial
+- [x] **TC-W1.2** - 🧪 Modificar generador para estado DRAFT inicial
   - ⏱️ **1 día**
   - 🔗 TC-W1.1
   - **Archivos a modificar**:
     - `app/backend/matrix/generator.py` (setear approval_status = DRAFT al crear)
 
-- [ ] **TC-W1.3** - 🧪 Bloquear subida a Jira si no está APPROVED
+- [x] **TC-W1.3** - 🧪 Bloquear subida a Jira si no está APPROVED
   - ⏱️ **2 días**
   - 🔗 TC-W1.2, W1.6
   - **Archivos a modificar**:
     - `static/js/modules/generators/test-case/test-case-jira.js` (validar estado antes de subir)
 
-- [ ] **TC-W1.4** - 🧪 Integrar UI de workflow en casos de prueba
+- [x] **TC-W1.4** - 🧪 Integrar UI de workflow en casos de prueba
   - ⏱️ **2 días**
   - 🔗 W1.7, TC-W1.3
   - **Entregables**:

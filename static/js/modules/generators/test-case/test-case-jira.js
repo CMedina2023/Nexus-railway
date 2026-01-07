@@ -68,10 +68,23 @@
             }
 
             // Historias seleccionadas
-            const selectedTests = Array.from(selected).map(cb => {
+            const selectedTestsRaw = Array.from(selected).map(cb => {
                 const index = parseInt(cb.dataset.index);
                 return window.currentTestsData[index];
             });
+
+            // TC-W1.3 - Bloquear subida si no está APPROVED
+            const selectedTests = selectedTestsRaw.filter(t => t.approval_status === 'approved');
+            const unapprovedCount = selectedTestsRaw.length - selectedTests.length;
+
+            if (unapprovedCount > 0) {
+                if (selectedTests.length === 0) {
+                    window.showDownloadNotification('Solo se pueden subir casos con estado Aprobado (APPROVED).', 'error');
+                    return;
+                }
+                window.showDownloadNotification(`Se han omitido ${unapprovedCount} casos que no están aprobados.`, 'warning');
+            }
+
             window.selectedTestsForUpload = selectedTests;
 
             const modal = document.getElementById('jira-upload-tests-modal');

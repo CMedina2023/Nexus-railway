@@ -49,8 +49,9 @@ class TestCaseRepository:
             cursor.execute(f'''
                 INSERT INTO test_cases (
                     user_id, project_key, area, test_case_title, test_case_content,
-                    jira_issue_key, created_at, updated_at
-                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                    jira_issue_key, requirement_id, requirement_version, coverage_status,
+                    approval_status, approved_by, approved_at, created_at, updated_at
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 test_case.user_id,
                 test_case.project_key,
@@ -58,6 +59,12 @@ class TestCaseRepository:
                 test_case.test_case_title,
                 test_case.test_case_content,
                 test_case.jira_issue_key,
+                test_case.requirement_id,
+                test_case.requirement_version,
+                test_case.coverage_status,
+                test_case.approval_status,
+                test_case.approved_by,
+                test_case.approved_at,
                 test_case.created_at,
                 test_case.updated_at
             ))
@@ -86,7 +93,8 @@ class TestCaseRepository:
             
             cursor.execute(f'''
                 SELECT id, user_id, project_key, area, test_case_title, test_case_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, requirement_id, requirement_version, coverage_status,
+                       approval_status, approved_by, approved_at, created_at, updated_at
                 FROM test_cases
                 WHERE id = {placeholder}
             ''', (test_case_id,))
@@ -119,7 +127,8 @@ class TestCaseRepository:
             
             query = f'''
                 SELECT id, user_id, project_key, area, test_case_title, test_case_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, requirement_id, requirement_version, coverage_status,
+                       approval_status, approved_by, approved_at, created_at, updated_at
                 FROM test_cases
                 WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
@@ -152,7 +161,8 @@ class TestCaseRepository:
         try:
             query = '''
                 SELECT id, user_id, project_key, area, test_case_title, test_case_content,
-                       jira_issue_key, created_at, updated_at
+                       jira_issue_key, requirement_id, requirement_version, coverage_status,
+                       approval_status, approved_by, approved_at, created_at, updated_at
                 FROM test_cases
                 ORDER BY created_at DESC
             '''
@@ -232,12 +242,20 @@ class TestCaseRepository:
             cursor.execute(f'''
                 UPDATE test_cases
                 SET test_case_title = {placeholder}, test_case_content = {placeholder}, jira_issue_key = {placeholder},
+                    requirement_id = {placeholder}, requirement_version = {placeholder}, coverage_status = {placeholder},
+                    approval_status = {placeholder}, approved_by = {placeholder}, approved_at = {placeholder},
                     updated_at = {placeholder}
                 WHERE id = {placeholder}
             ''', (
                 test_case.test_case_title,
                 test_case.test_case_content,
                 test_case.jira_issue_key,
+                test_case.requirement_id,
+                test_case.requirement_version,
+                test_case.coverage_status,
+                test_case.approval_status,
+                test_case.approved_by,
+                test_case.approved_at,
                 test_case.updated_at,
                 test_case.id
             ))
@@ -309,8 +327,14 @@ class TestCaseRepository:
             test_case_title=row[4],
             test_case_content=row[5],
             jira_issue_key=row[6],
-            created_at=parse_datetime_field(row[7]),
-            updated_at=parse_datetime_field(row[8])
+            requirement_id=row[7],
+            requirement_version=row[8],
+            coverage_status=row[9],
+            approval_status=row[10],
+            approved_by=row[11],
+            approved_at=parse_datetime_field(row[12]),
+            created_at=parse_datetime_field(row[13]),
+            updated_at=parse_datetime_field(row[14])
         )
 
 

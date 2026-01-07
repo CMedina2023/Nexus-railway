@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 
 
 class TestCase:
+    
     """
     Representa un caso de prueba generado por un usuario
     
@@ -21,6 +22,9 @@ class TestCase:
         requirement_id: ID del requerimiento asociado (trazabilidad)
         requirement_version: Versión del requerimiento asociado
         coverage_status: Estado de cobertura del requerimiento
+        approval_status: Estado de aprobación (pending, approved, rejected)
+        approved_by: ID del usuario que aprobó/rechazó
+        approved_at: Fecha de aprobación/rechazo
         created_at: Fecha de creación
         updated_at: Fecha de última actualización
     """
@@ -36,6 +40,9 @@ class TestCase:
         requirement_id: Optional[str] = None,
         requirement_version: Optional[str] = None,
         coverage_status: Optional[str] = None,
+        approval_status: Optional[str] = 'pending',
+        approved_by: Optional[int] = None,
+        approved_at: Optional[datetime] = None,
         id: Optional[int] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None
@@ -50,6 +57,9 @@ class TestCase:
         self.requirement_id = requirement_id
         self.requirement_version = requirement_version
         self.coverage_status = coverage_status
+        self.approval_status = approval_status
+        self.approved_by = approved_by
+        self.approved_at = approved_at
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
     
@@ -66,6 +76,9 @@ class TestCase:
             'requirement_id': self.requirement_id,
             'requirement_version': self.requirement_version,
             'coverage_status': self.coverage_status,
+            'approval_status': self.approval_status,
+            'approved_by': self.approved_by,
+            'approved_at': self.approved_at.isoformat() if self.approved_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
@@ -84,6 +97,9 @@ class TestCase:
             requirement_id=data.get('requirement_id'),
             requirement_version=data.get('requirement_version'),
             coverage_status=data.get('coverage_status'),
+            approval_status=data.get('approval_status'),
+            approved_by=data.get('approved_by'),
+            approved_at=data.get('approved_at'),
             created_at=data.get('created_at'),
             updated_at=data.get('updated_at')
         )
