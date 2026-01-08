@@ -364,7 +364,7 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 🔧 Infraestructura Compartida
 
-- [ ] **V1.1** - 🔧 Diseñar modelo de versionado
+- [x] **V1.1** - 🔧 Diseñar modelo de versionado
   - ⏱️ **2 días**
   - 🔗 Ninguna
   - **Entregables**:
@@ -374,21 +374,21 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Documento a crear**:
     - `docs/VERSIONING_STRATEGY.md`
 
-- [ ] **V1.2** - 🔧 Crear modelos de versionado
+- [x] **V1.2** - 🔧 Crear modelos de versionado
   - ⏱️ **3 días**
   - 🔗 V1.1
   - **Archivos a crear**:
     - `app/models/artifact_version.py`
     - `app/models/change_log.py`
 
-- [ ] **V1.3** - 🔧 Crear migraciones de versionado
+- [x] **V1.3** - 🔧 Crear migraciones de versionado
   - ⏱️ **2 días**
   - 🔗 V1.2
   - **Archivos a crear**:
     - `migrations/add_versioning_tables.sql`
     - `migrations/rollback_versioning_tables.sql`
 
-- [ ] **V1.4** - 🔧 Implementar repositorio de versiones
+- [x] **V1.4** - 🔧 Implementar repositorio de versiones
   - ⏱️ **4 días**
   - 🔗 V1.3
   - **Entregables**:
@@ -399,13 +399,13 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Archivos a crear**:
     - `app/database/repositories/version_repository.py`
 
-- [ ] **V1.5** - 🔧 Crear servicio de versionado
+- [x] **V1.5** - 🔧 Crear servicio de versionado
   - ⏱️ **3 días**
   - 🔗 V1.4
   - **Archivos a crear**:
     - `app/services/version_service.py`
 
-- [ ] **V1.6** - 🔧 Crear API endpoints de versionado
+- [x] **V1.6** - 🔧 Crear API endpoints de versionado
   - ⏱️ **3 días**
   - 🔗 V1.5
   - **Entregables**:
@@ -416,7 +416,7 @@ Proveer una **lista accionable de tareas** organizadas por:
   - **Archivos a crear**:
     - `app/routes/version_routes.py`
 
-- [ ] **V1.7** - 🔧 Implementar UI de versionado
+- [x] **V1.7** - 🔧 Implementar UI de versionado
   - ⏱️ **4 días**
   - 🔗 V1.6
   - **Entregables**:
