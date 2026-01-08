@@ -330,26 +330,26 @@ Proveer una **lista accionable de tareas** organizadas por:
 
 #### 📖 Historias de Usuario
 
-- [ ] **US-W1.1** - 📖 Agregar campo approval_status a UserStory
+- [x] **US-W1.1** - 📖 Agregar campo approval_status a UserStory
   - ⏱️ **1 día**
   - 🔗 W1.3
   - **Archivos a modificar**:
     - `app/models/user_story.py` (agregar: approval_status, approved_by, approved_at)
     - `app/database/repositories/user_story_repository.py`
 
-- [ ] **US-W1.2** - 📖 Modificar generador para estado DRAFT inicial
+- [x] **US-W1.2** - 📖 Modificar generador para estado DRAFT inicial
   - ⏱️ **1 día**
   - 🔗 US-W1.1
   - **Archivos a modificar**:
     - `app/backend/story_generator.py` (setear approval_status = DRAFT al crear)
 
-- [ ] **US-W1.3** - 📖 Bloquear subida a Jira si no está APPROVED
+- [x] **US-W1.3** - 📖 Bloquear subida a Jira si no está APPROVED
   - ⏱️ **2 días**
   - 🔗 US-W1.2, W1.6
   - **Archivos a modificar**:
     - `static/js/modules/generators/story/story-jira.js` (validar estado antes de subir)
 
-- [ ] **US-W1.4** - 📖 Integrar UI de workflow en historias
+- [x] **US-W1.4** - 📖 Integrar UI de workflow en historias
   - ⏱️ **2 días**
   - 🔗 W1.7, US-W1.3
   - **Entregables**:

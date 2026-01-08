@@ -18,6 +18,9 @@ class UserStory:
         story_title: Título de la historia
         story_content: Contenido completo de la historia (JSON)
         jira_issue_key: Clave del issue en Jira (si se subió)
+        approval_status: Estado de aprobación (pending, approved, rejected)
+        approved_by: ID del usuario que aprobó/rechazó
+        approved_at: Fecha de aprobación/rechazo
         created_at: Fecha de creación
         updated_at: Fecha de última actualización
     """
@@ -30,6 +33,9 @@ class UserStory:
         story_content: str,
         area: Optional[str] = None,
         jira_issue_key: Optional[str] = None,
+        approval_status: Optional[str] = 'pending',
+        approved_by: Optional[int] = None,
+        approved_at: Optional[datetime] = None,
         id: Optional[int] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -46,6 +52,9 @@ class UserStory:
         self.story_title = story_title
         self.story_content = story_content  # JSON string
         self.jira_issue_key = jira_issue_key
+        self.approval_status = approval_status
+        self.approved_by = approved_by
+        self.approved_at = approved_at
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
         
@@ -66,6 +75,9 @@ class UserStory:
             'story_title': self.story_title,
             'story_content': self.story_content,
             'jira_issue_key': self.jira_issue_key,
+            'approval_status': self.approval_status,
+            'approved_by': self.approved_by,
+            'approved_at': self.approved_at.isoformat() if self.approved_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'requirement_id': self.requirement_id,
@@ -86,6 +98,9 @@ class UserStory:
             story_title=data['story_title'],
             story_content=data['story_content'],
             jira_issue_key=data.get('jira_issue_key'),
+            approval_status=data.get('approval_status'),
+            approved_by=data.get('approved_by'),
+            approved_at=data.get('approved_at'),
             created_at=data.get('created_at'),
             updated_at=data.get('updated_at'),
             requirement_id=data.get('requirement_id'),

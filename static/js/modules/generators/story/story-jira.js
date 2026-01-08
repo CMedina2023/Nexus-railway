@@ -56,10 +56,26 @@
                 return;
             }
 
-            const selectedStories = Array.from(selected).map(cb => {
+            const selectedStoriesRaw = Array.from(selected).map(cb => {
                 const index = parseInt(cb.dataset.index);
                 return window.currentStoriesData[index];
             });
+
+            // US-W1.3 - Bloquear subida a Jira si no está APPROVED
+            // Validamos tanto mayúsculas como minúsculas para robustez
+            const selectedStories = selectedStoriesRaw.filter(s =>
+                s.approval_status && s.approval_status.toUpperCase() === 'APPROVED'
+            );
+            const unapprovedCount = selectedStoriesRaw.length - selectedStories.length;
+
+            if (unapprovedCount > 0) {
+                if (selectedStories.length === 0) {
+                    window.showDownloadNotification('Solo se pueden subir historias con estado Aprobado (APPROVED).', 'error');
+                    return;
+                }
+                window.showDownloadNotification(`Se han omitido ${unapprovedCount} historias que no están aprobadas.`, 'warning');
+            }
+
             window.selectedStoriesForUpload = selectedStories;
 
             try {

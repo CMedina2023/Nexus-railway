@@ -58,6 +58,12 @@
                         <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 500; background: rgba(59, 130, 246, 0.2); color: var(--accent);">${story.issuetype}</span>
                     </td>
                     <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        ${this.renderApprovalStatus(story, index)}
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                        ${this.renderApprovalActions(story, index)}
+                    </td>
+                    <td style="padding: 1rem; border-bottom: 1px solid var(--border);">
                         <select class="story-priority-select" data-index="${index}" style="padding: 0.5rem; background: var(--secondary-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-family: inherit; font-size: 0.9rem;">
                             <option value="High" ${story.priority === 'High' ? 'selected' : ''}>High</option>
                             <option value="Medium" ${story.priority === 'Medium' ? 'selected' : ''}>Medium</option>
@@ -231,6 +237,95 @@
                 iframe.src = '';
             }
             if (modal) modal.style.display = 'none';
+        },
+
+        /**
+         * Renderiza el estado de aprobación visual
+         */
+        renderApprovalStatus(story) {
+            const status = story.approval_status || 'DRAFT'; // Default to DRAFT if undefined
+            // Convert to uppercase for consistent handling
+            const statusUpper = status.toUpperCase();
+
+            let style = '';
+            let icon = '';
+            let text = statusUpper;
+
+            switch (statusUpper) {
+                case 'APPROVED':
+                    style = 'background: rgba(16, 185, 129, 0.2); color: #10b981;';
+                    icon = '<i class="fas fa-check-circle"></i>';
+                    break;
+                case 'REJECTED':
+                    style = 'background: rgba(239, 68, 68, 0.2); color: #ef4444;';
+                    icon = '<i class="fas fa-times-circle"></i>';
+                    break;
+                case 'PENDING_REVIEW':
+                    style = 'background: rgba(245, 158, 11, 0.2); color: #f59e0b;';
+                    icon = '<i class="fas fa-clock"></i>';
+                    text = 'REVIEW';
+                    break;
+                default: // DRAFT
+                    style = 'background: rgba(107, 114, 128, 0.2); color: var(--text-muted);';
+                    icon = '<i class="fas fa-pen"></i>';
+                    break;
+            }
+
+            return `<span class="badge-approval" style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; ${style}">
+                        ${icon} ${text}
+                    </span>`;
+        },
+
+        /**
+         * Renderiza los botones de acción del workflow
+         */
+        renderApprovalActions(story, index) {
+            const status = (story.approval_status || 'DRAFT').toUpperCase();
+
+            // Si ya está aprobado, solo mostramos opción de revertir o rechazar (si aplica)
+            if (status === 'APPROVED') {
+                return `
+                    <button class="btn-workflow-action btn-reject" onclick="NexusModules.Generators.StoryUI.setStoryStatus(${index}, 'REJECTED')" title="Rechazar" style="border:none; background:transparent; cursor:pointer; color:#ef4444;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="btn-workflow-action btn-reset" onclick="NexusModules.Generators.StoryUI.setStoryStatus(${index}, 'DRAFT')" title="Volver a Draft" style="border:none; background:transparent; cursor:pointer; color:var(--text-muted);">
+                         <i class="fas fa-undo"></i>
+                    </button>
+                `;
+            }
+
+            return `
+                <div class="workflow-actions-group" style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="btn-workflow-action btn-approve" onclick="NexusModules.Generators.StoryUI.setStoryStatus(${index}, 'APPROVED')" title="Aprobar" style="border:none; background:transparent; cursor:pointer; color:#10b981;">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn-workflow-action btn-reject" onclick="NexusModules.Generators.StoryUI.setStoryStatus(${index}, 'REJECTED')" title="Rechazar" style="border:none; background:transparent; cursor:pointer; color:#ef4444;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        },
+
+        /**
+         * Actualiza el estado de aprobación de una historia
+         */
+        setStoryStatus(index, newStatus) {
+            // Actualizar estado localmente
+            if (window.currentStoriesData && window.currentStoriesData[index]) {
+                window.currentStoriesData[index].approval_status = newStatus;
+
+                // Si es aprobado, setear metadata
+                if (newStatus === 'APPROVED') {
+                    window.currentStoriesData[index].approved_at = new Date().toISOString();
+                }
+
+                // Refrescar tabla (re-render)
+                // Necesitamos el 'state' original o reconstruirlo mínimamente
+                this.displayPreview({
+                    stories: window.currentStoriesData,
+                    stories_count: window.currentStoriesData.length
+                }, { currentData: window.currentStoriesData });
+            }
         }
     };
 

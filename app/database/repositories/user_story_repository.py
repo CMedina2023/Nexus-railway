@@ -51,8 +51,9 @@ class UserStoryRepository:
                 INSERT INTO user_stories (
                     user_id, project_key, area, story_title, story_content,
                     jira_issue_key, created_at, updated_at,
-                    requirement_id, epic_id, feature_id, parent_story_id, dependencies
-                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                    requirement_id, epic_id, feature_id, parent_story_id, dependencies,
+                    approval_status, approved_by, approved_at
+                ) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', (
                 story.user_id,
                 story.project_key,
@@ -66,7 +67,10 @@ class UserStoryRepository:
                 story.epic_id,
                 story.feature_id,
                 story.parent_story_id,
-                story.dependencies
+                story.dependencies,
+                story.approval_status,
+                story.approved_by,
+                story.approved_at
             ))
             
             story.id = cursor.lastrowid
@@ -94,7 +98,8 @@ class UserStoryRepository:
             cursor.execute(f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
                        jira_issue_key, created_at, updated_at,
-                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies,
+                       approval_status, approved_by, approved_at
                 FROM user_stories
                 WHERE id = {placeholder}
             ''', (story_id,))
@@ -128,7 +133,8 @@ class UserStoryRepository:
             query = f'''
                 SELECT id, user_id, project_key, area, story_title, story_content,
                        jira_issue_key, created_at, updated_at,
-                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies,
+                       approval_status, approved_by, approved_at
                 FROM user_stories
                 WHERE user_id = {placeholder}
                 ORDER BY created_at DESC
@@ -162,7 +168,8 @@ class UserStoryRepository:
             query = '''
                 SELECT id, user_id, project_key, area, story_title, story_content,
                        jira_issue_key, created_at, updated_at,
-                       requirement_id, epic_id, feature_id, parent_story_id, dependencies
+                       requirement_id, epic_id, feature_id, parent_story_id, dependencies,
+                       approval_status, approved_by, approved_at
                 FROM user_stories
                 ORDER BY created_at DESC
             '''
@@ -244,7 +251,8 @@ class UserStoryRepository:
                 SET story_title = {placeholder}, story_content = {placeholder}, jira_issue_key = {placeholder},
                     updated_at = {placeholder},
                     requirement_id = {placeholder}, epic_id = {placeholder}, feature_id = {placeholder},
-                    parent_story_id = {placeholder}, dependencies = {placeholder}
+                    parent_story_id = {placeholder}, dependencies = {placeholder},
+                    approval_status = {placeholder}, approved_by = {placeholder}, approved_at = {placeholder}
                 WHERE id = {placeholder}
             ''', (
                 story.story_title,
@@ -256,6 +264,9 @@ class UserStoryRepository:
                 story.feature_id,
                 story.parent_story_id,
                 story.dependencies,
+                story.approval_status,
+                story.approved_by,
+                story.approved_at,
                 story.id
             ))
             
@@ -325,6 +336,9 @@ class UserStoryRepository:
             feature_id = row[11] if len(row) > 11 else None
             parent_story_id = row[12] if len(row) > 12 else None
             dependencies = row[13] if len(row) > 13 else None
+            approval_status = row[14] if len(row) > 14 else 'pending'
+            approved_by = row[15] if len(row) > 15 else None
+            approved_at = parse_datetime_field(row[16]) if len(row) > 16 else None
         except (IndexError, KeyError):
             # Si row no soporta índice numérico o está fuera de rango
             requirement_id = None
@@ -332,6 +346,9 @@ class UserStoryRepository:
             feature_id = None
             parent_story_id = None
             dependencies = None
+            approval_status = 'pending'
+            approved_by = None
+            approved_at = None
 
         return UserStory(
             id=row[0],
@@ -347,7 +364,10 @@ class UserStoryRepository:
             epic_id=epic_id,
             feature_id=feature_id,
             parent_story_id=parent_story_id,
-            dependencies=dependencies
+            dependencies=dependencies,
+            approval_status=approval_status,
+            approved_by=approved_by,
+            approved_at=approved_at
         )
 
 

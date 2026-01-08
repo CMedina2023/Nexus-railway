@@ -20,6 +20,7 @@ from app.backend.matrix_backend import generate_test_cases_html_document, parse_
 # Imports de base de datos y modelos
 from app.models.user_story import UserStory
 from app.models.test_case import TestCase
+from app.models.approval_status import ApprovalStatus
 from app.database.repositories.user_story_repository import UserStoryRepository
 from app.database.repositories.test_case_repository import TestCaseRepository
 from app.auth.session_service import SessionService
@@ -307,6 +308,7 @@ class GenerationOrchestrator:
                         story_title=f"Generación {datetime.now().strftime('%Y-%m-%d %H:%M')}", # Título genérico
                         story_content=json.dumps(stories_dicts), # Guardar contenido estructurado
                         jira_issue_key="",
+                        approval_status=ApprovalStatus.DRAFT.value,
                         created_at=datetime.now(),
                         updated_at=datetime.now()
                     )
